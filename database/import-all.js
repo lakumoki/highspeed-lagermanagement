@@ -220,7 +220,7 @@ const PPH_ID = pphResult.lastInsertRowid;
 // 1. LAGERPLAN (Positionen, Belegung, EB-Nummern)
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('─── 1. LAGERPLAN ───');
-const lagerWb = XLSX.readFile('/Users/lukaskahle/Downloads/KOPIE_Lager-PLAN - 2-HS11_ab 14.11.25.xlsx');
+const lagerWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_Lager-PLAN - 2-HS11_ab 14.11.25.xlsx'));
 const lagerData = XLSX.utils.sheet_to_json(lagerWb.Sheets['Lagerplan'], { header: 1, defval: '' });
 
 const insertPlatz = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, belegt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -367,7 +367,7 @@ if (rhSheet) {
 // 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT + TRAFFIC
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('\n─── 2. PANPHARMA LAGER ───');
-const pphWb = XLSX.readFile('/Users/lukaskahle/Downloads/KOPIE_PANPHARMA Lager.xlsx');
+const pphWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_PANPHARMA Lager.xlsx'));
 
 function excelDate(serial) {
   if (!serial || typeof serial !== 'number') return null;
@@ -444,7 +444,7 @@ if (trafficSheet) {
 // 3. EINLAGERUNGS- UND ABRUFLISTE
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('\n─── 3. ABRUF- / EINLAGERUNGSLISTEN ───');
-const abrufWb = XLSX.readFile('/Users/lukaskahle/Downloads/KOPIE_Einlagerungs- und Abrufliste-HS1.xlsx');
+const abrufWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_Einlagerungs- und Abrufliste-HS1.xlsx'));
 
 // Abrufliste (aktuelle Abrufe für heute)
 const abrufSheet = abrufWb.Sheets['Abrufliste'];
