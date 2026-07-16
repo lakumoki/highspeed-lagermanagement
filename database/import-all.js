@@ -89,6 +89,7 @@ db.exec(`
   );
   CREATE TABLE abrufliste (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    abruf_id TEXT,
     lfd_nummer INTEGER,
     eb_nummer TEXT NOT NULL,
     lagerplatz TEXT,
@@ -96,6 +97,7 @@ db.exec(`
     artikel_nr TEXT,
     chargen_nr TEXT,
     status TEXT DEFAULT 'offen',
+    datum DATE,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE einlagerungsliste (
@@ -198,6 +200,15 @@ db.exec(`
     bemerkung TEXT,
     datum DATE
   );
+  CREATE TABLE wirtschaftspruefung (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pos INTEGER,
+    eb_nummer TEXT,
+    einlagerung_datum DATE,
+    letzter_lagerplatz TEXT,
+    auslagerung_datum DATE,
+    stichtag DATE DEFAULT '2022-12-31'
+  );
   CREATE TABLE traffic (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     monat DATE,
@@ -212,6 +223,7 @@ db.exec(`
 const hash = bcrypt.hashSync('admin', 10);
 db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('admin', hash, 'Administrator', 'Administrator');
 db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('lager', bcrypt.hashSync('lager', 10), 'Lagermitarbeiter', 'Mitarbeiter');
+db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('Martin', bcrypt.hashSync('Highspeed2026!', 10), 'Martin', 'admin');
 
 const pphResult = db.prepare("INSERT INTO kunden (name, kundennummer, ansprechpartner) VALUES (?, ?, ?)").run('Panpharma', 'PPH-001', 'Daniel Schidlowski');
 const PPH_ID = pphResult.lastInsertRowid;
@@ -451,38 +463,49 @@ const abrufSheet = abrufWb.Sheets['Abrufliste'];
 if (abrufSheet) {
   const d = XLSX.utils.sheet_to_json(abrufSheet, { header: 1, defval: '' });
   let count = 0, lkw = 'LKW 1';
+  const abrufId = String(d[0]?.[2] || '').trim();
+  const abrufDatum = excelDate(d[1]?.[2]) || null;
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
-    if (String(row[1]).includes('LKW')) { lkw = String(row[1]).trim(); continue; }
+    const col1str = String(row[1] || '').trim();
+    if (col1str.includes('LKW')) { lkw = col1str; continue; }
     if (!row[1] || typeof row[1] !== 'number') continue;
     if (String(row[0]) === 'lfd. Nummer') continue;
     const eb = String(row[1]);
     const platz = String(row[2] || '').trim();
-    db.prepare('INSERT INTO abrufliste (lfd_nummer, eb_nummer, lagerplatz, lkw) VALUES (?,?,?,?)').run(row[0] || count + 1, eb, platz, lkw);
-    // Update palette location if exists
+    db.prepare('INSERT INTO abrufliste (abruf_id, lfd_nummer, eb_nummer, lagerplatz, lkw, datum) VALUES (?,?,?,?,?,?)').run(abrufId, row[0] || count + 1, eb, platz, lkw, abrufDatum);
     const palette = db.prepare("SELECT id FROM paletten WHERE eb_nummer = ? AND ausgelagert = 0 AND geloescht = 0").get(eb);
     if (palette && platz) {
       db.prepare("UPDATE paletten SET lagerplatz_bezeichnung = ? WHERE id = ?").run(platz, palette.id);
     }
     count++;
   }
-  console.log(`  Abrufliste: ${count} Positionen (${lkw})`);
+  console.log(`  Abrufliste ${abrufId}: ${count} Positionen`);
 }
 
 // DirektABHOLUNG
 const direktSheet = abrufWb.Sheets['DirektABHOLUNG'];
 if (direktSheet) {
   const d = XLSX.utils.sheet_to_json(direktSheet, { header: 1, defval: '' });
-  let count = 0, artikelNr = '', chargenNr = '';
+  let count = 0, currentArtikel = '', currentCharge = '';
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
     if (String(row[0]) === 'lfd. Nummer') continue;
     const info = String(row[3] || '').trim();
-    if (info.match(/^[A-Z]{3}\d/)) artikelNr = info;
-    if (info.match(/^Charge/)) chargenNr = info.replace('Charge.: ', '').replace('Charge.:', '').trim();
+    if (info.match(/^[A-Z]{3}\d/)) currentArtikel = info;
+    if (info.match(/^Charge/i)) currentCharge = info.replace(/Charge\.?:?\s*/i, '').trim();
+    const eb = String(row[1]);
+    const platz = String(row[2] || '').trim();
     db.prepare('INSERT INTO direktabholungen (lfd_nummer, eb_nummer, lagerplatz, artikel_nr, chargen_nr) VALUES (?,?,?,?,?)')
-      .run(row[0], String(row[1]), String(row[2] || ''), artikelNr, chargenNr);
+      .run(row[0], eb, platz, currentArtikel, currentCharge);
+    // Link article/charge to palette if it exists
+    if (currentArtikel || currentCharge) {
+      const pal = db.prepare("SELECT id FROM paletten WHERE eb_nummer = ? AND ausgelagert = 0 AND geloescht = 0").get(eb);
+      if (pal) {
+        db.prepare("UPDATE paletten SET artikel_nr = ?, chargen_nr = ? WHERE id = ?").run(currentArtikel || null, currentCharge || null, pal.id);
+      }
+    }
     count++;
   }
   console.log(`  DirektABHOLUNG: ${count} Positionen`);
@@ -566,7 +589,38 @@ if (invSheet) {
       count++;
     }
   }
-  console.log(`  Inventur-Archiv: ${count} Einträge`);
+  console.log(`  Inventur-Archiv: ${count} Einträge (Archiv-Nr., NICHT EB-Nummern!)`);
+}
+
+// Neue EB-Nummern (Einlagerungsliste Neue Eb-Numme)
+const neueEbSheet = abrufWb.Sheets['Einlagerungsliste Neue Eb-Numme'];
+if (neueEbSheet) {
+  const d = XLSX.utils.sheet_to_json(neueEbSheet, { header: 1, defval: '' });
+  let count = 0;
+  for (let i = 3; i < d.length; i++) {
+    const row = d[i];
+    if (!row[1] || typeof row[1] !== 'number') continue;
+    db.prepare('INSERT INTO einlagerungsliste (lfd_nummer, eb_nummer, lagerplatz, typ) VALUES (?,?,?,?)').run(row[0], String(row[1]), String(row[2] || '').trim() || null, 'Neue EB-Nummern');
+    count++;
+  }
+  console.log(`  Neue EB-Nummern: ${count} Paletten`);
+}
+
+// Wirtschaftsprüfung 31.12.2022 (historischer Bestand)
+const wpSheet = abrufWb.Sheets['Wirtschaftspr.31.12.22'];
+if (wpSheet) {
+  const d = XLSX.utils.sheet_to_json(wpSheet, { header: 1, defval: '' });
+  let count = 0;
+  for (let i = 2; i < d.length; i++) {
+    const row = d[i];
+    if (!row[1] || typeof row[1] !== 'number') continue;
+    const einlDatum = excelDate(row[2]);
+    const auslDatum = excelDate(row[4]);
+    db.prepare('INSERT INTO wirtschaftspruefung (pos, eb_nummer, einlagerung_datum, letzter_lagerplatz, auslagerung_datum) VALUES (?,?,?,?,?)')
+      .run(row[0], String(row[1]), einlDatum, String(row[3] || ''), auslDatum);
+    count++;
+  }
+  console.log(`  Wirtschaftsprüfung 31.12.22: ${count} Positionen`);
 }
 
 // Protokoll

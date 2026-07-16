@@ -82,6 +82,7 @@ db.exec(`
   );
   CREATE TABLE IF NOT EXISTS abrufliste (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    abruf_id TEXT,
     lfd_nummer INTEGER,
     eb_nummer TEXT NOT NULL,
     lagerplatz TEXT,
@@ -89,6 +90,7 @@ db.exec(`
     artikel_nr TEXT,
     chargen_nr TEXT,
     status TEXT DEFAULT 'offen',
+    datum DATE,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS einlagerungsliste (
@@ -190,6 +192,15 @@ db.exec(`
     vorhanden TEXT,
     bemerkung TEXT,
     datum DATE
+  );
+  CREATE TABLE IF NOT EXISTS wirtschaftspruefung (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pos INTEGER,
+    eb_nummer TEXT,
+    einlagerung_datum DATE,
+    letzter_lagerplatz TEXT,
+    auslagerung_datum DATE,
+    stichtag DATE DEFAULT '2022-12-31'
   );
   CREATE TABLE IF NOT EXISTS traffic (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
