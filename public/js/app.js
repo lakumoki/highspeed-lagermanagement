@@ -238,6 +238,8 @@ const App = {
   // ═══════ LAGERPLAN ═══════
   async pgLagerplan(el) {
     const bereiche = await this.api('/api/dashboard/belegung-bereiche');
+    const regale = ['A','B','C','D','E','F'];
+    
     el.innerHTML = `
       <div class="page-header"><h1>Lagerplan</h1></div>
       <div class="stats-row">
@@ -247,13 +249,104 @@ const App = {
           return `<div class="stat-card"><div class="stat-icon ${cls}"><i class="fas fa-grip-vertical"></i></div><div><div class="stat-val">${p}%</div><div class="stat-label">${b.bereich} (${b.belegt}/${b.gesamt})</div></div></div>`;
         }).join('')}
       </div>
-      <div class="card"><div class="card-h"><h3>Alle Bereiche</h3></div><div class="card-b"><div class="bereich-grid">
-        ${(bereiche||[]).map(b => {
-          const p = Math.round(b.belegt/b.gesamt*100);
-          const c = p>95?'var(--danger)':p>80?'var(--accent)':'var(--success)';
-          return `<div class="bereich-card"><h4>${b.bereich}</h4><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${c}"></div></div><div class="nums"><span>${b.belegt}/${b.gesamt}</span><span>${p}%</span></div></div>`;
-        }).join('')}
-      </div></div></div>`;
+      <div class="card" style="margin-bottom:16px"><div class="card-h"><h3>Regal auswählen</h3></div><div class="card-b" style="display:flex;gap:8px;flex-wrap:wrap">
+        ${regale.map(r=>`<button class="btn btn-outline regal-btn" data-r="${r}" style="min-width:60px">Regal ${r}</button>`).join('')}
+        <button class="btn btn-outline regal-btn" data-r="Block" style="min-width:80px">Blocklager</button>
+      </div></div>
+      <div id="lp-grid"></div>
+    `;
+    el.querySelectorAll('.regal-btn').forEach(b => {
+      b.onclick = () => {
+        el.querySelectorAll('.regal-btn').forEach(x=>x.classList.remove('btn-primary','btn-outline'));
+        b.classList.remove('btn-outline'); b.classList.add('btn-primary');
+        this.loadRegalGrid(b.dataset.r);
+      };
+    });
+    el.querySelector('.regal-btn').click();
+  },
+
+  async loadRegalGrid(regal) {
+    const grid = document.getElementById('lp-grid');
+    grid.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Laden...</div>';
+    
+    let data;
+    if (regal === 'Block') {
+      data = await this.api('/api/lagerplaetze?bereich=Blocklager Halle 1&limit=300');
+      const data2 = await this.api('/api/lagerplaetze?bereich=Blocklager Halle 2&limit=300');
+      if (data2) data = (data||[]).concat(data2);
+    } else {
+      data = await this.api(`/api/lagerplaetze?regal=${regal}&limit=500`);
+    }
+    if (!data||!data.length) { grid.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Keine Plätze</div>'; return; }
+
+    const positions = {};
+    for (const p of data) {
+      const key = p.position;
+      if (!positions[key]) positions[key] = [];
+      positions[key].push(p);
+    }
+
+    const posKeys = Object.keys(positions).map(Number).sort((a,b)=>a-b);
+    const belegt = data.filter(d=>d.belegt).length;
+    const frei = data.length - belegt;
+    const pct = Math.round(belegt/data.length*100);
+
+    grid.innerHTML = `
+      <div class="card"><div class="card-h"><h3>${regal==='Block'?'Blocklager':'Regal '+regal}</h3><span style="font-size:12px;color:var(--text-muted)">${belegt} belegt / ${frei} frei (${pct}%)</span></div>
+      <div class="card-b">
+        <div style="display:flex;gap:6px;margin-bottom:12px;font-size:11px;color:var(--text-muted)">
+          <span><span style="display:inline-block;width:12px;height:12px;background:var(--danger);border-radius:3px;vertical-align:middle"></span> Belegt (EB)</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:3px;vertical-align:middle"></span> Belegt (ohne EB)</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:var(--success);border-radius:3px;vertical-align:middle"></span> Frei</span>
+        </div>
+        <div class="lp-visual" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:3px;">
+          ${posKeys.map(pos => {
+            const slots = positions[pos];
+            return slots.map(s => {
+              let color = 'var(--success)';
+              let title = s.bezeichnung + ' – FREI';
+              if (s.belegt && s.eb_nummer) { color = '#c0392b'; title = s.bezeichnung + ' – ' + s.eb_nummer; }
+              else if (s.belegt) { color = 'var(--accent)'; title = s.bezeichnung + ' – belegt'; }
+              return `<div class="lp-cell" data-id="${s.id}" style="width:100%;aspect-ratio:1;background:${color};border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600;opacity:0.9;transition:opacity 0.1s" title="${title}">${s.position}${s.unter_position||''}</div>`;
+            }).join('');
+          }).join('')}
+        </div>
+      </div></div>
+    `;
+
+    grid.querySelectorAll('.lp-cell').forEach(cell => {
+      cell.onmouseenter = () => cell.style.opacity='1';
+      cell.onmouseleave = () => cell.style.opacity='0.9';
+      cell.onclick = () => this.showPlatzDetail(parseInt(cell.dataset.id));
+    });
+  },
+
+  async showPlatzDetail(id) {
+    const resp = await this.api(`/api/lagerplaetze/${id}`);
+    if (!resp) return;
+    const platz = resp;
+
+    let content = `
+      <div class="field-row"><div class="field"><label>Platz</label><input value="${platz.bezeichnung}" readonly></div><div class="field"><label>Regal / Bereich</label><input value="${platz.bereich}" readonly></div></div>
+      <div class="field-row"><div class="field"><label>Ebene</label><input value="${platz.ebene}" readonly></div><div class="field"><label>Status</label><input value="${platz.belegt?'Belegt':'Frei'}" readonly></div></div>
+    `;
+
+    if (platz.eb_nummer) {
+      content += `<div class="field-row"><div class="field"><label>EB-Nummer</label><input value="${platz.eb_nummer}" readonly style="font-weight:700;background:#fef9e7"></div><div class="field"><label>Kunde</label><input value="${platz.kunde_name||'Panpharma'}" readonly></div></div>`;
+      
+      const paletten = await this.api(`/api/paletten/suche?q=${platz.eb_nummer}`);
+      const pal = paletten?.[0];
+      if (pal?.artikel_nr) content += `<div class="field"><label>Artikel-Nr.</label><input value="${pal.artikel_nr}" readonly></div>`;
+      if (pal?.chargen_nr) content += `<div class="field"><label>Chargen-Nr.</label><input value="${pal.chargen_nr}" readonly></div>`;
+      if (pal?.eingelagert_am) content += `<div class="field"><label>Eingelagert am</label><input value="${new Date(pal.eingelagert_am).toLocaleDateString('de')}" readonly></div>`;
+    }
+
+    const d = document.createElement('div');
+    d.className = 'modal-bg';
+    d.innerHTML = `<div class="modal-box"><div class="modal-top"><h3>Platz ${platz.bezeichnung}</h3><button class="modal-close" onclick="this.closest('.modal-bg').remove()">&times;</button></div><div class="modal-body">${content}</div>
+    ${platz.eb_nummer?`<div class="modal-footer"><button class="btn btn-primary" onclick="window.open('/api/berichte/auslagerungsbeleg?eb=${platz.eb_nummer}&platz=${encodeURIComponent(platz.bezeichnung)}&kunde=${encodeURIComponent(platz.kunde_name||'Panpharma')}');this.closest('.modal-bg').remove()"><i class="fas fa-file-pdf"></i> Auslagerungsbeleg</button></div>`:''}</div>`;
+    document.body.appendChild(d);
+    d.onclick = (e) => { if(e.target===d) d.remove(); };
   },
 
   // ═══════ BERICHTE ═══════

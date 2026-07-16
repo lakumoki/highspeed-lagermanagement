@@ -34,6 +34,19 @@ router.get('/frei', (req, res) => {
   res.json(rows);
 });
 
+router.get('/:id', (req, res) => {
+  const row = db.prepare(`
+    SELECT l.*, p.eb_nummer, p.artikel_nr as pal_artikel, p.chargen_nr as pal_charge, 
+           p.eingelagert_am, k.name as kunde_name
+    FROM lagerplaetze l
+    LEFT JOIN paletten p ON l.id = p.lagerplatz_id AND p.ausgelagert = 0 AND p.geloescht = 0
+    LEFT JOIN kunden k ON p.kunde_id = k.id
+    WHERE l.id = ?
+  `).get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
+  res.json(row);
+});
+
 router.get('/uebersicht', (req, res) => {
   const regale = db.prepare(`
     SELECT regal, 
