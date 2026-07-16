@@ -3,7 +3,9 @@ services:
     name: highspeed-lagermanagement
     runtime: node
     plan: free
-    buildCommand: npm install
+    region: frankfurt
+    nodeVersion: "20.18.1"
+    buildCommand: npm install --build-from-source
     startCommand: npm start
     envVars:
       - key: NODE_ENV
