@@ -1,0 +1,25 @@
+{
+  "name": "highspeed-lagermanagement",
+  "version": "2.2.0",
+  "description": "Highspeed Kurier - Lagermanagement System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node database/import-all.js && node server.js",
+    "dev": "node server.js",
+    "import": "node database/import-all.js",
+    "build": "echo 'no build needed'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.0",
+    "express-session": "^1.18.1",
+    "nodemailer": "^9.0.3",
+    "pdfkit": "^0.19.1",
+    "xlsx": "^0.18.5"
+  }
+}
