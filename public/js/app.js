@@ -265,9 +265,9 @@ async function showFreiePlaetze() {
   const plaetze = await api('/api/einlagerung/freie-plaetze');
   const box = document.getElementById('freie-plaetze-box');
   box.innerHTML = `<div class="card"><div class="card-header"><h3>${plaetze.length} freie Plätze</h3><button class="btn btn-sm btn-secondary" onclick="this.closest('.card').remove()">Schließen</button></div>
-    <div class="table-wrap"><table><thead><tr><th>Platz</th><th>Regal</th><th>Pos.</th><th>Bereich</th><th>Ebene</th></tr></thead><tbody>
-    ${plaetze.slice(0, 50).map(p => `<tr onclick="document.getElementById('einl-platz').value='${p.bezeichnung}';this.closest('.card').remove()" style="cursor:pointer"><td><strong>${p.bezeichnung}</strong></td><td>${p.regal}</td><td>${p.position}</td><td>${p.bereich}</td><td>${p.ebene}</td></tr>`).join('')}
-    ${plaetze.length > 50 ? `<tr><td colspan="5" style="color:var(--text-muted)">… und ${plaetze.length - 50} weitere</td></tr>` : ''}
+    <div class="table-wrap"><table><thead><tr><th>Platz</th><th>Regal</th><th>Pos.</th><th>Bereich</th><th>Ebene</th><th>Max. Höhe</th></tr></thead><tbody>
+    ${plaetze.slice(0, 50).map(p => `<tr onclick="document.getElementById('einl-platz').value='${p.bezeichnung}';this.closest('.card').remove()" style="cursor:pointer"><td><strong>${p.bezeichnung}</strong></td><td>${p.regal}</td><td>${p.position}</td><td>${p.bereich}</td><td>${p.ebene}</td><td>${p.max_hoehe_cm ? p.max_hoehe_cm + ' cm' : '—'}</td></tr>`).join('')}
+    ${plaetze.length > 50 ? `<tr><td colspan="6" style="color:var(--text-muted)">… und ${plaetze.length - 50} weitere</td></tr>` : ''}
     </tbody></table></div></div>`;
 }
 

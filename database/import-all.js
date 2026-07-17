@@ -442,6 +442,43 @@ if (artikelSheet) {
   console.log(`  ${c} PPH-Artikel importiert`);
 }
 
+// Regalhöhen importieren und auf Lagerplätze anwenden
+const hoehenSheet = lagerWb.Sheets['Regalhöhen'];
+if (hoehenSheet) {
+  const hData = XLSX.utils.sheet_to_json(hoehenSheet, { header: 1, defval: '' });
+  // Spalte 0 = Höhe (m), Spalten 1-6 = Regal A-F, Wert = Ebene-Index (0=EG, 1=1.OG, 2=2.OG, 3=3.OG)
+  const regalHoehen = {}; // { "A": { 0: 132, 1: 155, 2: 111, 3: 110 } }
+  const regalIdx = { 1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F' };
+  
+  for (let i = 1; i < hData.length; i++) {
+    const row = hData[i];
+    const hoehe = parseFloat(row[0]);
+    if (isNaN(hoehe)) continue;
+    const hoeheCm = Math.round(hoehe * 100);
+    
+    for (let col = 1; col <= 6; col++) {
+      const ebeneVal = row[col];
+      if (ebeneVal === '' || ebeneVal === undefined) continue;
+      const ebeneIndex = parseInt(ebeneVal);
+      if (isNaN(ebeneIndex)) continue;
+      const regal = regalIdx[col];
+      if (!regalHoehen[regal]) regalHoehen[regal] = {};
+      regalHoehen[regal][ebeneIndex] = hoeheCm;
+    }
+  }
+  
+  // max_hoehe_cm auf alle Lagerplätze setzen
+  const updateHoehe = db.prepare('UPDATE lagerplaetze SET max_hoehe_cm = ? WHERE regal = ? AND ebene_index = ? AND bereich LIKE ?');
+  let hCount = 0;
+  for (const [regal, ebenen] of Object.entries(regalHoehen)) {
+    for (const [ebIdx, hoehe] of Object.entries(ebenen)) {
+      const result = updateHoehe.run(hoehe, regal, parseInt(ebIdx), `Regal ${regal}`);
+      hCount += result.changes;
+    }
+  }
+  console.log(`  Regalhöhen: ${Object.keys(regalHoehen).length} Regale, ${hCount} Plätze mit max_hoehe_cm`);
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT
 // ════════════════════════════════════════════════════════════════════════════════

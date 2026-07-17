@@ -22,6 +22,12 @@ router.post('/', (req, res) => {
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" nicht gefunden` });
   if (platz.belegt) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" ist bereits belegt` });
   
+  // Höhenprüfung: Wenn Palette eine bekannte Höhe hat und der Platz eine max_hoehe hat
+  const { paletten_hoehe_cm } = req.body;
+  if (paletten_hoehe_cm && platz.max_hoehe_cm && paletten_hoehe_cm > platz.max_hoehe_cm) {
+    return res.status(400).json({ error: `Palette (${paletten_hoehe_cm}cm) zu hoch für ${lagerplatz} (max. ${platz.max_hoehe_cm}cm)`, warnung: true });
+  }
+  
   // Duplikat prüfen
   const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(paletten_nr);
   if (duplikat) return res.status(400).json({ error: `Palette "${paletten_nr}" ist bereits eingelagert` });
@@ -59,7 +65,7 @@ router.get('/freie-plaetze', (req, res) => {
   if (bereich) { where += ' AND bereich = ?'; params.push(bereich); }
   if (regal) { where += ' AND regal = ?'; params.push(regal); }
   
-  const plaetze = db.prepare(`SELECT bezeichnung, regal, position, bereich, typ, ebene FROM lagerplaetze ${where} ORDER BY regal, position`).all(...params);
+  const plaetze = db.prepare(`SELECT bezeichnung, regal, position, bereich, typ, ebene, max_hoehe_cm FROM lagerplaetze ${where} ORDER BY regal, position`).all(...params);
   res.json(plaetze);
 });
 
