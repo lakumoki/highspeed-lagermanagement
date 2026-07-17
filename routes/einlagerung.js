@@ -62,15 +62,22 @@ router.get('/naechste-nr', (req, res) => {
   res.json({ prefix: kunde?.nummern_prefix || '', format: kunde?.nummern_format || 'Frei' });
 });
 
-// Freie Lagerplätze
+// Freie Lagerplätze (nur echte, nicht-belegte, Echtzeit-Prüfung)
 router.get('/freie-plaetze', (req, res) => {
   const { bereich, regal } = req.query;
-  let where = 'WHERE belegt = 0';
+  let where = 'WHERE l.belegt = 0 AND l.bemerkung IS NULL';
   const params = [];
-  if (bereich) { where += ' AND bereich = ?'; params.push(bereich); }
-  if (regal) { where += ' AND regal = ?'; params.push(regal); }
+  if (bereich) { where += ' AND l.bereich = ?'; params.push(bereich); }
+  if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
   
-  const plaetze = db.prepare(`SELECT bezeichnung, regal, position, bereich, typ, ebene, max_hoehe_cm FROM lagerplaetze ${where} ORDER BY regal, position`).all(...params);
+  // Nur Plätze die WIRKLICH frei sind (keine Palette drauf, nicht blockiert)
+  const plaetze = db.prepare(`
+    SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.typ, l.ebene, l.max_hoehe_cm 
+    FROM lagerplaetze l
+    LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+    ${where} AND p.id IS NULL
+    ORDER BY l.regal, l.position
+  `).all(...params);
   res.json(plaetze);
 });
 

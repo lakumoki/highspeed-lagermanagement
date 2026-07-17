@@ -14,8 +14,17 @@ app.use(session({
   secret: 'highspeed-lager-secret-2026',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 }
+  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' }
 }));
+
+// Fehlerbehandlung für ungültige Session-Cookies
+app.use((err, req, res, next) => {
+  if (err && err.message && err.message.includes('did not match')) {
+    res.clearCookie('connect.sid');
+    return res.status(400).json({ error: 'Sitzung abgelaufen — bitte neu anmelden' });
+  }
+  next(err);
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
