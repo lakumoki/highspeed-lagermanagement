@@ -4,49 +4,54 @@ const db = require('../database/init');
 
 // Einlagerung: Neues System mit Kundenauswahl + Nummernformat
 router.post('/', (req, res) => {
-  const { paletten_nr, kunde_id, lagerplatz, artikel_nr, chargen_nr, bemerkung, menge, direktanlieferung_id } = req.body;
+  const { paletten_nr, kunde_id, lagerplatz, artikel_nr, chargen_nr, bemerkung, menge, direktanlieferung_id, paletten_hoehe_cm } = req.body;
   
-  if (!paletten_nr || !lagerplatz) {
-    return res.status(400).json({ error: 'Palettennummer und Lagerplatz erforderlich' });
+  if (!paletten_nr || !paletten_nr.trim()) {
+    return res.status(400).json({ error: 'Palettennummer erforderlich' });
   }
+  if (!lagerplatz || !lagerplatz.trim()) {
+    return res.status(400).json({ error: 'Lagerplatz erforderlich' });
+  }
+  
+  const nr = paletten_nr.trim();
+  const platzBez = lagerplatz.trim();
   
   // Kunde ermitteln
   let kundeId = kunde_id ? parseInt(kunde_id) : null;
   let nummernTyp = 'Sonstige';
   
-  if (paletten_nr.match(/^\d{6}$/)) { nummernTyp = 'EB'; if (!kundeId) kundeId = 1; }
-  else if (paletten_nr.match(/^KW|^Kw/i)) { nummernTyp = 'KW'; if (!kundeId) kundeId = 2; }
+  if (nr.match(/^\d{6}$/)) { nummernTyp = 'EB'; if (!kundeId) kundeId = 1; }
+  else if (nr.match(/^KW|^Kw/i)) { nummernTyp = 'KW'; if (!kundeId) kundeId = 2; }
   
-  // Lagerplatz prüfen
-  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ?').get(lagerplatz);
-  if (!platz) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" nicht gefunden` });
-  if (platz.belegt) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" ist bereits belegt` });
+  // Lagerplatz prüfen (case-insensitive)
+  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(platzBez, platzBez.toUpperCase(), platzBez.toLowerCase());
+  if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
+  if (platz.belegt) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
   
-  // Höhenprüfung: Wenn Palette eine bekannte Höhe hat und der Platz eine max_hoehe hat
-  const { paletten_hoehe_cm } = req.body;
-  if (paletten_hoehe_cm && platz.max_hoehe_cm && paletten_hoehe_cm > platz.max_hoehe_cm) {
-    return res.status(400).json({ error: `Palette (${paletten_hoehe_cm}cm) zu hoch für ${lagerplatz} (max. ${platz.max_hoehe_cm}cm)`, warnung: true });
+  // Höhenprüfung
+  if (paletten_hoehe_cm && platz.max_hoehe_cm && parseFloat(paletten_hoehe_cm) > platz.max_hoehe_cm) {
+    return res.status(400).json({ error: `Palette (${paletten_hoehe_cm}cm) zu hoch für ${platzBez} (max. ${platz.max_hoehe_cm}cm)` });
   }
   
   // Duplikat prüfen
-  const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(paletten_nr);
-  if (duplikat) return res.status(400).json({ error: `Palette "${paletten_nr}" ist bereits eingelagert` });
+  const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
+  if (duplikat) return res.status(400).json({ error: `Palette "${nr}" ist bereits eingelagert` });
   
   // Einlagern
   const result = db.prepare(`
     INSERT INTO paletten (paletten_nr, nummern_typ, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, artikel_nr, chargen_nr, menge, eingelagert_von, bemerkung)
     VALUES (?,?,?,?,?,?,?,?,?,?)
-  `).run(paletten_nr, nummernTyp, kundeId, platz.id, lagerplatz, artikel_nr || null, chargen_nr || null, menge || 1, req.session?.user?.benutzername || 'System', bemerkung || null);
+  `).run(nr, nummernTyp, kundeId, platz.id, platz.bezeichnung, artikel_nr || null, chargen_nr || null, menge || 1, req.session?.user?.benutzername || 'System', bemerkung || null);
   
   // Platz belegen
   db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(platz.id);
   
   // Bewegung dokumentieren
-  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer) VALUES (?, date("now"), ?, 1, ?, ?, ?)').run(kundeId, 'Einlagerung', paletten_nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System');
+  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer) VALUES (?, date("now"), ?, 1, ?, ?, ?)').run(kundeId, 'Einlagerung', nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System');
   
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Einlagerung', `${paletten_nr} → ${lagerplatz}`, req.session?.user?.benutzername || 'System');
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Einlagerung', `${nr} → ${platz.bezeichnung}`, req.session?.user?.benutzername || 'System');
   
-  res.json({ ok: true, id: result.lastInsertRowid, message: `${paletten_nr} auf ${lagerplatz} eingelagert` });
+  res.json({ ok: true, id: result.lastInsertRowid, message: `${nr} auf ${platz.bezeichnung} eingelagert` });
 });
 
 // Nummernformat-Info für Kunde

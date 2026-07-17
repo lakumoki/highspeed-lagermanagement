@@ -204,6 +204,8 @@ async function doSearch() {
 async function pgEinlagerung() {
   const pc = document.getElementById('page-content');
   const kunden = await api('/api/kunden');
+  const freie = await api('/api/einlagerung/freie-plaetze');
+  const vorschlag = freie.length > 0 ? freie[0].bezeichnung : '';
   
   pc.innerHTML = `
     <div class="page-header"><h1>Einlagerung</h1></div>
@@ -218,13 +220,14 @@ async function pgEinlagerung() {
         </div>
         <div class="form-group">
           <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
-          <input type="text" id="einl-nr" placeholder="z.B. 654321 oder KW...">
+          <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Lagerplatz * <button class="btn btn-sm btn-secondary" onclick="showFreiePlaetze()" style="margin-left:8px">Freie anzeigen</button></label>
-          <input type="text" id="einl-platz" placeholder="z.B. A42, BL-H2-A1003">
+          <label>Lagerplatz * <span style="color:var(--success);font-size:11px">(${freie.length} frei)</span></label>
+          <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}">
+          <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Vorschlag: <strong>${vorschlag}</strong> ${freie.length > 0 && freie[0].max_hoehe_cm ? `(max. ${freie[0].max_hoehe_cm}cm)` : ''} · <a href="#" onclick="showFreiePlaetze();return false" style="color:var(--info)">Alle ${freie.length} freien anzeigen</a></div>
         </div>
         <div class="form-group">
           <label>Menge</label>
@@ -265,9 +268,9 @@ async function showFreiePlaetze() {
   const plaetze = await api('/api/einlagerung/freie-plaetze');
   const box = document.getElementById('freie-plaetze-box');
   box.innerHTML = `<div class="card"><div class="card-header"><h3>${plaetze.length} freie Plätze</h3><button class="btn btn-sm btn-secondary" onclick="this.closest('.card').remove()">Schließen</button></div>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Klicke auf einen Platz um ihn zu übernehmen</p>
     <div class="table-wrap"><table><thead><tr><th>Platz</th><th>Regal</th><th>Pos.</th><th>Bereich</th><th>Ebene</th><th>Max. Höhe</th></tr></thead><tbody>
-    ${plaetze.slice(0, 50).map(p => `<tr onclick="document.getElementById('einl-platz').value='${p.bezeichnung}';this.closest('.card').remove()" style="cursor:pointer"><td><strong>${p.bezeichnung}</strong></td><td>${p.regal}</td><td>${p.position}</td><td>${p.bereich}</td><td>${p.ebene}</td><td>${p.max_hoehe_cm ? p.max_hoehe_cm + ' cm' : '—'}</td></tr>`).join('')}
-    ${plaetze.length > 50 ? `<tr><td colspan="6" style="color:var(--text-muted)">… und ${plaetze.length - 50} weitere</td></tr>` : ''}
+    ${plaetze.map(p => `<tr onclick="document.getElementById('einl-platz').value='${p.bezeichnung}';this.closest('.card').remove()" style="cursor:pointer"><td><strong>${p.bezeichnung}</strong></td><td>${p.regal}</td><td>${p.position}</td><td>${p.bereich}</td><td>${p.ebene}</td><td>${p.max_hoehe_cm ? p.max_hoehe_cm + ' cm' : '—'}</td></tr>`).join('')}
     </tbody></table></div></div>`;
 }
 
