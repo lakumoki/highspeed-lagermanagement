@@ -326,13 +326,13 @@ async function pgPickliste() {
   const aktuell = await api('/api/pickliste/aktuell');
   
   pc.innerHTML = `
-    <div class="page-header"><h1>Pickliste / Abruf</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neue Pickliste</button></div></div>
+    <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button></div></div>
     <div class="tabs">
       <button class="active" onclick="showPickTab('tablet')">Tablet-Ansicht</button>
       <button onclick="showPickTab('liste')">Listenansicht</button>
     </div>
     <div id="pick-content">
-      ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine aktive Pickliste vorhanden.</p>' :
+      ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine aktive Pickliste vorhanden. Klicke "Neuer Abruf" um eine Liste zu importieren.</p>' :
       aktuell.map(item => `
         <div class="picklist-item ${item.abgehakt ? 'done' : ''}" data-nr="${item.paletten_nr}">
           <div class="check" onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')">${item.abgehakt ? '✓' : ''}</div>
@@ -356,11 +356,12 @@ function showNeuePickliste() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal">
-      <h2>Neue Pickliste erstellen</h2>
+    <div class="modal" style="max-width:600px">
+      <h2>Neuer Abruf — Liste importieren</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Paletten-Nummern einfügen (eine pro Zeile, z.B. vom Kunden per Mail). Leere Zeilen werden ignoriert.</p>
       <div class="form-group">
         <label>Paletten-Nummern (eine pro Zeile)</label>
-        <textarea id="pick-nummern" rows="8" placeholder="654321&#10;654322&#10;654323"></textarea>
+        <textarea id="pick-nummern" rows="10" placeholder="645524&#10;645525&#10;645526&#10;652654&#10;652655" style="font-family:monospace"></textarea>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Abruf-ID</label><input type="text" id="pick-abruf" placeholder="z.B. 2026/149-1"></div>
@@ -368,7 +369,7 @@ function showNeuePickliste() {
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
-        <button class="btn btn-primary" onclick="erstellePickliste()">Erstellen</button>
+        <button class="btn btn-primary" onclick="erstellePickliste()">Abruf erstellen</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -379,36 +380,108 @@ async function erstellePickliste() {
   const abruf = document.getElementById('pick-abruf').value.trim();
   const kap = parseInt(document.getElementById('pick-kap').value) || 17;
   
+  if (nummern.length === 0) { toast('Keine Nummern eingegeben', 'error'); return; }
+  
   try {
     const data = await api('/api/pickliste/erstellen', { method: 'POST', body: { paletten_nummern: nummern, abruf_id: abruf, lkw_split: kap } });
     document.querySelector('.modal-overlay')?.remove();
-    
-    const pc = document.getElementById('pick-content');
-    let html = `<div class="card"><div class="card-header"><h3>Pickliste: ${nummern.length} Paletten · ${data.lkw_anzahl} LKW</h3>
-      <button class="btn btn-sm btn-primary" onclick="picklistePDF()">PDF drucken</button></div>`;
-    
-    let lastLkw = '';
-    for (const item of data.items) {
-      if (item.lkw !== lastLkw) { html += `<div style="margin:12px 0 6px;font-weight:600;color:var(--info)">${item.lkw}</div>`; lastLkw = item.lkw; }
-      html += `<div class="picklist-item"><div class="check"></div><div class="nr">${item.paletten_nr}</div><div class="platz">${item.lagerplatz}</div><div class="info">${item.bereich} · ${item.artikel_nr || ''}</div></div>`;
-    }
-    html += '</div>';
-    pc.innerHTML = html;
-    
     window._lastPickliste = data;
+    renderAbrufErgebnis(data);
   } catch (e) { toast(e.message, 'error'); }
 }
 
-async function picklistePDF() {
+function renderAbrufErgebnis(data) {
+  const pc = document.getElementById('pick-content');
+  const nichtGefunden = data.items.filter(i => !i.gefunden);
+  const gefunden = data.items.filter(i => i.gefunden);
+  
+  let html = `
+    <div class="card">
+      <div class="card-header">
+        <h3>Abruf${data.abruf_id ? ' ' + data.abruf_id : ''}: ${data.gesamt} Paletten · ${data.lkw_anzahl} LKW</h3>
+        <div class="actions">
+          <button class="btn btn-sm btn-primary" onclick="abrufPDF()">PDF Pickliste</button>
+          <button class="btn btn-sm btn-success" onclick="abrufDurchfuehren()">Abruf ausführen</button>
+        </div>
+      </div>
+      ${nichtGefunden.length > 0 ? `<div style="background:#fdecea;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:12px"><strong>${nichtGefunden.length} nicht gefunden:</strong> ${nichtGefunden.map(i => i.paletten_nr).join(', ')}</div>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Detaillierte Aufschlüsselung</h3></div>
+      <div class="table-wrap"><table><thead><tr>
+        <th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Bereich</th><th>LKW</th><th>Handling</th>
+      </tr></thead><tbody>`;
+  
+  let lastLkw = '';
+  for (const item of data.items) {
+    if (item.lkw !== lastLkw) {
+      html += `<tr style="background:#f8f9fa"><td colspan="6" style="font-weight:600;color:var(--info);padding:8px 12px">${item.lkw} (max. ${data.lkw_kapazitaet} Pal.)</td></tr>`;
+      lastLkw = item.lkw;
+    }
+    html += `<tr${!item.gefunden ? ' style="background:#fdecea"' : ''}>
+      <td>${item.lfd}</td>
+      <td><strong>${item.paletten_nr}</strong></td>
+      <td>${item.gefunden ? `<span style="color:var(--info);font-weight:500">${item.lagerplatz}</span>` : '<span style="color:var(--danger)">NICHT GEFUNDEN</span>'}</td>
+      <td>${item.bereich !== '?' ? item.bereich : ''}</td>
+      <td>${item.lkw}</td>
+      <td><input type="checkbox" class="handling-check" data-nr="${item.paletten_nr}" title="Handling-Gebühr (Tray/Muster)"></td>
+    </tr>`;
+  }
+  
+  html += `</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Zusammenfassung / Abrechnung</h3></div>
+      <table style="width:100%;font-size:13px">
+        <tr><td>Paletten gesamt</td><td><strong>${data.gesamt}</strong></td></tr>
+        <tr><td>Gefunden / zuordenbar</td><td>${gefunden.length}</td></tr>
+        <tr><td>Nicht gefunden</td><td style="color:var(--danger)">${nichtGefunden.length}</td></tr>
+        <tr><td>LKW benötigt</td><td>${data.lkw_anzahl} (à ${data.lkw_kapazitaet} Pal.)</td></tr>
+        <tr><td>Auslagerungen (Abrechnung)</td><td><strong>${gefunden.length}</strong></td></tr>
+        <tr><td>Handling-Gebühren</td><td id="handling-count"><strong>0</strong> <span style="color:var(--text-muted)">(Checkboxen oben setzen)</span></td></tr>
+      </table>
+    </div>`;
+  
+  pc.innerHTML = html;
+  
+  // Handling-Checkboxen live zählen
+  pc.querySelectorAll('.handling-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const count = pc.querySelectorAll('.handling-check:checked').length;
+      document.getElementById('handling-count').innerHTML = `<strong>${count}</strong>`;
+    });
+  });
+}
+
+async function abrufPDF() {
   if (!window._lastPickliste) return;
+  // PDF über neues Fenster mit POST
   const form = document.createElement('form');
   form.method = 'POST'; form.action = '/api/pickliste/pdf'; form.target = '_blank';
-  const input = document.createElement('input');
-  input.type = 'hidden'; input.name = 'data';
-  input.value = JSON.stringify(window._lastPickliste);
-  form.appendChild(input);
-  document.body.appendChild(form);
-  form.submit(); form.remove();
+  form.innerHTML = `<input type="hidden" name="items" value='${JSON.stringify(window._lastPickliste.items)}'>
+    <input type="hidden" name="abruf_id" value="${window._lastPickliste.abruf_id || ''}">
+    <input type="hidden" name="kunde_name" value="Panpharma">`;
+  document.body.appendChild(form); form.submit(); form.remove();
+}
+
+async function abrufDurchfuehren() {
+  if (!window._lastPickliste) return;
+  const items = window._lastPickliste.items.filter(i => i.gefunden);
+  if (items.length === 0) { toast('Keine Paletten zum Auslagern', 'error'); return; }
+  
+  const handlingNummern = [...document.querySelectorAll('.handling-check:checked')].map(cb => cb.dataset.nr);
+  
+  if (!confirm(`${items.length} Paletten auslagern + ${handlingNummern.length} Handling-Gebühren buchen?`)) return;
+  
+  try {
+    const data = await api('/api/pickliste/ausfuehren', { method: 'POST', body: {
+      paletten_nummern: items.map(i => i.paletten_nr),
+      abruf_id: window._lastPickliste.abruf_id,
+      handling_nummern: handlingNummern
+    }});
+    toast(`Abruf abgeschlossen: ${data.ausgelagert} ausgelagert, ${data.handling} Handling`, 'success');
+    pgPickliste();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ═══ MUSTERUNG ═══════════════════════════════════════════════════════════════
