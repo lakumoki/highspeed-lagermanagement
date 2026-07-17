@@ -24,7 +24,7 @@ router.post('/', (req, res) => {
   }
   
   // Bewegung dokumentieren
-  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer) VALUES (?, date("now"), ?, 1, ?, ?)').run(palette.kunde_id, 'Auslagerung', paletten_nr, req.session?.user?.benutzername || 'System');
+  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer) VALUES (?, ?, ?, 1, ?, ?)').run(palette.kunde_id, new Date().toISOString().split('T')[0], 'Auslagerung', paletten_nr, req.session?.user?.benutzername || 'System');
   
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Auslagerung', `${paletten_nr} von ${palette.lagerplatz_bezeichnung}`, req.session?.user?.benutzername || 'System');
   
@@ -48,7 +48,7 @@ router.post('/abruf', (req, res) => {
   }
   
   if (results.ok.length > 0) {
-    db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer) VALUES (?, date("now"), ?, ?, ?, ?, ?)').run(1, 'Auslagerung', results.ok.length, results.ok.map(r => r.nr).join(', '), abruf_id || null, req.session?.user?.benutzername || 'System');
+    db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer) VALUES (?, ?, ?, ?, ?, ?, ?)').run(1, new Date().toISOString().split('T')[0], 'Auslagerung', results.ok.length, results.ok.map(r => r.nr).join(', '), abruf_id || null, req.session?.user?.benutzername || 'System');
   }
   
   res.json({ ok: true, ausgelagert: results.ok.length, fehler: results.fehler.length, details: results });

@@ -14,7 +14,7 @@ router.post('/', (req, res) => {
   db.prepare('INSERT INTO musterzuege (lfd_nummer, paletten_nr, lagerplatz, menge, kunde_id, benutzer, bemerkung) VALUES (?,?,?,?,?,?,?)').run(lfd, paletten_nr, lagerplatz || null, menge || '1 Tray', kunde_id || 1, req.session?.user?.benutzername || 'System', bemerkung || null);
   
   // Als Bewegung + Extra Handling dokumentieren
-  db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, handling_art, benutzer) VALUES (?, date('now'), 'Extra Handling', 1, ?, 'Musterzug', ?)").run(kunde_id || 1, paletten_nr, req.session?.user?.benutzername || 'System');
+  db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, handling_art, benutzer) VALUES (?, ?, 'Extra Handling', 1, ?, 'Musterzug', ?)").run(kunde_id || 1, new Date().toISOString().split('T')[0], paletten_nr, req.session?.user?.benutzername || 'System');
   
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Musterzug', `${menge || '1 Tray'} aus ${paletten_nr} (Handling-Gebühr)`, req.session?.user?.benutzername || 'System');
   
