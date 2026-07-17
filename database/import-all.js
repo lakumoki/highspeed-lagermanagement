@@ -389,36 +389,7 @@ const importTransaction = db.transaction(() => {
     }
   }
   
-  // ─── HALLE 2: Blocklager + P-Gänge + Gänge (xA-xF) ──────────────────────
-  const h2Cols = { A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8, H: 9 };
-  
-  for (let row = 3; row < lagerData.length; row++) {
-    const r = lagerData[row];
-    const col1 = r?.[1];
-    if (typeof col1 !== 'number' || col1 < 1001) continue;
-    
-    for (const [colName, colIdx] of Object.entries(h2Cols)) {
-      const cell = String(r[colIdx] || '').trim();
-      if (cell === '' || cell.startsWith('↓')) continue;
-      
-      const bez = `BL-H2-${colName}${col1}`;
-      const nrTyp = detectNrTyp(cell);
-      
-      insertPlatz.run(bez, `Block-H2-${colName}`, col1, null, 'EG', 0, 'Blocklager Halle 2', 'Blocklager', 0, 1, null);
-      stats.plaetze++;
-      
-      if (cell.startsWith('eb0') || cell.match(/^Kw|^KW/)) {
-        const nr = extractNr(cell);
-        if (nr && nr.length >= 3) {
-          const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
-          if (platz) {
-            insertPalette.run(nr, nrTyp, getKundeId(nrTyp, cell), platz.id, bez, 'Import', null);
-            stats.paletten++;
-          }
-        }
-      } else { stats.belegtOhneNr++; }
-    }
-  }
+  // ─── Halle 2 wurde entfernt (nicht mehr aktuell) ─────────────────────────
 });
 importTransaction();
 
