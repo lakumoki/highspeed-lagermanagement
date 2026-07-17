@@ -256,14 +256,9 @@ async function einlKundeChange() {
   const sel = document.getElementById('einl-kunde');
   const opt = sel.options[sel.selectedIndex];
   const hint = document.getElementById('einl-format-hint');
-  const prefix = opt.dataset.prefix;
   const format = opt.dataset.format;
   hint.textContent = format ? `(${format})` : '';
-  
-  if (prefix === 'EB') {
-    const r = await api(`/api/einlagerung/naechste-nr?kunde_id=${sel.value}`);
-    document.getElementById('einl-nr').placeholder = `Nächste: ${r.naechste}`;
-  }
+  document.getElementById('einl-nr').placeholder = opt.dataset.prefix === 'EB' ? '6-stellige EB-Nr. vom Kunden' : 'Paletten-Nr. eingeben';
 }
 
 async function showFreiePlaetze() {

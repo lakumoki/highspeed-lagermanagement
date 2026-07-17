@@ -43,19 +43,12 @@ router.post('/', (req, res) => {
   res.json({ ok: true, id: result.lastInsertRowid, message: `${paletten_nr} auf ${lagerplatz} eingelagert` });
 });
 
-// Nächste freie EB-Nummer vorschlagen
+// Nummernformat-Info für Kunde
 router.get('/naechste-nr', (req, res) => {
   const { kunde_id } = req.query;
   const kid = parseInt(kunde_id) || 1;
   const kunde = db.prepare('SELECT * FROM kunden WHERE id = ?').get(kid);
-  
-  if (kunde?.nummern_prefix === 'EB') {
-    const max = db.prepare("SELECT MAX(CAST(paletten_nr AS INTEGER)) as m FROM paletten WHERE nummern_typ = 'EB'").get();
-    const next = String((max?.m || 650000) + 1).padStart(6, '0');
-    return res.json({ prefix: 'EB', naechste: next, format: '6-stellig numerisch' });
-  }
-  
-  res.json({ prefix: kunde?.nummern_prefix || '', naechste: '', format: kunde?.nummern_format || 'Frei' });
+  res.json({ prefix: kunde?.nummern_prefix || '', format: kunde?.nummern_format || 'Frei' });
 });
 
 // Freie Lagerplätze
