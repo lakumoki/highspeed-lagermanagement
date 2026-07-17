@@ -2,85 +2,135 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
+// Erweiterte Suche: Palettennummer (EB/KW/Sonstige), Artikel-Nr, Chargen-Nr, Lagerplatz
 router.get('/suche', (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.json([]);
-
-  const rows = db.prepare(`
-    SELECT p.*, k.name as kunde_name, COALESCE(p.lagerplatz_bezeichnung, l.bezeichnung) as lagerplatz_bez
-    FROM paletten p
-    LEFT JOIN kunden k ON p.kunde_id = k.id
-    LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-    WHERE (p.eb_nummer LIKE ? OR k.name LIKE ? OR p.lagerplatz_bezeichnung LIKE ? OR p.artikel_nr LIKE ?) 
-      AND p.ausgelagert = 0 AND p.geloescht = 0
-    ORDER BY p.eingelagert_am DESC
-    LIMIT 100
-  `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+  const { q, typ } = req.query;
+  if (!q || q.length < 2) return res.json([]);
   
-  // Map lagerplatz_bez back to lagerplatz_bezeichnung for frontend compat
-  res.json(rows.map(r => ({ ...r, lagerplatz_bezeichnung: r.lagerplatz_bez || r.lagerplatz_bezeichnung })));
+  const term = `%${q}%`;
+  let results;
+  
+  if (typ === 'artikel') {
+    results = db.prepare(`
+      SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE p.ausgelagert = 0 AND p.geloescht = 0
+        AND p.artikel_nr LIKE ?
+      ORDER BY p.artikel_nr
+    `).all(term);
+  } else if (typ === 'charge') {
+    results = db.prepare(`
+      SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE p.ausgelagert = 0 AND p.geloescht = 0
+        AND p.chargen_nr LIKE ?
+      ORDER BY p.chargen_nr
+    `).all(term);
+  } else if (typ === 'lagerplatz') {
+    results = db.prepare(`
+      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, p.chargen_nr, k.name as kunde_name
+      FROM lagerplaetze l
+      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE l.bezeichnung LIKE ?
+      ORDER BY l.bezeichnung
+    `).all(term);
+  } else {
+    // Standard: Suche nach Palettennummer (EB, KW, Sonstige)
+    results = db.prepare(`
+      SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE p.ausgelagert = 0 AND p.geloescht = 0
+        AND (p.paletten_nr LIKE ? OR p.artikel_nr LIKE ? OR p.chargen_nr LIKE ?)
+      ORDER BY p.paletten_nr
+    `).all(term, term, term);
+  }
+  
+  res.json(results);
 });
 
+// Alle aktiven Paletten (mit Pagination)
 router.get('/', (req, res) => {
-  const { kunde_id, eb_nummer, lagerplatz, limit: lim } = req.query;
-  let query = `
-    SELECT p.*, k.name as kunde_name, COALESCE(p.lagerplatz_bezeichnung, l.bezeichnung) as lagerplatz_bezeichnung
-    FROM paletten p
-    LEFT JOIN kunden k ON p.kunde_id = k.id
-    LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-    WHERE p.ausgelagert = 0 AND p.geloescht = 0
-  `;
-  const params = [];
-
-  if (kunde_id) { query += ' AND p.kunde_id = ?'; params.push(kunde_id); }
-  if (eb_nummer) { query += ' AND p.eb_nummer LIKE ?'; params.push(`%${eb_nummer}%`); }
-  if (lagerplatz) { query += ' AND (p.lagerplatz_bezeichnung LIKE ? OR l.bezeichnung LIKE ?)'; params.push(`%${lagerplatz}%`, `%${lagerplatz}%`); }
-
-  query += ' ORDER BY p.eingelagert_am DESC';
-  if (lim) { query += ` LIMIT ${parseInt(lim)}`; }
+  const { page = 1, limit = 50, kunde_id, regal } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
   
-  const rows = db.prepare(query).all(...params);
-  res.json(rows);
-});
-
-router.get('/stats', (req, res) => {
-  const total = db.prepare('SELECT COUNT(*) as c FROM paletten WHERE ausgelagert = 0 AND geloescht = 0').get().c;
-  const mitPlatz = db.prepare('SELECT COUNT(*) as c FROM paletten WHERE ausgelagert = 0 AND geloescht = 0 AND (lagerplatz_id IS NOT NULL OR lagerplatz_bezeichnung IS NOT NULL)').get().c;
-  const ohnePlatz = total - mitPlatz;
-  res.json({ total, mitPlatz, ohnePlatz });
-});
-
-router.get('/:id', (req, res) => {
-  const row = db.prepare(`
-    SELECT p.*, k.name as kunde_name, COALESCE(p.lagerplatz_bezeichnung, l.bezeichnung) as lagerplatz_bezeichnung
+  let where = 'WHERE p.ausgelagert = 0 AND p.geloescht = 0';
+  const params = [];
+  
+  if (kunde_id) { where += ' AND p.kunde_id = ?'; params.push(kunde_id); }
+  if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
+  
+  const total = db.prepare(`SELECT COUNT(*) as c FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id ${where}`).get(...params);
+  const paletten = db.prepare(`
+    SELECT p.*, l.bezeichnung as platz, l.regal, l.bereich, k.name as kunde_name
     FROM paletten p
-    LEFT JOIN kunden k ON p.kunde_id = k.id
     LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+    LEFT JOIN kunden k ON p.kunde_id = k.id
+    ${where}
+    ORDER BY p.paletten_nr
+    LIMIT ? OFFSET ?
+  `).all(...params, parseInt(limit), offset);
+  
+  res.json({ total: total.c, page: parseInt(page), paletten });
+});
+
+// Einzelne Palette
+router.get('/:id', (req, res) => {
+  const p = db.prepare(`
+    SELECT p.*, l.bezeichnung as platz, l.regal, l.bereich, l.ebene, k.name as kunde_name
+    FROM paletten p
+    LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+    LEFT JOIN kunden k ON p.kunde_id = k.id
     WHERE p.id = ?
   `).get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Palette nicht gefunden' });
-  res.json(row);
+  if (!p) return res.status(404).json({ error: 'Palette nicht gefunden' });
+  res.json(p);
 });
 
-router.delete('/:id', (req, res) => {
-  const { benutzer } = req.body;
-  const palette = db.prepare('SELECT * FROM paletten WHERE id = ?').get(req.params.id);
-  if (!palette) return res.status(404).json({ error: 'Palette nicht gefunden' });
-
-  db.prepare('INSERT INTO papierkorb (tabelle, datensatz_id, daten, geloescht_von) VALUES (?, ?, ?, ?)')
-    .run('paletten', palette.id, JSON.stringify(palette), benutzer || 'System');
-
-  db.prepare('UPDATE paletten SET geloescht = 1, geloescht_am = CURRENT_TIMESTAMP, geloescht_von = ? WHERE id = ?')
-    .run(benutzer || 'System', req.params.id);
-
-  if (palette.lagerplatz_id) {
-    db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(palette.lagerplatz_id);
+// Palette bearbeiten
+router.put('/:id', (req, res) => {
+  const { paletten_nr, artikel_nr, chargen_nr, lagerplatz_bezeichnung, kunde_id, bemerkung, menge } = req.body;
+  const existing = db.prepare('SELECT * FROM paletten WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Palette nicht gefunden' });
+  
+  const updates = [];
+  const params = [];
+  
+  if (paletten_nr !== undefined) { updates.push('paletten_nr = ?'); params.push(paletten_nr); }
+  if (artikel_nr !== undefined) { updates.push('artikel_nr = ?'); params.push(artikel_nr); }
+  if (chargen_nr !== undefined) { updates.push('chargen_nr = ?'); params.push(chargen_nr); }
+  if (kunde_id !== undefined) { updates.push('kunde_id = ?'); params.push(kunde_id); }
+  if (bemerkung !== undefined) { updates.push('bemerkung = ?'); params.push(bemerkung); }
+  if (menge !== undefined) { updates.push('menge = ?'); params.push(menge); }
+  
+  if (lagerplatz_bezeichnung !== undefined && lagerplatz_bezeichnung !== existing.lagerplatz_bezeichnung) {
+    const neuerPlatz = db.prepare('SELECT id FROM lagerplaetze WHERE bezeichnung = ?').get(lagerplatz_bezeichnung);
+    if (neuerPlatz) {
+      // Alten Platz freigeben
+      if (existing.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);
+      // Neuen belegen
+      db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
+      updates.push('lagerplatz_id = ?', 'lagerplatz_bezeichnung = ?');
+      params.push(neuerPlatz.id, lagerplatz_bezeichnung);
+      // Umlagerung protokollieren
+      db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, benutzer) VALUES (?,?,?,?,?)').run(existing.id, existing.paletten_nr, existing.lagerplatz_bezeichnung, lagerplatz_bezeichnung, req.session?.user?.benutzername || 'System');
+    }
   }
-
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-    .run('Palette gelöscht', `EB-Nr: ${palette.eb_nummer} (Papierkorb)`, benutzer || 'System');
-
-  res.json({ success: true, message: 'Palette in Papierkorb verschoben' });
+  
+  if (updates.length === 0) return res.json({ ok: true, message: 'Keine Änderungen' });
+  
+  params.push(req.params.id);
+  db.prepare(`UPDATE paletten SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Palette bearbeitet', `Palette #${req.params.id} (${existing.paletten_nr}) geändert`, req.session?.user?.benutzername || 'System');
+  
+  res.json({ ok: true });
 });
 
 module.exports = router;

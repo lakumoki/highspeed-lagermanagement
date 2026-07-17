@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(session({
-  secret: 'highspeed-lager-secret-2025',
+  secret: 'highspeed-lager-secret-2026',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 8 * 60 * 60 * 1000 }
@@ -30,11 +30,14 @@ app.use('/api/berichte', require('./routes/berichte'));
 app.use('/api/benutzer', require('./routes/benutzer'));
 app.use('/api/protokoll', require('./routes/protokoll'));
 app.use('/api/bewegungen', require('./routes/bewegungen'));
+app.use('/api/kontingent', require('./routes/kontingent'));
+app.use('/api/musterung', require('./routes/musterung'));
+app.use('/api/pickliste', require('./routes/pickliste'));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Highspeed Lagermanagement läuft auf http://localhost:${PORT}`);
+  console.log(`Highspeed Kurier Lagermanagement läuft auf http://localhost:${PORT}`);
 });

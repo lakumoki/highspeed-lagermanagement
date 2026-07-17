@@ -2,60 +2,39 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
+// Alle Kunden
 router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM kunden WHERE aktiv = 1 ORDER BY name').all();
-  res.json(rows);
+  const kunden = db.prepare('SELECT * FROM kunden WHERE aktiv = 1 ORDER BY name').all();
+  res.json(kunden);
 });
 
+// Einzelner Kunde
 router.get('/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM kunden WHERE id = ?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Kunde nicht gefunden' });
-  res.json(row);
-});
-
-router.get('/:id/paletten', (req, res) => {
-  const rows = db.prepare(`
-    SELECT p.*, l.bezeichnung as lagerplatz_bezeichnung
-    FROM paletten p
-    LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-    WHERE p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
-    ORDER BY p.eingelagert_am DESC
-  `).all(req.params.id);
-  res.json(rows);
-});
-
-router.post('/', (req, res) => {
-  const { name, kundennummer, ansprechpartner, telefon, email, adresse } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
-
-  const result = db.prepare('INSERT INTO kunden (name, kundennummer, ansprechpartner, telefon, email, adresse) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(name, kundennummer || null, ansprechpartner || null, telefon || null, email || null, adresse || null);
-
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-    .run('Kunde erstellt', `Kunde: ${name}`, 'System');
-
-  res.json({ success: true, id: result.lastInsertRowid });
-});
-
-router.put('/:id', (req, res) => {
-  const { name, kundennummer, ansprechpartner, telefon, email, adresse } = req.body;
-  db.prepare('UPDATE kunden SET name=?, kundennummer=?, ansprechpartner=?, telefon=?, email=?, adresse=? WHERE id=?')
-    .run(name, kundennummer || null, ansprechpartner || null, telefon || null, email || null, adresse || null, req.params.id);
-  res.json({ success: true });
-});
-
-router.delete('/:id', (req, res) => {
   const kunde = db.prepare('SELECT * FROM kunden WHERE id = ?').get(req.params.id);
   if (!kunde) return res.status(404).json({ error: 'Kunde nicht gefunden' });
+  
+  // Paletten-Statistik
+  const palettenCount = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(req.params.id);
+  kunde.aktive_paletten = palettenCount.c;
+  
+  res.json(kunde);
+});
 
-  db.prepare('INSERT INTO papierkorb (tabelle, datensatz_id, daten, geloescht_von) VALUES (?, ?, ?, ?)')
-    .run('kunden', kunde.id, JSON.stringify(kunde), 'System');
-  db.prepare('UPDATE kunden SET aktiv = 0 WHERE id = ?').run(req.params.id);
+// Kunde anlegen
+router.post('/', (req, res) => {
+  const { name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze, ansprechpartner, telefon, email, adresse } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name erforderlich' });
+  
+  const result = db.prepare('INSERT INTO kunden (name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze, ansprechpartner, telefon, email, adresse) VALUES (?,?,?,?,?,?,?,?,?,?)').run(name, kuerzel || null, kundennummer || null, nummern_prefix || null, nummern_format || null, kontingent_plaetze || 0, ansprechpartner || null, telefon || null, email || null, adresse || null);
+  
+  res.json({ ok: true, id: result.lastInsertRowid });
+});
 
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-    .run('Kunde gelöscht', `Kunde: ${kunde.name} (Papierkorb)`, 'System');
-
-  res.json({ success: true });
+// Kunde bearbeiten
+router.put('/:id', (req, res) => {
+  const { name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze, ansprechpartner, telefon, email, adresse } = req.body;
+  db.prepare('UPDATE kunden SET name=?, kuerzel=?, kundennummer=?, nummern_prefix=?, nummern_format=?, kontingent_plaetze=?, ansprechpartner=?, telefon=?, email=?, adresse=? WHERE id=?').run(name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze || 0, ansprechpartner, telefon, email, adresse, req.params.id);
+  res.json({ ok: true });
 });
 
 module.exports = router;

@@ -1,4 +1,8 @@
-// Kompletter Neu-Import aller Daten aus den 3 Excel-Dateien
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIGHSPEED KURIER — LAGERMANAGEMENT VOLLIMPORT v3
+// Versteht: EB-Nummern, KW-Nummern, Artikel, Chargen (CETV+), Gänge (xA-xF),
+// P-Gänge (6 tief), Block F (ungeordnet), .a/.b (stapelbar), x (nicht stapelbar)
+// ═══════════════════════════════════════════════════════════════════════════════
 const XLSX = require('xlsx');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
@@ -12,9 +16,9 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-console.log('=== HIGHSPEED LAGERMANAGEMENT - VOLLIMPORT ===\n');
+console.log('═══ HIGHSPEED KURIER — LAGERMANAGEMENT VOLLIMPORT v3 ═══\n');
 
-// ─── SCHEMA ────────────────────────────────────────────────────────────────────
+// ─── SCHEMA ──────────────────────────────────────────────────────────────────
 db.exec(`
   CREATE TABLE benutzer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,10 +29,15 @@ db.exec(`
     aktiv INTEGER DEFAULT 1,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
   CREATE TABLE kunden (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    kuerzel TEXT UNIQUE,
     kundennummer TEXT,
+    nummern_prefix TEXT,
+    nummern_format TEXT,
+    kontingent_plaetze INTEGER DEFAULT 0,
     ansprechpartner TEXT,
     telefon TEXT,
     email TEXT,
@@ -36,6 +45,7 @@ db.exec(`
     aktiv INTEGER DEFAULT 1,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
   CREATE TABLE lagerplaetze (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bezeichnung TEXT UNIQUE NOT NULL,
@@ -46,13 +56,17 @@ db.exec(`
     ebene_index INTEGER DEFAULT 0,
     bereich TEXT NOT NULL,
     typ TEXT DEFAULT 'Regal',
+    stapelbar INTEGER DEFAULT 0,
     belegt INTEGER DEFAULT 0,
     max_hoehe_cm REAL,
+    bemerkung TEXT,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
   CREATE TABLE paletten (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    eb_nummer TEXT NOT NULL,
+    paletten_nr TEXT NOT NULL,
+    nummern_typ TEXT DEFAULT 'EB',
     kunde_id INTEGER,
     lagerplatz_id INTEGER,
     lagerplatz_bezeichnung TEXT,
@@ -75,58 +89,11 @@ db.exec(`
     FOREIGN KEY (kunde_id) REFERENCES kunden(id),
     FOREIGN KEY (lagerplatz_id) REFERENCES lagerplaetze(id)
   );
-  CREATE TABLE auslagerungen (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    palette_id INTEGER,
-    eb_nummer TEXT,
-    kunde_id INTEGER,
-    lagerplatz_bezeichnung TEXT,
-    artikel_nr TEXT,
-    chargen_nr TEXT,
-    ausgelagert_am DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ausgelagert_von TEXT,
-    bemerkung TEXT
-  );
-  CREATE TABLE abrufliste (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    abruf_id TEXT,
-    lfd_nummer INTEGER,
-    eb_nummer TEXT NOT NULL,
-    lagerplatz TEXT,
-    lkw TEXT DEFAULT 'LKW 1',
-    artikel_nr TEXT,
-    chargen_nr TEXT,
-    status TEXT DEFAULT 'offen',
-    datum DATE,
-    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  CREATE TABLE einlagerungsliste (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lfd_nummer INTEGER,
-    eb_nummer TEXT NOT NULL,
-    lagerplatz TEXT,
-    typ TEXT DEFAULT 'Standard',
-    status TEXT DEFAULT 'offen',
-    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  CREATE TABLE protokoll (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    aktion TEXT NOT NULL,
-    details TEXT,
-    benutzer TEXT,
-    zeitstempel DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  CREATE TABLE papierkorb (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tabelle TEXT NOT NULL,
-    datensatz_id INTEGER NOT NULL,
-    daten TEXT NOT NULL,
-    geloescht_von TEXT,
-    geloescht_am DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+
   CREATE TABLE artikel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     material_nr TEXT UNIQUE NOT NULL,
+    bezeichnung TEXT,
     menge_pro_palette INTEGER,
     paletten_hoehe_cm REAL,
     stellplaetze REAL DEFAULT 1,
@@ -134,6 +101,57 @@ db.exec(`
     hinweis TEXT,
     kunde_id INTEGER
   );
+
+  CREATE TABLE abrufliste (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    abruf_id TEXT,
+    lfd_nummer INTEGER,
+    paletten_nr TEXT NOT NULL,
+    lagerplatz TEXT,
+    lkw TEXT DEFAULT 'LKW 1',
+    lkw_nr INTEGER DEFAULT 1,
+    artikel_nr TEXT,
+    chargen_nr TEXT,
+    status TEXT DEFAULT 'offen',
+    abgehakt INTEGER DEFAULT 0,
+    datum DATE,
+    kunde_id INTEGER,
+    bemerkung TEXT,
+    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE einlagerungsliste (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lfd_nummer INTEGER,
+    paletten_nr TEXT NOT NULL,
+    lagerplatz TEXT,
+    typ TEXT DEFAULT 'Standard',
+    kunde_id INTEGER,
+    artikel_nr TEXT,
+    chargen_nr TEXT,
+    direktanlieferung_id TEXT,
+    status TEXT DEFAULT 'offen',
+    bemerkung TEXT,
+    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE bewegungen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kunde_id INTEGER,
+    datum DATE,
+    typ TEXT NOT NULL,
+    anzahl INTEGER DEFAULT 0,
+    paletten_nummern TEXT,
+    abruf_id TEXT,
+    direktanlieferung_id TEXT,
+    handling_art TEXT,
+    abgerechnet INTEGER DEFAULT 0,
+    korrektur INTEGER DEFAULT 0,
+    bemerkung TEXT,
+    benutzer TEXT,
+    monat TEXT
+  );
+
   CREATE TABLE kontingent (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     kunde_id INTEGER,
@@ -146,52 +164,48 @@ db.exec(`
     auslagerungen INTEGER DEFAULT 0,
     extra_handling INTEGER DEFAULT 0,
     bewegungen_gesamt INTEGER DEFAULT 0,
-    traffic_ratio REAL
+    traffic_ratio REAL,
+    saldo_ueberkapazitaet INTEGER DEFAULT 0
   );
-  CREATE TABLE bewegungen (
+
+  CREATE TABLE musterzuege (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lfd_nummer INTEGER,
+    paletten_nr TEXT,
+    lagerplatz TEXT,
+    menge TEXT,
+    abholort TEXT DEFAULT 'Abholtisch',
+    handling_gebuehr INTEGER DEFAULT 1,
     kunde_id INTEGER,
-    datum DATE,
-    typ TEXT NOT NULL,
-    anzahl INTEGER DEFAULT 0,
-    eb_nummern TEXT,
-    bemerkung TEXT,
+    datum DATETIME DEFAULT CURRENT_TIMESTAMP,
     benutzer TEXT,
-    monat TEXT
+    bemerkung TEXT
   );
+
+  CREATE TABLE direktabholungen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lfd_nummer INTEGER,
+    paletten_nr TEXT,
+    lagerplatz TEXT,
+    artikel_nr TEXT,
+    chargen_nr TEXT,
+    kunde_id INTEGER,
+    datum DATETIME DEFAULT CURRENT_TIMESTAMP,
+    benutzer TEXT,
+    bemerkung TEXT
+  );
+
   CREATE TABLE umlagerungen (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     palette_id INTEGER,
-    eb_nummer TEXT,
+    paletten_nr TEXT,
     von_platz TEXT,
     nach_platz TEXT,
     datum DATETIME DEFAULT CURRENT_TIMESTAMP,
     benutzer TEXT,
     bemerkung TEXT
   );
-  CREATE TABLE musterzuege (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lfd_nummer INTEGER,
-    eb_nummer TEXT,
-    lagerplatz TEXT,
-    menge TEXT,
-    abholort TEXT DEFAULT 'Abholtisch',
-    datum DATETIME DEFAULT CURRENT_TIMESTAMP,
-    benutzer TEXT,
-    bemerkung TEXT
-  );
-  CREATE TABLE direktabholungen (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lfd_nummer INTEGER,
-    eb_nummer TEXT,
-    lagerplatz TEXT,
-    artikel_nr TEXT,
-    chargen_nr TEXT,
-    trailer TEXT,
-    datum DATETIME DEFAULT CURRENT_TIMESTAMP,
-    benutzer TEXT,
-    bemerkung TEXT
-  );
+
   CREATE TABLE inventur (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     palette_nr TEXT,
@@ -200,15 +214,17 @@ db.exec(`
     bemerkung TEXT,
     datum DATE
   );
+
   CREATE TABLE wirtschaftspruefung (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pos INTEGER,
-    eb_nummer TEXT,
+    paletten_nr TEXT,
     einlagerung_datum DATE,
     letzter_lagerplatz TEXT,
     auslagerung_datum DATE,
     stichtag DATE DEFAULT '2022-12-31'
   );
+
   CREATE TABLE traffic (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     monat DATE,
@@ -217,55 +233,120 @@ db.exec(`
     bewegungen_jahr INTEGER,
     umsatz_handling INTEGER
   );
+
+  CREATE TABLE einstellungen (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    schluessel TEXT UNIQUE NOT NULL,
+    wert TEXT,
+    beschreibung TEXT
+  );
+
+  CREATE TABLE protokoll (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aktion TEXT NOT NULL,
+    details TEXT,
+    benutzer TEXT,
+    zeitstempel DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE papierkorb (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tabelle TEXT NOT NULL,
+    datensatz_id INTEGER NOT NULL,
+    daten TEXT NOT NULL,
+    geloescht_von TEXT,
+    geloescht_am DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
-// ─── STAMMDATEN ────────────────────────────────────────────────────────────────
-const hash = bcrypt.hashSync('admin', 10);
-db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('admin', hash, 'Administrator', 'Administrator');
-db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('lager', bcrypt.hashSync('lager', 10), 'Lagermitarbeiter', 'Mitarbeiter');
-db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?, ?, ?, ?)').run('Martin', bcrypt.hashSync('Highspeed2026!', 10), 'Martin', 'admin');
+// ─── BENUTZER ────────────────────────────────────────────────────────────────
+db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?,?,?,?)').run('admin', bcrypt.hashSync('admin', 10), 'Administrator', 'Administrator');
+db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?,?,?,?)').run('Martin', bcrypt.hashSync('Highspeed2026!', 10), 'Martin', 'admin');
+db.prepare('INSERT INTO benutzer (benutzername, passwort, vollname, rolle) VALUES (?,?,?,?)').run('lager', bcrypt.hashSync('lager', 10), 'Lagermitarbeiter', 'Mitarbeiter');
 
-const pphResult = db.prepare("INSERT INTO kunden (name, kundennummer, ansprechpartner) VALUES (?, ?, ?)").run('Panpharma', 'PPH-001', 'Daniel Schidlowski');
-const PPH_ID = pphResult.lastInsertRowid;
+// ─── KUNDEN ──────────────────────────────────────────────────────────────────
+const pph = db.prepare("INSERT INTO kunden (name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze, ansprechpartner) VALUES (?,?,?,?,?,?,?)").run('Panpharma', 'PPH', 'PPH-001', 'EB', '6-stellig numerisch', 642, 'Daniel Schidlowski');
+const PPH_ID = pph.lastInsertRowid;
+
+const kw = db.prepare("INSERT INTO kunden (name, kuerzel, kundennummer, nummern_prefix, nummern_format, kontingent_plaetze) VALUES (?,?,?,?,?,?)").run('KahlWax', 'KW', 'KW-001', 'KW', 'KW + alphanumerisch, Charge: CETV + Ziffern', 0);
+const KW_ID = kw.lastInsertRowid;
+
+db.prepare("INSERT INTO kunden (name, kuerzel, kundennummer) VALUES (?,?,?)").run('Highspeed (Eigenbedarf)', 'HS', 'HS-001');
+
+// ─── EINSTELLUNGEN ───────────────────────────────────────────────────────────
+db.prepare("INSERT INTO einstellungen (schluessel, wert, beschreibung) VALUES (?,?,?)").run('lkw_kapazitaet', '17', 'Max. Paletten pro LKW für automatische Trennung');
+db.prepare("INSERT INTO einstellungen (schluessel, wert, beschreibung) VALUES (?,?,?)").run('kontingent_pph', '642', 'Panpharma Kontingent Stellplätze');
 
 // ════════════════════════════════════════════════════════════════════════════════
-// 1. LAGERPLAN (Positionen, Belegung, EB-Nummern)
+// 1. LAGERPLAN
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('─── 1. LAGERPLAN ───');
 const lagerWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_Lager-PLAN - 2-HS11_ab 14.11.25.xlsx'));
 const lagerData = XLSX.utils.sheet_to_json(lagerWb.Sheets['Lagerplan'], { header: 1, defval: '' });
 
-const insertPlatz = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, belegt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-const insertPalette = db.prepare('INSERT INTO paletten (eb_nummer, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, eingelagert_von, bemerkung) VALUES (?, ?, ?, ?, ?, ?)');
+const insertPlatz = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, stapelbar, belegt, bemerkung) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+const insertPalette = db.prepare('INSERT INTO paletten (paletten_nr, nummern_typ, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, eingelagert_von, bemerkung) VALUES (?,?,?,?,?,?,?)');
 
-let stats = { plaetze: 0, paletten: 0, belegtOhneEB: 0 };
+let stats = { plaetze: 0, paletten: 0, belegtOhneNr: 0, gaenge: 0 };
 let currentEbene = 'EG', ebeneIdx = 0;
 const regalCols = { A: 2, B: 3, C: 4, D: 5, E: 6, F: 7 };
 
+function detectNrTyp(cell) {
+  if (cell.startsWith('eb0') || cell.startsWith('EB')) return 'EB';
+  if (cell.match(/^Kw|^KW|^kw/)) return 'KW';
+  return 'Sonstige';
+}
+
+function extractNr(cell) {
+  if (cell.startsWith('eb0')) return cell.replace(/^eb0/, '').trim();
+  if (cell.match(/^Kw|^KW/)) return cell.trim();
+  return cell.trim();
+}
+
+function getKundeId(typ, cell) {
+  if (typ === 'EB') return PPH_ID;
+  if (typ === 'KW') return KW_ID;
+  if (cell.includes('HIGHSPEED') || cell.includes('Staplerschule')) return 3; // HS
+  return null;
+}
+
 function processCell(cell, bez, regal, pos, sub, ebene, ebeneIdx, bereich, typ) {
-  if (cell === 'Staplerschule') return;
   if (pos > 84 && cell === '') return;
+
+  // Gang-Markierungen (xA, xB, etc.) = Vorgang/Gang, kein Platz
+  if (cell.startsWith('↓') || cell.includes('Gang') || cell.includes('H A L L E')) return;
   
+  // Stapelbar: .a/.b Positionen = ja (zwei Ebenen möglich)
+  const stapelbar = sub ? 1 : 0;
   const istBelegt = (cell !== '') ? 1 : 0;
-  insertPlatz.run(bez, regal, pos, sub, ebene, ebeneIdx, bereich, typ, istBelegt);
-  stats.plaetze++;
   
-  if (cell.startsWith('eb0')) {
-    const eb = cell.replace(/^eb0/, '').trim();
-    if (eb && eb.length >= 3) {
+  let bemerkung = null;
+  if (cell === 'x') bemerkung = 'Nicht nutzbar (Palette zu hoch)';
+  else if (cell.includes('Staplerschule')) { bemerkung = 'Staplerschule'; }
+  else if (cell.includes('HIGHSPEED')) { bemerkung = cell; }
+  
+  insertPlatz.run(bez, regal, pos, sub || null, ebene, ebeneIdx, bereich, typ, stapelbar, istBelegt, bemerkung);
+  stats.plaetze++;
+
+  // Palette mit Nummer?
+  if (cell.startsWith('eb0') || cell.match(/^Kw|^KW/)) {
+    const nrTyp = detectNrTyp(cell);
+    const nr = extractNr(cell);
+    if (nr && nr.length >= 3) {
       const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
       if (platz) {
-        insertPalette.run(eb, PPH_ID, platz.id, bez, 'Import', null);
+        insertPalette.run(nr, nrTyp, getKundeId(nrTyp, cell), platz.id, bez, 'Import', null);
         stats.paletten++;
       }
     }
   } else if (cell !== '') {
-    stats.belegtOhneEB++;
+    // x, Staplerschule, HIGHSPEED etc. = belegt ohne Palettennummer
+    stats.belegtOhneNr++;
   }
 }
 
 const importTransaction = db.transaction(() => {
-  // Regalbereich
+  // ─── HALLE 1: Regalbereich (Pos 1-84 + Sonderpositionen) ─────────────────
   for (let row = 3; row < lagerData.length; row++) {
     const r = lagerData[row];
     if (!r || r.every(c => c === '')) continue;
@@ -279,9 +360,12 @@ const importTransaction = db.transaction(() => {
     else if (col0.match(/^2\.?\s*OG$/)) { currentEbene = '2.OG'; ebeneIdx = 2; }
     else if (col0.match(/^3\.?\s*OG$/)) { currentEbene = '3.OG'; ebeneIdx = 3; }
     
-    if (typeof col1 === 'number' && col1 >= 900) continue;
+    // Skip Halle 2 (positions >= 1000)
+    if (typeof col1 === 'number' && col1 >= 1000) continue;
+    // Skip navigation rows
+    if (col0 === 'Block' || col1Str.includes('↓') || col1Str.includes('HALLE')) continue;
     
-    // Unterposition (.a / .b)
+    // Unterposition (.a / .b) = stapelbar
     const subMatch = col1Str.match(/^(\d+)\.([ab])$/);
     if (subMatch) {
       const pos = parseInt(subMatch[1]);
@@ -294,8 +378,8 @@ const importTransaction = db.transaction(() => {
       continue;
     }
     
-    // Hauptposition
-    if (typeof col1 === 'number' && col1 >= 1 && col1 < 900) {
+    // Hauptposition (1-100+)
+    if (typeof col1 === 'number' && col1 >= 1 && col1 < 1000) {
       const pos = col1;
       for (const [regal, colIdx] of Object.entries(regalCols)) {
         const cell = String(r[colIdx] || '').trim();
@@ -305,52 +389,42 @@ const importTransaction = db.transaction(() => {
     }
   }
   
-  // Blocklager
+  // ─── HALLE 2: Blocklager + P-Gänge + Gänge (xA-xF) ──────────────────────
+  const h2Cols = { A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8, H: 9 };
+  
   for (let row = 3; row < lagerData.length; row++) {
     const r = lagerData[row];
     const col1 = r?.[1];
+    if (typeof col1 !== 'number' || col1 < 1001) continue;
     
-    if (typeof col1 === 'number' && col1 >= 900 && col1 < 1000) {
-      for (const [colName, colIdx] of Object.entries(regalCols)) {
-        const cell = String(r[colIdx] || '').trim();
-        if (cell === '' || cell.startsWith('↓')) continue;
-        const bez = `BL-H1-${colName}${col1}`;
-        insertPlatz.run(bez, `Block-${colName}`, col1, null, 'EG', 0, 'Blocklager Halle 1', 'Blocklager', 1);
-        stats.plaetze++;
-        if (cell.startsWith('eb0')) {
-          const eb = cell.replace(/^eb0/, '').trim();
-          if (eb && eb.length >= 3) {
-            const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
-            if (platz) { insertPalette.run(eb, PPH_ID, platz.id, bez, 'Import', null); stats.paletten++; }
+    for (const [colName, colIdx] of Object.entries(h2Cols)) {
+      const cell = String(r[colIdx] || '').trim();
+      if (cell === '' || cell.startsWith('↓')) continue;
+      
+      const bez = `BL-H2-${colName}${col1}`;
+      const nrTyp = detectNrTyp(cell);
+      
+      insertPlatz.run(bez, `Block-H2-${colName}`, col1, null, 'EG', 0, 'Blocklager Halle 2', 'Blocklager', 0, 1, null);
+      stats.plaetze++;
+      
+      if (cell.startsWith('eb0') || cell.match(/^Kw|^KW/)) {
+        const nr = extractNr(cell);
+        if (nr && nr.length >= 3) {
+          const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
+          if (platz) {
+            insertPalette.run(nr, nrTyp, getKundeId(nrTyp, cell), platz.id, bez, 'Import', null);
+            stats.paletten++;
           }
-        } else { stats.belegtOhneEB++; }
-      }
-    }
-    
-    if (typeof col1 === 'number' && col1 >= 1001) {
-      const h2Cols = { A: 2, B: 3, C: 4, D: 5, E: 6, F: 7, G: 8, H: 9 };
-      for (const [colName, colIdx] of Object.entries(h2Cols)) {
-        const cell = String(r[colIdx] || '').trim();
-        if (cell === '' || cell.startsWith('↓') || cell.startsWith('P') || cell.startsWith('Gang')) continue;
-        const bez = `BL-H2-${colName}${col1}`;
-        insertPlatz.run(bez, `Block-H2-${colName}`, col1, null, 'EG', 0, 'Blocklager Halle 2', 'Blocklager', 1);
-        stats.plaetze++;
-        if (cell.startsWith('eb0')) {
-          const eb = cell.replace(/^eb0/, '').trim();
-          if (eb && eb.length >= 3) {
-            const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
-            if (platz) { insertPalette.run(eb, PPH_ID, platz.id, bez, 'Import', null); stats.paletten++; }
-          }
-        } else { stats.belegtOhneEB++; }
-      }
+        }
+      } else { stats.belegtOhneNr++; }
     }
   }
 });
 importTransaction();
 
-const belegt = stats.paletten + stats.belegtOhneEB;
+const belegt = stats.paletten + stats.belegtOhneNr;
 const frei = stats.plaetze - belegt;
-console.log(`  Plätze: ${stats.plaetze} | Belegt: ${belegt} (${stats.paletten} mit EB + ${stats.belegtOhneEB} ohne) | Frei: ${frei}`);
+console.log(`  Plätze: ${stats.plaetze} | Belegt: ${belegt} (${stats.paletten} mit Nr + ${stats.belegtOhneNr} ohne) | Frei: ${frei}`);
 console.log(`  → Auslastung: ${Math.round(belegt / stats.plaetze * 100)}%`);
 
 // PPH-Artikel
@@ -365,18 +439,11 @@ if (artikelSheet) {
       .run(String(row[0]).trim(), row[1] || null, row[2] || null, row[3] || 1, row[4] || null, row[5] || null, PPH_ID);
     c++;
   }
-  console.log(`  ${c} Artikel importiert`);
-}
-
-// Regalhöhen
-const rhSheet = lagerWb.Sheets['Regalhöhen'];
-if (rhSheet) {
-  const rhData = XLSX.utils.sheet_to_json(rhSheet, { header: 1, defval: '' });
-  console.log(`  Regalhöhen-Daten: ${rhData.length - 1} Einträge geladen`);
+  console.log(`  ${c} PPH-Artikel importiert`);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT + TRAFFIC
+// 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('\n─── 2. PANPHARMA LAGER ───');
 const pphWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_PANPHARMA Lager.xlsx'));
@@ -396,7 +463,6 @@ const bewTransaction = db.transaction(() => {
     const d = XLSX.utils.sheet_to_json(pphWb.Sheets[name], { header: 1, defval: '' });
     if (d.length < 7) continue;
     
-    // Header-Infos (variiert je nach Epoche)
     const kontingent = typeof d[0]?.[10] === 'number' ? d[0][10] : null;
     const verfuegbar = typeof d[1]?.[10] === 'number' ? d[1][10] : null;
     const uebertrag = typeof d[2]?.[5] === 'number' ? d[2][5] : null;
@@ -406,13 +472,15 @@ const bewTransaction = db.transaction(() => {
     const sumBew = typeof d[5]?.[9] === 'number' ? d[5][9] : 0;
     const trafficRatio = typeof d[5]?.[11] === 'number' ? d[5][11] : null;
     
+    // Saldo Überkapazität = Lagerbestand - Kontingent (wenn > 0)
+    const saldo = (lagerbestand && kontingent) ? Math.max(0, lagerbestand - kontingent) : 0;
+    
     if (lagerbestand > 0 || sumBew > 0) {
-      db.prepare('INSERT INTO kontingent (kunde_id, monat, kontingent_plaetze, verfuegbar, lagerbestand, uebertrag_vormonat, einlagerungen, auslagerungen, bewegungen_gesamt, traffic_ratio) VALUES (?,?,?,?,?,?,?,?,?,?)')
-        .run(PPH_ID, name, kontingent, verfuegbar, lagerbestand, uebertrag, sumEinl, sumAusl, sumBew, trafficRatio);
+      db.prepare('INSERT INTO kontingent (kunde_id, monat, kontingent_plaetze, verfuegbar, lagerbestand, uebertrag_vormonat, einlagerungen, auslagerungen, bewegungen_gesamt, traffic_ratio, saldo_ueberkapazitaet) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+        .run(PPH_ID, name, kontingent, verfuegbar, lagerbestand, uebertrag, sumEinl, sumAusl, sumBew, trafficRatio, saldo);
       monateCount++;
     }
     
-    // Einzelne Bewegungen
     for (let i = 6; i < d.length; i++) {
       const row = d[i];
       if (!row?.[0] || typeof row[0] !== 'number') continue;
@@ -422,20 +490,35 @@ const bewTransaction = db.transaction(() => {
       const einl = parseInt(row[1]) || 0;
       const ausl = parseInt(row[2]) || 0;
       const extra = parseInt(row[4]) || 0;
-      const ebNummern = String(row[10] || '').trim();
+      const palNummern = String(row[10] || '').trim();
       const bemerkung = String(row[11] || '').trim();
       
-      if (einl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,eb_nummern,bemerkung,monat) VALUES (?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Einlagerung', einl, ebNummern, bemerkung, name); bewCount++; }
-      if (ausl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,eb_nummern,bemerkung,monat) VALUES (?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Auslagerung', ausl, ebNummern, bemerkung, name); bewCount++; }
-      if (extra > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,eb_nummern,bemerkung,monat) VALUES (?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Extra Handling', extra, ebNummern, bemerkung, name); bewCount++; }
+      // Extract Abruf-ID (format: 2026/148-1)
+      let abrufId = null;
+      const abrufMatch = bemerkung.match(/(\d{4}\/\d+-\d+)/);
+      if (abrufMatch) abrufId = abrufMatch[1];
+      
+      // Extract Direktanlieferung-ID
+      let direktId = null;
+      const direktMatch = bemerkung.match(/Direktanlieferung\s+(?:am\s+)?(\d{2}\.\d{2}\.\d{2}_\d+)/);
+      if (direktMatch) direktId = direktMatch[1];
+      
+      // Handling-Art erkennen
+      let handlingArt = null;
+      if (palNummern.includes('Handling')) handlingArt = 'Handling Zwischenlager';
+      if (palNummern.includes('MUSTERZUG')) handlingArt = 'Musterzug';
+      
+      if (einl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,paletten_nummern,abruf_id,direktanlieferung_id,handling_art,bemerkung,monat) VALUES (?,?,?,?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Einlagerung', einl, palNummern, abrufId, direktId, null, bemerkung, name); bewCount++; }
+      if (ausl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,paletten_nummern,abruf_id,direktanlieferung_id,handling_art,bemerkung,monat) VALUES (?,?,?,?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Auslagerung', ausl, palNummern, abrufId, direktId, null, bemerkung, name); bewCount++; }
+      if (extra > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,paletten_nummern,abruf_id,direktanlieferung_id,handling_art,bemerkung,monat) VALUES (?,?,?,?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Extra Handling', extra, palNummern, null, direktId, handlingArt, bemerkung, name); bewCount++; }
     }
   }
 });
 bewTransaction();
-console.log(`  ${monateCount} Monate Kontingent (11/2016 bis 06/2026)`);
-console.log(`  ${bewCount} Einzelbewegungen importiert`);
+console.log(`  ${monateCount} Monate Kontingent`);
+console.log(`  ${bewCount} Einzelbewegungen`);
 
-// Traffic-Übersicht
+// Traffic
 const trafficSheet = pphWb.Sheets['Traffic'];
 if (trafficSheet) {
   const td = XLSX.utils.sheet_to_json(trafficSheet, { header: 1, defval: '' });
@@ -449,7 +532,7 @@ if (trafficSheet) {
       .run(monat, row[1] || 0, row[2] || 0, row[3] || null, row[4] || 0);
     tc++;
   }
-  console.log(`  ${tc} Traffic-Monate importiert`);
+  console.log(`  ${tc} Traffic-Monate`);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -457,30 +540,40 @@ if (trafficSheet) {
 // ════════════════════════════════════════════════════════════════════════════════
 console.log('\n─── 3. ABRUF- / EINLAGERUNGSLISTEN ───');
 const abrufWb = XLSX.readFile(path.join(__dirname, '..', 'data', 'KOPIE_Einlagerungs- und Abrufliste-HS1.xlsx'));
+const lkwKap = 17;
 
-// Abrufliste (aktuelle Abrufe für heute)
+// Abrufliste
 const abrufSheet = abrufWb.Sheets['Abrufliste'];
 if (abrufSheet) {
   const d = XLSX.utils.sheet_to_json(abrufSheet, { header: 1, defval: '' });
-  let count = 0, lkw = 'LKW 1';
+  let count = 0, lkw = 'LKW 1', lkwNr = 1;
   const abrufId = String(d[0]?.[2] || '').trim();
   const abrufDatum = excelDate(d[1]?.[2]) || null;
+  
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     const col1str = String(row[1] || '').trim();
-    if (col1str.includes('LKW')) { lkw = col1str; continue; }
+    if (col1str.includes('LKW')) { lkw = col1str; lkwNr++; continue; }
     if (!row[1] || typeof row[1] !== 'number') continue;
     if (String(row[0]) === 'lfd. Nummer') continue;
-    const eb = String(row[1]);
+    
+    const nr = String(row[1]);
     const platz = String(row[2] || '').trim();
-    db.prepare('INSERT INTO abrufliste (abruf_id, lfd_nummer, eb_nummer, lagerplatz, lkw, datum) VALUES (?,?,?,?,?,?)').run(abrufId, row[0] || count + 1, eb, platz, lkw, abrufDatum);
-    const palette = db.prepare("SELECT id FROM paletten WHERE eb_nummer = ? AND ausgelagert = 0 AND geloescht = 0").get(eb);
+    
+    // Auto LKW-Trennung
+    const autoLkwNr = Math.ceil((count + 1) / lkwKap);
+    const autoLkw = `LKW ${autoLkwNr}`;
+    
+    db.prepare('INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, datum, kunde_id) VALUES (?,?,?,?,?,?,?,?)').run(abrufId, row[0] || count + 1, nr, platz, lkw, lkwNr, abrufDatum, PPH_ID);
+    
+    // Update palette location
+    const palette = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
     if (palette && platz) {
       db.prepare("UPDATE paletten SET lagerplatz_bezeichnung = ? WHERE id = ?").run(platz, palette.id);
     }
     count++;
   }
-  console.log(`  Abrufliste ${abrufId}: ${count} Positionen`);
+  console.log(`  Abrufliste ${abrufId}: ${count} Pos. (${lkwNr} LKW)`);
 }
 
 // DirektABHOLUNG
@@ -495,53 +588,39 @@ if (direktSheet) {
     const info = String(row[3] || '').trim();
     if (info.match(/^[A-Z]{3}\d/)) currentArtikel = info;
     if (info.match(/^Charge/i)) currentCharge = info.replace(/Charge\.?:?\s*/i, '').trim();
-    const eb = String(row[1]);
+    const nr = String(row[1]);
     const platz = String(row[2] || '').trim();
-    db.prepare('INSERT INTO direktabholungen (lfd_nummer, eb_nummer, lagerplatz, artikel_nr, chargen_nr) VALUES (?,?,?,?,?)')
-      .run(row[0], eb, platz, currentArtikel, currentCharge);
-    // Link article/charge to palette if it exists
-    if (currentArtikel || currentCharge) {
-      const pal = db.prepare("SELECT id FROM paletten WHERE eb_nummer = ? AND ausgelagert = 0 AND geloescht = 0").get(eb);
-      if (pal) {
-        db.prepare("UPDATE paletten SET artikel_nr = ?, chargen_nr = ? WHERE id = ?").run(currentArtikel || null, currentCharge || null, pal.id);
-      }
+    db.prepare('INSERT INTO direktabholungen (lfd_nummer, paletten_nr, lagerplatz, artikel_nr, chargen_nr, kunde_id) VALUES (?,?,?,?,?,?)')
+      .run(row[0], nr, platz, currentArtikel, currentCharge, PPH_ID);
+    // Link to palette
+    const pal = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
+    if (pal && (currentArtikel || currentCharge)) {
+      db.prepare("UPDATE paletten SET artikel_nr = ?, chargen_nr = ? WHERE id = ?").run(currentArtikel || null, currentCharge || null, pal.id);
     }
     count++;
   }
-  console.log(`  DirektABHOLUNG: ${count} Positionen`);
+  console.log(`  DirektABHOLUNG: ${count} Pos.`);
 }
 
-// Einlagerungsliste DIREKTANL
-const einlDirektSheet = abrufWb.Sheets['Einlagerungsliste DIREKTANL'];
-if (einlDirektSheet) {
-  const d = XLSX.utils.sheet_to_json(einlDirektSheet, { header: 1, defval: '' });
+// Einlagerungslisten
+for (const [sheetName, typ] of [['Einlagerungsliste DIREKTANL', 'Direktanlieferung'], ['Einlagerungsliste', 'Standard'], ['Einlagerungsliste Neue Eb-Numme', 'Neue Nummern']]) {
+  const ws = abrufWb.Sheets[sheetName];
+  if (!ws) continue;
+  const d = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
   let count = 0;
+  const direktId = String(d[1]?.[2] || '').trim() || null;
   for (let i = 3; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
     if (String(row[0]) === 'lfd. Nummer') continue;
-    db.prepare('INSERT INTO einlagerungsliste (lfd_nummer, eb_nummer, lagerplatz, typ) VALUES (?,?,?,?)').run(row[0], String(row[1]), String(row[2] || '').trim() || null, 'Direktanlieferung');
+    db.prepare('INSERT INTO einlagerungsliste (lfd_nummer, paletten_nr, lagerplatz, typ, kunde_id, direktanlieferung_id) VALUES (?,?,?,?,?,?)')
+      .run(row[0], String(row[1]), String(row[2] || '').trim() || null, typ, PPH_ID, direktId);
     count++;
   }
-  console.log(`  Einlagerung DIREKT: ${count} Paletten`);
+  if (count) console.log(`  ${sheetName}: ${count} Pal.`);
 }
 
-// Einlagerungsliste Standard
-const einlSheet = abrufWb.Sheets['Einlagerungsliste'];
-if (einlSheet) {
-  const d = XLSX.utils.sheet_to_json(einlSheet, { header: 1, defval: '' });
-  let count = 0;
-  for (let i = 3; i < d.length; i++) {
-    const row = d[i];
-    if (!row[1] || typeof row[1] !== 'number') continue;
-    if (String(row[0]) === 'lfd. Nummer') continue;
-    db.prepare('INSERT INTO einlagerungsliste (lfd_nummer, eb_nummer, lagerplatz, typ) VALUES (?,?,?,?)').run(row[0], String(row[1]), String(row[2] || '').trim() || null, 'Standard');
-    count++;
-  }
-  console.log(`  Einlagerung Standard: ${count} Paletten`);
-}
-
-// MUSTER (Musterzüge)
+// MUSTER
 const musterSheet = abrufWb.Sheets['MUSTER'];
 if (musterSheet) {
   const d = XLSX.utils.sheet_to_json(musterSheet, { header: 1, defval: '' });
@@ -549,15 +628,14 @@ if (musterSheet) {
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
-    if (String(row[0]) === 'lfd. Nummer') continue;
-    db.prepare('INSERT INTO musterzuege (lfd_nummer, eb_nummer, lagerplatz, menge, abholort) VALUES (?,?,?,?,?)')
-      .run(row[0], String(row[1]), String(row[2] || ''), String(row[3] || ''), 'Abholtisch');
+    db.prepare('INSERT INTO musterzuege (lfd_nummer, paletten_nr, lagerplatz, menge, abholort, kunde_id) VALUES (?,?,?,?,?,?)')
+      .run(row[0], String(row[1]), String(row[2] || ''), String(row[3] || ''), 'Abholtisch', PPH_ID);
     count++;
   }
   console.log(`  Musterzüge: ${count}`);
 }
 
-// Umlagerungen zur Prüfung
+// Umlagerungen
 const umlagSheet = abrufWb.Sheets['UMlag.zur Prüf.'];
 if (umlagSheet) {
   const d = XLSX.utils.sheet_to_json(umlagSheet, { header: 1, defval: '' });
@@ -565,48 +643,30 @@ if (umlagSheet) {
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
-    db.prepare('INSERT INTO umlagerungen (eb_nummer, von_platz, nach_platz, bemerkung) VALUES (?,?,?,?)')
+    db.prepare('INSERT INTO umlagerungen (paletten_nr, von_platz, nach_platz, bemerkung) VALUES (?,?,?,?)')
       .run(String(row[1]), String(row[2] || ''), String(row[3] || ''), 'Gestellung zur Prüfung');
     count++;
   }
-  console.log(`  Umlagerungen z. Prüfung: ${count}`);
+  console.log(`  Umlagerungen: ${count}`);
 }
 
-// Inventur PPH (Archiv-Referenz)
+// Inventur
 const invSheet = abrufWb.Sheets['Inventur PPH-nur Archiv'];
 if (invSheet) {
   const d = XLSX.utils.sheet_to_json(invSheet, { header: 1, defval: '' });
   let count = 0;
   for (let i = 3; i < d.length; i++) {
     const row = d[i];
-    if (!row[1] && !row[2]) continue;
-    if (String(row[0]) === '' && String(row[1]) === '') continue;
     const palNr = String(row[1] || '').trim();
-    const ort = String(row[2] || '').trim();
-    const vorhanden = String(row[3] || '').trim();
-    if (palNr && palNr !== 'Pal.Nr. (Archiv)') {
-      db.prepare('INSERT INTO inventur (palette_nr, lagerort, vorhanden, bemerkung) VALUES (?,?,?,?)').run(palNr, ort || null, vorhanden, null);
-      count++;
-    }
-  }
-  console.log(`  Inventur-Archiv: ${count} Einträge (Archiv-Nr., NICHT EB-Nummern!)`);
-}
-
-// Neue EB-Nummern (Einlagerungsliste Neue Eb-Numme)
-const neueEbSheet = abrufWb.Sheets['Einlagerungsliste Neue Eb-Numme'];
-if (neueEbSheet) {
-  const d = XLSX.utils.sheet_to_json(neueEbSheet, { header: 1, defval: '' });
-  let count = 0;
-  for (let i = 3; i < d.length; i++) {
-    const row = d[i];
-    if (!row[1] || typeof row[1] !== 'number') continue;
-    db.prepare('INSERT INTO einlagerungsliste (lfd_nummer, eb_nummer, lagerplatz, typ) VALUES (?,?,?,?)').run(row[0], String(row[1]), String(row[2] || '').trim() || null, 'Neue EB-Nummern');
+    if (!palNr || palNr === 'Pal.Nr. (Archiv)') continue;
+    db.prepare('INSERT INTO inventur (palette_nr, lagerort, vorhanden) VALUES (?,?,?)')
+      .run(palNr, String(row[2] || '').trim() || null, String(row[3] || '').trim());
     count++;
   }
-  console.log(`  Neue EB-Nummern: ${count} Paletten`);
+  console.log(`  Inventur-Archiv: ${count} (Archiv-Nr., nicht EB!)`);
 }
 
-// Wirtschaftsprüfung 31.12.2022 (historischer Bestand)
+// Wirtschaftsprüfung
 const wpSheet = abrufWb.Sheets['Wirtschaftspr.31.12.22'];
 if (wpSheet) {
   const d = XLSX.utils.sheet_to_json(wpSheet, { header: 1, defval: '' });
@@ -614,28 +674,26 @@ if (wpSheet) {
   for (let i = 2; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
-    const einlDatum = excelDate(row[2]);
-    const auslDatum = excelDate(row[4]);
-    db.prepare('INSERT INTO wirtschaftspruefung (pos, eb_nummer, einlagerung_datum, letzter_lagerplatz, auslagerung_datum) VALUES (?,?,?,?,?)')
-      .run(row[0], String(row[1]), einlDatum, String(row[3] || ''), auslDatum);
+    db.prepare('INSERT INTO wirtschaftspruefung (pos, paletten_nr, einlagerung_datum, letzter_lagerplatz, auslagerung_datum) VALUES (?,?,?,?,?)')
+      .run(row[0], String(row[1]), excelDate(row[2]), String(row[3] || ''), excelDate(row[4]));
     count++;
   }
-  console.log(`  Wirtschaftsprüfung 31.12.22: ${count} Positionen`);
+  console.log(`  Wirtschaftsprüfung: ${count} Pos.`);
 }
 
 // Protokoll
-db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('System-Import', `Vollimport: ${stats.plaetze} Plätze, ${stats.paletten} Paletten, ${bewCount} Bewegungen, ${monateCount} Monate`, 'System');
-
+db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('System-Import v3', `${stats.plaetze} Plätze, ${stats.paletten} Paletten, ${bewCount} Bewegungen, Kunden: PPH + KW + HS`, 'System');
 db.close();
 
-// ─── ZUSAMMENFASSUNG ───────────────────────────────────────────────────────────
+// ─── ZUSAMMENFASSUNG ─────────────────────────────────────────────────────────
 console.log('\n═══════════════════════════════════════');
-console.log('         IMPORT ABGESCHLOSSEN');
+console.log('       IMPORT v3 ABGESCHLOSSEN');
 console.log('═══════════════════════════════════════');
 console.log(`  Lagerplätze:     ${stats.plaetze}`);
-console.log(`  Belegt gesamt:   ${belegt} (${Math.round(belegt / stats.plaetze * 100)}%)`);
+console.log(`  Belegt:          ${belegt} (${Math.round(belegt / stats.plaetze * 100)}%)`);
 console.log(`  Frei:            ${frei}`);
-console.log(`  Paletten (EB):   ${stats.paletten}`);
+console.log(`  Paletten (Nr):   ${stats.paletten}`);
 console.log(`  Bewegungen:      ${bewCount}`);
 console.log(`  Kontingent:      ${monateCount} Monate`);
+console.log(`  Kunden:          Panpharma, KahlWax, Highspeed`);
 console.log('═══════════════════════════════════════');

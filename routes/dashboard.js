@@ -2,51 +2,45 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
-router.get('/stats', (req, res) => {
-  const totalPlaetze = db.prepare('SELECT COUNT(*) as c FROM lagerplaetze').get().c;
-  const belegtePlaetze = db.prepare('SELECT COUNT(*) as c FROM lagerplaetze WHERE belegt = 1').get().c;
-  const freiePlaetze = totalPlaetze - belegtePlaetze;
-  const blocklagerBelegt = db.prepare("SELECT COUNT(*) as c FROM lagerplaetze WHERE typ = 'Blocklager' AND belegt = 1").get().c;
-
-  const today = new Date().toISOString().split('T')[0];
-  const heuteEingelagert = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE date(eingelagert_am) = ? AND geloescht = 0").get(today).c;
-  const heuteAusgelagert = db.prepare("SELECT COUNT(*) as c FROM auslagerungen WHERE date(ausgelagert_am) = ?").get(today).c;
-
-  const kontingent = db.prepare("SELECT * FROM kontingent ORDER BY id DESC LIMIT 1").get();
-
-  res.json({
-    totalPlaetze,
-    belegtePlaetze,
-    freiePlaetze,
-    blocklagerBelegt,
-    heuteEingelagert,
-    heuteAusgelagert,
-    belegungProzent: totalPlaetze > 0 ? Math.round((belegtePlaetze / totalPlaetze) * 100) : 0,
-    kontingent: kontingent || null
-  });
-});
-
-router.get('/belegung-bereiche', (req, res) => {
+// Dashboard-Übersicht
+router.get('/', (req, res) => {
+  const plaetze = db.prepare('SELECT COUNT(*) as total FROM lagerplaetze').get();
+  const belegt = db.prepare('SELECT COUNT(*) as total FROM lagerplaetze WHERE belegt = 1').get();
+  const frei = plaetze.total - belegt.total;
+  const paletten = db.prepare("SELECT COUNT(*) as total FROM paletten WHERE ausgelagert = 0 AND geloescht = 0").get();
+  const kunden = db.prepare('SELECT COUNT(*) as total FROM kunden WHERE aktiv = 1').get();
+  
+  // Kontingent aktuell (neuester Monat PPH)
+  const kontingent = db.prepare('SELECT * FROM kontingent WHERE kunde_id = 1 ORDER BY id DESC LIMIT 1').get();
+  
+  // Bewegungen letzte 30 Tage
+  const bew30 = db.prepare("SELECT COUNT(*) as total FROM bewegungen WHERE datum >= date('now', '-30 days')").get();
+  
+  // Offene Abrufe
+  const offeneAbrufe = db.prepare("SELECT COUNT(*) as total FROM abrufliste WHERE status = 'offen'").get();
+  
+  // Pro Bereich
   const bereiche = db.prepare(`
     SELECT bereich, 
-           COUNT(*) as gesamt, 
-           SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt
+      COUNT(*) as gesamt,
+      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt
     FROM lagerplaetze 
-    GROUP BY bereich
+    GROUP BY bereich 
     ORDER BY bereich
   `).all();
-  res.json(bereiche);
-});
-
-router.get('/kontingent-verlauf', (req, res) => {
-  const rows = db.prepare(`
-    SELECT monat, kontingent_plaetze, verfuegbar, lagerbestand, uebertrag_vormonat, 
-           einlagerungen, auslagerungen, extra_handling, bewegungen_gesamt, traffic_ratio
-    FROM kontingent 
-    ORDER BY id DESC 
-    LIMIT 24
-  `).all();
-  res.json(rows.reverse());
+  
+  res.json({
+    plaetze_gesamt: plaetze.total,
+    plaetze_belegt: belegt.total,
+    plaetze_frei: frei,
+    auslastung: Math.round(belegt.total / plaetze.total * 100),
+    paletten_aktiv: paletten.total,
+    kunden_aktiv: kunden.total,
+    kontingent,
+    bewegungen_30d: bew30.total,
+    offene_abrufe: offeneAbrufe.total,
+    bereiche
+  });
 });
 
 module.exports = router;

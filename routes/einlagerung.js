@@ -2,122 +2,72 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
+// Einlagerung: Neues System mit Kundenauswahl + Nummernformat
 router.post('/', (req, res) => {
-  const { eb_nummer, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, lagerplatz, artikel_nr, artikel_beschreibung, chargen_nr, menge, gewicht, paletten_hoehe_cm, benutzer, bemerkung } = req.body;
-
-  if (!eb_nummer) {
-    return res.status(400).json({ error: 'EB-Nummer ist erforderlich' });
-  }
-
-  let platzId = lagerplatz_id;
-  let platzBez = lagerplatz_bezeichnung || lagerplatz;
-
-  // If lagerplatz_bezeichnung is given but no ID, look up
-  if (!platzId && platzBez) {
-    const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ?').get(platzBez);
-    if (platz) {
-      if (platz.belegt) return res.status(400).json({ error: `Lagerplatz ${platzBez} ist bereits belegt` });
-      platzId = platz.id;
-    }
-  }
-
-  if (platzId) {
-    const platz = db.prepare('SELECT * FROM lagerplaetze WHERE id = ?').get(platzId);
-    if (!platz) return res.status(404).json({ error: 'Lagerplatz nicht gefunden' });
-    if (platz.belegt) return res.status(400).json({ error: `Lagerplatz ${platz.bezeichnung} ist bereits belegt` });
-    platzBez = platz.bezeichnung;
-  }
-
-  const result = db.prepare(`
-    INSERT INTO paletten (eb_nummer, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, artikel_nr, artikel_beschreibung, chargen_nr, menge, gewicht, paletten_hoehe_cm, eingelagert_von, bemerkung)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(eb_nummer, kunde_id || null, platzId || null, platzBez || null, artikel_nr || null, artikel_beschreibung || null, chargen_nr || null, menge || 1, gewicht || null, paletten_hoehe_cm || null, benutzer || 'System', bemerkung || null);
-
-  if (platzId) {
-    db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(platzId);
-  }
-
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-    .run('Einlagerung', `EB-Nr: ${eb_nummer} auf Platz ${platzBez || 'ohne Platz'}`, benutzer || 'System');
-
-  res.json({ success: true, id: result.lastInsertRowid, lagerplatz: platzBez });
-});
-
-router.post('/mehrfach', (req, res) => {
-  const { einlagerungen, benutzer } = req.body;
+  const { paletten_nr, kunde_id, lagerplatz, artikel_nr, chargen_nr, bemerkung, menge, direktanlieferung_id } = req.body;
   
-  if (!Array.isArray(einlagerungen) || einlagerungen.length === 0) {
-    return res.status(400).json({ error: 'Keine Einlagerungen angegeben' });
+  if (!paletten_nr || !lagerplatz) {
+    return res.status(400).json({ error: 'Palettennummer und Lagerplatz erforderlich' });
   }
-
-  const results = [];
-  const transaction = db.transaction(() => {
-    for (const e of einlagerungen) {
-      let platzId = e.lagerplatz_id;
-      let platzBez = e.lagerplatz_bezeichnung;
-
-      if (!platzId && platzBez) {
-        const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ?').get(platzBez);
-        if (platz && !platz.belegt) { platzId = platz.id; }
-      }
-
-      const r = db.prepare(`
-        INSERT INTO paletten (eb_nummer, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, artikel_nr, menge, eingelagert_von)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(e.eb_nummer, e.kunde_id || null, platzId || null, platzBez || null, e.artikel_nr || null, e.menge || 1, benutzer || 'System');
-
-      if (platzId) {
-        db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(platzId);
-      }
-
-      db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-        .run('Einlagerung', `EB-Nr: ${e.eb_nummer} auf ${platzBez || 'ohne Platz'}`, benutzer || 'System');
-
-      results.push({ eb_nummer: e.eb_nummer, success: true, id: r.lastInsertRowid, lagerplatz: platzBez });
-    }
-  });
-
-  transaction();
-  res.json({ success: true, results });
+  
+  // Kunde ermitteln
+  let kundeId = kunde_id ? parseInt(kunde_id) : null;
+  let nummernTyp = 'Sonstige';
+  
+  if (paletten_nr.match(/^\d{6}$/)) { nummernTyp = 'EB'; if (!kundeId) kundeId = 1; }
+  else if (paletten_nr.match(/^KW|^Kw/i)) { nummernTyp = 'KW'; if (!kundeId) kundeId = 2; }
+  
+  // Lagerplatz prüfen
+  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ?').get(lagerplatz);
+  if (!platz) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" nicht gefunden` });
+  if (platz.belegt) return res.status(400).json({ error: `Lagerplatz "${lagerplatz}" ist bereits belegt` });
+  
+  // Duplikat prüfen
+  const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(paletten_nr);
+  if (duplikat) return res.status(400).json({ error: `Palette "${paletten_nr}" ist bereits eingelagert` });
+  
+  // Einlagern
+  const result = db.prepare(`
+    INSERT INTO paletten (paletten_nr, nummern_typ, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, artikel_nr, chargen_nr, menge, eingelagert_von, bemerkung)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
+  `).run(paletten_nr, nummernTyp, kundeId, platz.id, lagerplatz, artikel_nr || null, chargen_nr || null, menge || 1, req.session?.user?.benutzername || 'System', bemerkung || null);
+  
+  // Platz belegen
+  db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(platz.id);
+  
+  // Bewegung dokumentieren
+  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer) VALUES (?, date("now"), ?, 1, ?, ?, ?)').run(kundeId, 'Einlagerung', paletten_nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System');
+  
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Einlagerung', `${paletten_nr} → ${lagerplatz}`, req.session?.user?.benutzername || 'System');
+  
+  res.json({ ok: true, id: result.lastInsertRowid, message: `${paletten_nr} auf ${lagerplatz} eingelagert` });
 });
 
-// Umlagerung
-router.post('/umlagern', (req, res) => {
-  const { palette_id, eb_nummer, nach_platz, benutzer } = req.body;
-
-  let palette;
-  if (palette_id) {
-    palette = db.prepare('SELECT * FROM paletten WHERE id = ? AND ausgelagert = 0 AND geloescht = 0').get(palette_id);
-  } else if (eb_nummer) {
-    palette = db.prepare('SELECT * FROM paletten WHERE eb_nummer = ? AND ausgelagert = 0 AND geloescht = 0').get(eb_nummer);
+// Nächste freie EB-Nummer vorschlagen
+router.get('/naechste-nr', (req, res) => {
+  const { kunde_id } = req.query;
+  const kid = parseInt(kunde_id) || 1;
+  const kunde = db.prepare('SELECT * FROM kunden WHERE id = ?').get(kid);
+  
+  if (kunde?.nummern_prefix === 'EB') {
+    const max = db.prepare("SELECT MAX(CAST(paletten_nr AS INTEGER)) as m FROM paletten WHERE nummern_typ = 'EB'").get();
+    const next = String((max?.m || 650000) + 1).padStart(6, '0');
+    return res.json({ prefix: 'EB', naechste: next, format: '6-stellig numerisch' });
   }
+  
+  res.json({ prefix: kunde?.nummern_prefix || '', naechste: '', format: kunde?.nummern_format || 'Frei' });
+});
 
-  if (!palette) return res.status(404).json({ error: 'Palette nicht gefunden' });
-
-  const neuerPlatz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ?').get(nach_platz);
-  if (!neuerPlatz) return res.status(404).json({ error: `Platz ${nach_platz} existiert nicht` });
-  if (neuerPlatz.belegt) return res.status(400).json({ error: `Platz ${nach_platz} ist bereits belegt` });
-
-  const vonPlatz = palette.lagerplatz_bezeichnung || 'unbekannt';
-
-  // Free old spot
-  if (palette.lagerplatz_id) {
-    db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(palette.lagerplatz_id);
-  }
-
-  // Move to new spot
-  db.prepare('UPDATE paletten SET lagerplatz_id = ?, lagerplatz_bezeichnung = ? WHERE id = ?')
-    .run(neuerPlatz.id, nach_platz, palette.id);
-  db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
-
-  // Log umlagerung
-  db.prepare('INSERT INTO umlagerungen (palette_id, eb_nummer, von_platz, nach_platz, benutzer) VALUES (?, ?, ?, ?, ?)')
-    .run(palette.id, palette.eb_nummer, vonPlatz, nach_platz, benutzer || 'System');
-
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?, ?, ?)')
-    .run('Umlagerung', `EB-Nr: ${palette.eb_nummer} von ${vonPlatz} nach ${nach_platz}`, benutzer || 'System');
-
-  res.json({ success: true, von: vonPlatz, nach: nach_platz });
+// Freie Lagerplätze
+router.get('/freie-plaetze', (req, res) => {
+  const { bereich, regal } = req.query;
+  let where = 'WHERE belegt = 0';
+  const params = [];
+  if (bereich) { where += ' AND bereich = ?'; params.push(bereich); }
+  if (regal) { where += ' AND regal = ?'; params.push(regal); }
+  
+  const plaetze = db.prepare(`SELECT bezeichnung, regal, position, bereich, typ, ebene FROM lagerplaetze ${where} ORDER BY regal, position`).all(...params);
+  res.json(plaetze);
 });
 
 module.exports = router;

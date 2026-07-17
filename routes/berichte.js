@@ -3,193 +3,144 @@ const router = express.Router();
 const db = require('../database/init');
 const PDFDocument = require('pdfkit');
 
-router.get('/lagerliste', (req, res) => {
-  const rows = db.prepare(`
-    SELECT p.eb_nummer, k.name as kunde, COALESCE(p.lagerplatz_bezeichnung, l.bezeichnung) as lagerplatz, 
-           p.eingelagert_am, p.artikel_nr
+// Auslagerungsbeleg PDF
+router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
+  const pal = db.prepare(`
+    SELECT p.*, k.name as kunde_name, l.bezeichnung as platz
     FROM paletten p
     LEFT JOIN kunden k ON p.kunde_id = k.id
     LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-    WHERE p.ausgelagert = 0 AND p.geloescht = 0
-    ORDER BY p.lagerplatz_bezeichnung
-  `).all();
-  res.json(rows);
-});
-
-router.get('/kontingent-history', (req, res) => {
-  const rows = db.prepare('SELECT * FROM kontingent ORDER BY id DESC LIMIT 24').all();
-  res.json(rows.reverse());
-});
-
-// PDF: Auslagerungsbeleg
-router.get('/auslagerungsbeleg', (req, res) => {
-  const { eb, platz, kunde } = req.query;
-
-  let palette = null;
-  if (eb) {
-    palette = db.prepare(`
-      SELECT p.*, k.name as kunde_name, COALESCE(p.lagerplatz_bezeichnung, l.bezeichnung) as lp
-      FROM paletten p LEFT JOIN kunden k ON p.kunde_id = k.id LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-      WHERE p.eb_nummer = ? ORDER BY p.ausgelagert ASC LIMIT 1
-    `).get(eb);
-  }
-
-  const ebNr = eb || palette?.eb_nummer || '—';
-  const lagerplatz = platz || palette?.lp || palette?.lagerplatz_bezeichnung || '—';
-  const kundeName = kunde || palette?.kunde_name || 'Panpharma';
-  const artikelNr = palette?.artikel_nr || '';
-  const datum = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const uhrzeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
+    WHERE p.paletten_nr = ?
+    ORDER BY p.id DESC LIMIT 1
+  `).get(req.params.paletten_nr);
+  
+  if (!pal) return res.status(404).json({ error: 'Palette nicht gefunden' });
+  
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename=Auslagerungsbeleg_${ebNr}_${datum.replace(/\./g,'')}.pdf`);
+  res.setHeader('Content-Disposition', `inline; filename="Beleg_${pal.paletten_nr}.pdf"`);
   doc.pipe(res);
-
-  // Header
-  doc.rect(0, 0, 595, 100).fill('#111111');
-  doc.fill('#FFC107').fontSize(22).font('Helvetica-Bold').text('HIGHSPEED KURIER', 50, 30);
-  doc.fill('#ffffff').fontSize(10).font('Helvetica').text('Lagermanagement', 50, 55);
-  doc.fill('#ffffff').fontSize(18).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG', 350, 35, { align: 'right', width: 195 });
-  doc.fill('#ffffff').fontSize(10).font('Helvetica').text(`Nr. ${Date.now().toString(36).toUpperCase()}`, 350, 60, { align: 'right', width: 195 });
-
-  // Beleg-Details
-  doc.fill('#111111');
-  let y = 120;
   
-  doc.roundedRect(50, y, 495, 160, 8).stroke('#dddddd');
+  doc.fontSize(18).font('Helvetica-Bold').text('HIGHSPEED KURIER', 50, 50);
+  doc.fontSize(10).font('Helvetica').text('Lagermanagement · Trittau', 50, 72);
+  doc.fontSize(14).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG', 50, 110);
+  
+  doc.moveTo(50, 130).lineTo(545, 130).stroke();
+  
+  let y = 145;
+  const label = (l, v) => {
+    doc.fontSize(9).font('Helvetica-Bold').text(l, 50, y, { width: 150 });
+    doc.font('Helvetica').text(v || '—', 200, y);
+    y += 20;
+  };
+  
+  label('Paletten-Nr.:', pal.paletten_nr);
+  label('Typ:', pal.nummern_typ);
+  label('Kunde:', pal.kunde_name || '—');
+  label('Lagerplatz:', pal.platz || pal.lagerplatz_bezeichnung);
+  label('Artikel-Nr.:', pal.artikel_nr);
+  label('Chargen-Nr.:', pal.chargen_nr);
+  label('Eingelagert am:', pal.eingelagert_am ? new Date(pal.eingelagert_am).toLocaleDateString('de-DE') : '—');
+  label('Ausgelagert am:', new Date().toLocaleDateString('de-DE'));
+  label('Bemerkung:', pal.bemerkung);
+  
+  y += 30;
+  doc.moveTo(50, y).lineTo(545, y).stroke();
   y += 20;
   
-  doc.fontSize(11).font('Helvetica-Bold').fill('#666666').text('DATUM', 70, y);
-  doc.fontSize(13).font('Helvetica-Bold').fill('#111111').text(`${datum}  ${uhrzeit}`, 200, y);
-  y += 30;
-
-  doc.fontSize(11).font('Helvetica-Bold').fill('#666666').text('EB-NUMMER', 70, y);
-  doc.fontSize(16).font('Helvetica-Bold').fill('#111111').text(ebNr, 200, y);
-  y += 32;
-
-  doc.fontSize(11).font('Helvetica-Bold').fill('#666666').text('LAGERPLATZ', 70, y);
-  doc.fontSize(14).font('Helvetica-Bold').fill('#111111').text(lagerplatz, 200, y);
-  y += 30;
-
-  doc.fontSize(11).font('Helvetica-Bold').fill('#666666').text('KUNDE', 70, y);
-  doc.fontSize(13).font('Helvetica').fill('#111111').text(kundeName, 200, y);
-
-  if (artikelNr) {
-    y += 26;
-    doc.fontSize(11).font('Helvetica-Bold').fill('#666666').text('ARTIKEL', 70, y);
-    doc.fontSize(13).font('Helvetica').fill('#111111').text(artikelNr, 200, y);
-  }
-
-  // Trennlinie
-  y = 310;
-  doc.moveTo(50, y).lineTo(545, y).stroke('#eeeeee');
-  y += 20;
-
-  // Bestätigung
-  doc.fontSize(12).font('Helvetica-Bold').text('Bestätigung der Auslagerung', 50, y);
-  y += 24;
-  doc.fontSize(10).font('Helvetica').fill('#444444')
-    .text('Hiermit bestätige ich die ordnungsgemäße Auslagerung und Übergabe der oben genannten Palette.', 50, y, { width: 495 });
+  doc.fontSize(9).text('Unterschrift Lager:', 50, y);
+  doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke();
   
-  y += 60;
+  doc.text('Unterschrift Empfänger:', 300, y);
+  doc.moveTo(300, y + 40).lineTo(500, y + 40).stroke();
   
-  // Unterschrift Lager
-  doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke('#cccccc');
-  doc.fontSize(10).font('Helvetica').fill('#666666').text('Datum, Unterschrift Lager', 50, y + 48);
-
-  // Unterschrift Fahrer
-  doc.moveTo(300, y + 40).lineTo(545, y + 40).stroke('#cccccc');
-  doc.fontSize(10).font('Helvetica').fill('#666666').text('Datum, Unterschrift Fahrer / Abholer', 300, y + 48);
-
-  // Stempel-Bereich
-  y += 110;
-  doc.roundedRect(50, y, 495, 80, 8).stroke('#eeeeee');
-  doc.fontSize(10).font('Helvetica').fill('#999999').text('Stempel / Bemerkungen:', 70, y + 12);
-
-  // Footer
-  doc.fontSize(8).font('Helvetica').fill('#999999')
-    .text('Highspeed Kurier · Lagermanagement · Dieses Dokument wurde automatisch erstellt.', 50, 770, { align: 'center', width: 495 });
-
+  doc.fontSize(7).text(`Generiert: ${new Date().toLocaleString('de-DE')} · Highspeed Kurier Lagermanagement`, 50, 780, { align: 'center', width: 495 });
+  
   doc.end();
 });
 
-// PDF: Abrufbeleg (alle aktuellen Abrufe)
-router.get('/abrufbeleg', (req, res) => {
-  const abrufe = db.prepare('SELECT * FROM abrufliste ORDER BY lkw, lfd_nummer').all();
-  const datum = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+// Abrechnungsdokument PDF (Monatsbericht wie Excel)
+router.get('/monatsbericht-pdf', (req, res) => {
+  const { kunde_id, von, bis } = req.query;
+  if (!kunde_id || !von || !bis) return res.status(400).json({ error: 'kunde_id, von, bis erforderlich' });
+  
+  const kid = parseInt(kunde_id);
+  const kunde = db.prepare('SELECT * FROM kunden WHERE id = ?').get(kid);
+  const kontingent = db.prepare('SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC LIMIT 1').get(kid);
+  
+  const tage = db.prepare(`
+    SELECT datum,
+      SUM(CASE WHEN typ = 'Einlagerung' THEN anzahl ELSE 0 END) as einl,
+      SUM(CASE WHEN typ = 'Auslagerung' THEN anzahl ELSE 0 END) as ausl,
+      SUM(CASE WHEN typ = 'Extra Handling' THEN anzahl ELSE 0 END) as extra,
+      GROUP_CONCAT(paletten_nummern, ', ') as nummern
+    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ?
+    GROUP BY datum ORDER BY datum
+  `).all(kid, von, bis);
+  
+  const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
+  
+  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape' });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename=Abrufbeleg_${datum.replace(/\./g,'')}.pdf`);
+  res.setHeader('Content-Disposition', `inline; filename="Monatsbericht_${kunde?.name || ''}_${von}_${bis}.pdf"`);
   doc.pipe(res);
-
+  
   // Header
-  doc.rect(0, 0, 595, 90).fill('#111111');
-  doc.fill('#FFC107').fontSize(20).font('Helvetica-Bold').text('HIGHSPEED KURIER', 50, 25);
-  doc.fill('#ffffff').fontSize(10).font('Helvetica').text('Lagermanagement', 50, 48);
-  doc.fill('#ffffff').fontSize(16).font('Helvetica-Bold').text('ABRUFLISTE', 380, 30, { align: 'right', width: 165 });
-  doc.fill('#ffffff').fontSize(10).font('Helvetica').text(datum, 380, 52, { align: 'right', width: 165 });
-
-  let y = 110;
-  doc.fill('#111111').fontSize(11).font('Helvetica-Bold').text(`Panpharma · ${abrufe.length} Paletten`, 50, y);
-  y += 28;
-
-  // Tabelle Header
-  doc.fontSize(9).font('Helvetica-Bold').fill('#666666');
-  doc.text('#', 50, y); doc.text('EB-Nummer', 80, y); doc.text('Lagerplatz', 200, y); doc.text('LKW', 320, y);
-  y += 4;
-  doc.moveTo(50, y + 12).lineTo(545, y + 12).stroke('#dddddd');
-  y += 18;
-
-  // Zeilen
-  doc.font('Helvetica').fontSize(10).fill('#111111');
-  for (const a of abrufe) {
-    if (y > 740) { doc.addPage(); y = 50; }
-    doc.text(String(a.lfd_nummer || '-'), 50, y);
-    doc.font('Helvetica-Bold').text(a.eb_nummer, 80, y);
-    doc.font('Helvetica').text(a.lagerplatz || '-', 200, y);
-    doc.text(a.lkw || '-', 320, y);
-    y += 18;
+  doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED KURIER · Lagerbericht', 40, 30);
+  doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
+  doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
+  
+  if (kontingent) {
+    doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${bestand.c} | Überkapazität: ${Math.max(0, bestand.c - kontingent.kontingent_plaetze)}`, 400, 48);
   }
-
-  // Unterschrift
-  y += 40;
-  if (y > 680) { doc.addPage(); y = 50; }
-  doc.moveTo(50, y + 30).lineTo(250, y + 30).stroke('#cccccc');
-  doc.fontSize(9).fill('#666666').text('Unterschrift Lager', 50, y + 36);
-  doc.moveTo(300, y + 30).lineTo(545, y + 30).stroke('#cccccc');
-  doc.text('Unterschrift Fahrer', 300, y + 36);
-
+  
+  doc.moveTo(40, 78).lineTo(780, 78).stroke();
+  
+  // Tabellenkopf
+  let y = 88;
+  doc.fontSize(7).font('Helvetica-Bold');
+  doc.text('Datum', 40, y, { width: 70 });
+  doc.text('Einlag.', 115, y, { width: 40 });
+  doc.text('Auslag.', 160, y, { width: 40 });
+  doc.text('+/-', 205, y, { width: 30 });
+  doc.text('Extra', 240, y, { width: 40 });
+  doc.text('Paletten-Nummern', 285, y, { width: 490 });
+  y += 12;
+  
+  doc.font('Helvetica').fontSize(7);
+  let sumEinl = 0, sumAusl = 0, sumExtra = 0;
+  
+  for (const tag of tage) {
+    const d = new Date(tag.datum).toLocaleDateString('de-DE');
+    const diff = tag.einl - tag.ausl;
+    sumEinl += tag.einl; sumAusl += tag.ausl; sumExtra += tag.extra;
+    
+    doc.text(d, 40, y, { width: 70 });
+    if (tag.einl) doc.text(String(tag.einl), 115, y, { width: 40 });
+    if (tag.ausl) doc.text(String(tag.ausl), 160, y, { width: 40 });
+    if (diff) doc.text(diff > 0 ? `+${diff}` : String(diff), 205, y, { width: 30 });
+    if (tag.extra) doc.text(String(tag.extra), 240, y, { width: 40 });
+    doc.text((tag.nummern || '').substring(0, 120), 285, y, { width: 490 });
+    y += 11;
+    
+    if (y > 540) { doc.addPage({ layout: 'landscape' }); y = 40; }
+  }
+  
+  // Summenzeile
+  y += 5;
+  doc.moveTo(40, y).lineTo(780, y).stroke();
+  y += 5;
+  doc.font('Helvetica-Bold');
+  doc.text('SUMME', 40, y);
+  doc.text(String(sumEinl), 115, y);
+  doc.text(String(sumAusl), 160, y);
+  doc.text(String(sumEinl - sumAusl), 205, y);
+  doc.text(String(sumExtra), 240, y);
+  doc.text(`Bewegungen gesamt: ${sumEinl + sumAusl + sumExtra}`, 285, y);
+  
+  doc.fontSize(6).font('Helvetica').text(`Generiert: ${new Date().toLocaleString('de-DE')}`, 40, 560, { width: 740, align: 'center' });
+  
   doc.end();
-});
-
-// E-Mail-Versand des Belegs
-router.post('/beleg-senden', async (req, res) => {
-  const { eb_nummer, empfaenger_email, kunde } = req.body;
-  if (!empfaenger_email) return res.status(400).json({ error: 'E-Mail-Adresse erforderlich' });
-
-  try {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || ''
-      }
-    });
-
-    // Placeholder - in production, SMTP credentials would be configured
-    res.json({ 
-      success: false, 
-      message: 'E-Mail-Versand vorbereitet. Bitte SMTP-Einstellungen in Umgebungsvariablen konfigurieren (SMTP_HOST, SMTP_USER, SMTP_PASS).',
-      beleg_url: `/api/berichte/auslagerungsbeleg?eb=${eb_nummer}&kunde=${encodeURIComponent(kunde||'Panpharma')}`
-    });
-  } catch (e) {
-    res.status(500).json({ error: 'E-Mail-Versand fehlgeschlagen: ' + e.message });
-  }
 });
 
 module.exports = router;

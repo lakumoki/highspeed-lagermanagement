@@ -1,385 +1,737 @@
-const App = {
-  page: 'dashboard',
-  user: null,
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIGHSPEED KURIER — LAGERMANAGEMENT FRONTEND v3
+// ═══════════════════════════════════════════════════════════════════════════════
+const app = document.getElementById('app');
+let currentUser = null;
+let currentPage = 'dashboard';
 
-  async init() {
-    const s = await this.api('/api/auth/session');
-    if (s?.user) { this.user = s.user; this.render(); }
-    else this.loginPage();
-  },
+// ─── INIT ────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/auth/session');
+    if (r.ok) { currentUser = (await r.json()).user; renderApp(); }
+    else renderLogin();
+  } catch { renderLogin(); }
+}
 
-  async api(url, o = {}) {
-    try {
-      const r = await fetch(url, { headers: {'Content-Type':'application/json'}, ...o });
-      if (!r.ok) { const t = await r.text(); throw new Error(t); }
-      return r.json();
-    } catch(e) { return null; }
-  },
+// ─── API HELPER ──────────────────────────────────────────────────────────────
+async function api(url, opts = {}) {
+  const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Fehler');
+  return data;
+}
 
-  toast(msg, type='info') {
-    const c = document.getElementById('toast-container');
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-triangle'}"></i> ${msg}`;
-    c.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  },
+function toast(msg, type = '') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
 
-  go(p) { this.page = p; this.render(); },
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+function renderLogin() {
+  app.innerHTML = `
+    <div class="login-page">
+      <div class="login-box">
+        <h1>Highspeed Kurier</h1>
+        <p class="subtitle">Lagermanagement · Anmeldung</p>
+        <input type="text" id="login-user" placeholder="Benutzername" autofocus>
+        <input type="password" id="login-pass" placeholder="Passwort">
+        <button onclick="doLogin()">Anmelden</button>
+        <p class="login-error" id="login-err"></p>
+      </div>
+    </div>`;
+  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
 
-  loginPage() {
-    document.getElementById('app').innerHTML = `
-      <div class="login-page">
-        <div class="login-card">
-          <div class="brand"><div class="ico"><i class="fas fa-warehouse"></i></div><span>Highspeed Kurier</span></div>
-          <p class="sub">Lagerverwaltung</p>
-          <form id="lf">
-            <div class="field"><label>Benutzername</label><input id="lu" placeholder="Benutzername" autofocus></div>
-            <div class="field"><label>Passwort</label><input id="lp" type="password" placeholder="Passwort"></div>
-            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px">Anmelden</button>
-          </form>
+async function doLogin() {
+  const err = document.getElementById('login-err');
+  try {
+    const data = await api('/api/auth/login', { method: 'POST', body: { benutzername: document.getElementById('login-user').value, passwort: document.getElementById('login-pass').value } });
+    currentUser = data.user;
+    renderApp();
+  } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+}
+
+// ─── APP SHELL ───────────────────────────────────────────────────────────────
+function renderApp() {
+  app.innerHTML = `
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>HIGHSPEED KURIER</h2>
+          <small>Lagermanagement</small>
         </div>
-      </div>`;
-    document.getElementById('lf').onsubmit = async(e) => {
-      e.preventDefault();
-      const r = await this.api('/api/auth/login', { method:'POST', body: JSON.stringify({benutzername:document.getElementById('lu').value,passwort:document.getElementById('lp').value})});
-      if (r?.success) { this.user = r.user; this.render(); }
-      else this.toast('Anmeldung fehlgeschlagen','error');
-    };
-  },
-
-  render() {
-    const nav = [
-      {section:'Übersicht'},
-      {id:'dashboard',icon:'fa-th-large',label:'Dashboard'},
-      {id:'suche',icon:'fa-search',label:'Suche'},
-      {section:'Lager'},
-      {id:'einlagern',icon:'fa-arrow-down',label:'Einlagern'},
-      {id:'auslagern',icon:'fa-arrow-up',label:'Auslagern'},
-      {id:'lagerplan',icon:'fa-map',label:'Lagerplan'},
-      {section:'Auswertung'},
-      {id:'berichte',icon:'fa-chart-bar',label:'Berichte'},
-      {id:'protokoll',icon:'fa-list',label:'Protokoll'},
-    ];
-
-    document.getElementById('app').innerHTML = `
-      <div class="app-layout">
-        <nav class="sidebar">
-          <div class="sidebar-brand"><div class="logo">HS</div><span>Highspeed Kurier</span></div>
-          <div class="sidebar-nav">
-            ${nav.map(n => n.section
-              ? `<div class="nav-section">${n.section}</div>`
-              : `<div class="nav-item ${n.id===this.page?'active':''}" data-p="${n.id}"><i class="fas ${n.icon}"></i>${n.label}</div>`
-            ).join('')}
-          </div>
-          <div class="sidebar-footer">
-            <div class="nav-item" id="logout-btn"><i class="fas fa-sign-out-alt"></i>Abmelden</div>
-          </div>
+        <nav>
+          <div class="nav-section">Übersicht</div>
+          <a href="#" data-page="dashboard" class="active"><span class="icon">◉</span><span>Dashboard</span></a>
+          <a href="#" data-page="suche"><span class="icon">⌕</span><span>Suche</span></a>
+          
+          <div class="nav-section">Lagerverwaltung</div>
+          <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
+          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Auslagerung</span></a>
+          <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
+          <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterung</span></a>
+          <a href="#" data-page="lagerplan"><span class="icon">▦</span><span>Lagerplan</span></a>
+          
+          <div class="nav-section">Abrechnung</div>
+          <a href="#" data-page="bewegungen"><span class="icon">⇄</span><span>Bewegungen</span></a>
+          <a href="#" data-page="kontingent"><span class="icon">◧</span><span>Kontingent</span></a>
+          <a href="#" data-page="berichte"><span class="icon">⊞</span><span>Berichte/PDF</span></a>
+          
+          <div class="nav-section">System</div>
+          <a href="#" data-page="kunden"><span class="icon">⊕</span><span>Kunden</span></a>
+          <a href="#" data-page="protokoll"><span class="icon">⊙</span><span>Protokoll</span></a>
         </nav>
-        <main class="main" id="content"></main>
-      </div>`;
-
-    document.querySelectorAll('.nav-item[data-p]').forEach(el => { el.onclick = () => this.go(el.dataset.p); });
-    document.getElementById('logout-btn').onclick = async() => { await this.api('/api/auth/logout',{method:'POST'}); this.user=null; this.loginPage(); };
-    this.loadPage();
-  },
-
-  async loadPage() {
-    const el = document.getElementById('content');
-    switch(this.page) {
-      case 'dashboard': return this.pgDash(el);
-      case 'suche': return this.pgSuche(el);
-      case 'einlagern': return this.pgEinlagern(el);
-      case 'auslagern': return this.pgAuslagern(el);
-      case 'lagerplan': return this.pgLagerplan(el);
-      case 'berichte': return this.pgBerichte(el);
-      case 'protokoll': return this.pgProtokoll(el);
-    }
-  },
-
-  // ═══════ DASHBOARD ═══════
-  async pgDash(el) {
-    const [stats, bereiche] = await Promise.all([
-      this.api('/api/dashboard/stats'),
-      this.api('/api/dashboard/belegung-bereiche')
-    ]);
-    if (!stats) { el.innerHTML = '<p>Fehler beim Laden</p>'; return; }
-
-    const pct = stats.belegungProzent;
-    const lvl = pct > 90 ? 'high' : pct > 70 ? 'mid' : 'low';
-
-    el.innerHTML = `
-      <div class="page-header">
-        <h1>Dashboard</h1>
-        <div class="meta"><span>${new Date().toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><div class="avatar">${(this.user?.vollname||'?')[0]}</div></div>
-      </div>
-
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-icon crit"><i class="fas fa-tachometer-alt"></i></div><div><div class="stat-val">${pct}%</div><div class="stat-label">Auslastung</div></div></div>
-        <div class="stat-card"><div class="stat-icon warn"><i class="fas fa-pallet"></i></div><div><div class="stat-val">${stats.totalPlaetze.toLocaleString('de')}</div><div class="stat-label">Plätze gesamt</div></div></div>
-        <div class="stat-card"><div class="stat-icon ok"><i class="fas fa-check"></i></div><div><div class="stat-val">${stats.freiePlaetze}</div><div class="stat-label">Frei verfügbar</div></div></div>
-        <div class="stat-card"><div class="stat-icon info"><i class="fas fa-file-alt"></i></div><div><div class="stat-val">${stats.kontingent?.kontingent_plaetze||642}</div><div class="stat-label">Kontingent PPH</div></div></div>
-      </div>
-
-      <div class="capacity">
-        <div class="capacity-top"><h3>Gesamtbelegung</h3><span class="val ${lvl}">${pct}%</span></div>
-        <div class="bar"><div class="bar-fill ${lvl}" style="width:${pct}%"></div></div>
-        <div class="capacity-info"><span>${stats.belegtePlaetze.toLocaleString('de')} belegt</span><span>${stats.freiePlaetze} frei von ${stats.totalPlaetze.toLocaleString('de')}</span></div>
-      </div>
-
-      <div class="quick-grid">
-        <div class="q-card" data-p="suche"><i class="fas fa-search"></i><h4>EB-Nr. suchen</h4><p>Palette lokalisieren</p></div>
-        <div class="q-card" data-p="einlagern"><i class="fas fa-arrow-down"></i><h4>Einlagern</h4><p>Neue Palette</p></div>
-        <div class="q-card" data-p="auslagern"><i class="fas fa-arrow-up"></i><h4>Auslagern</h4><p>Beleg erstellen</p></div>
-        <div class="q-card" data-p="lagerplan"><i class="fas fa-map"></i><h4>Lagerplan</h4><p>Belegung</p></div>
-        <div class="q-card" data-p="berichte"><i class="fas fa-chart-bar"></i><h4>Berichte</h4><p>Kontingent</p></div>
-        <div class="q-card" data-p="protokoll"><i class="fas fa-list"></i><h4>Protokoll</h4><p>Verlauf</p></div>
-      </div>
-
-      ${bereiche?.length?`<div class="card"><div class="card-h"><h3>Belegung nach Bereich</h3></div><div class="card-b"><div class="bereich-grid">
-        ${bereiche.map(b => {
-          const p = Math.round(b.belegt/b.gesamt*100);
-          const c = p>95?'var(--danger)':p>80?'var(--accent)':'var(--success)';
-          return `<div class="bereich-card"><h4>${b.bereich}</h4><div class="mini-bar"><div class="mini-fill" style="width:${p}%;background:${c}"></div></div><div class="nums"><span>${b.belegt}/${b.gesamt}</span><span>${p}%</span></div></div>`;
-        }).join('')}
-      </div></div></div>`:''}
-    `;
-    el.querySelectorAll('.q-card[data-p]').forEach(c => { c.onclick = () => this.go(c.dataset.p); });
-  },
-
-  // ═══════ SUCHE ═══════
-  async pgSuche(el) {
-    el.innerHTML = `
-      <div class="page-header"><h1>Suche</h1></div>
-      <div class="search-box"><i class="fas fa-search ico"></i><input id="si" placeholder="EB-Nummer, Lagerplatz oder Kunde..." autofocus></div>
-      <div id="sr"></div>`;
-    let timer;
-    document.getElementById('si').oninput = () => {
-      clearTimeout(timer);
-      timer = setTimeout(async() => {
-        const q = document.getElementById('si').value.trim();
-        if (!q) { document.getElementById('sr').innerHTML = ''; return; }
-        const r = await this.api(`/api/paletten/suche?q=${encodeURIComponent(q)}`);
-        if (!r?.length) { document.getElementById('sr').innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted)">Keine Treffer für "${q}"</div>`; return; }
-        document.getElementById('sr').innerHTML = `<div class="card"><div class="card-h"><h3>${r.length} Ergebnis${r.length>1?'se':''}</h3></div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>EB-Nr.</th><th>Platz</th><th>Kunde</th><th>Datum</th><th></th></tr></thead><tbody>${r.map(p=>`<tr><td><span class="eb">${p.eb_nummer}</span></td><td><span class="loc">${p.lagerplatz_bez||p.lagerplatz_bezeichnung||'-'}</span></td><td>${p.kunde_name||'-'}</td><td>${p.eingelagert_am?new Date(p.eingelagert_am).toLocaleDateString('de'):'-'}</td><td><button class="btn btn-sm btn-outline" onclick="App.detail(${p.id})"><i class="fas fa-eye"></i></button></td></tr>`).join('')}</tbody></table></div></div>`;
-      }, 250);
-    };
-  },
-
-  async detail(id) {
-    const p = await this.api(`/api/paletten/${id}`);
-    if (!p) return;
-    const d = document.createElement('div');
-    d.className = 'modal-bg';
-    d.innerHTML = `<div class="modal-box"><div class="modal-top"><h3>Palette ${p.eb_nummer}</h3><button class="modal-close" onclick="this.closest('.modal-bg').remove()">&times;</button></div><div class="modal-body">
-      <div class="field-row"><div class="field"><label>EB-Nummer</label><input value="${p.eb_nummer}" readonly></div><div class="field"><label>Lagerplatz</label><input value="${p.lagerplatz_bezeichnung||'-'}" readonly></div></div>
-      <div class="field-row"><div class="field"><label>Kunde</label><input value="${p.kunde_name||'Panpharma'}" readonly></div><div class="field"><label>Eingelagert</label><input value="${p.eingelagert_am?new Date(p.eingelagert_am).toLocaleDateString('de'):'-'}" readonly></div></div>
-    </div><div class="modal-footer"><button class="btn btn-primary" onclick="window.open('/api/berichte/auslagerungsbeleg?eb=${p.eb_nummer}&platz=${encodeURIComponent(p.lagerplatz_bezeichnung||'')}&kunde=${encodeURIComponent(p.kunde_name||'Panpharma')}');this.closest('.modal-bg').remove()"><i class="fas fa-file-pdf"></i> Auslagerungsbeleg</button></div></div>`;
-    document.body.appendChild(d);
-    d.onclick = (e) => { if(e.target===d) d.remove(); };
-  },
-
-  // ═══════ EINLAGERN ═══════
-  async pgEinlagern(el) {
-    const freie = await this.api('/api/lagerplaetze?belegt=0&limit=50');
-    el.innerHTML = `
-      <div class="page-header"><h1>Einlagern</h1></div>
-      <div class="two-col">
-        <div class="card"><div class="card-h"><h3>Neue Palette</h3></div><div class="card-b">
-          <form id="ef">
-            <div class="field-row"><div class="field"><label>EB-Nummer *</label><input id="e-eb" placeholder="z.B. 655564" required></div><div class="field"><label>Lagerplatz *</label><input id="e-pl" placeholder="z.B. C12" required></div></div>
-            <div class="field-row"><div class="field"><label>Artikel-Nr.</label><input id="e-art"></div><div class="field"><label>Chargen-Nr.</label><input id="e-ch"></div></div>
-            <div class="field"><label>Bemerkung</label><input id="e-bem"></div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Einlagern</button>
-          </form>
-        </div></div>
-        <div class="card"><div class="card-h"><h3>Freie Plätze</h3><span style="font-size:12px;color:var(--text-muted)">${freie?.length||0} verfügbar</span></div><div style="max-height:380px;overflow-y:auto">
-          <table class="tbl"><thead><tr><th>Platz</th><th>Regal</th><th>Ebene</th></tr></thead><tbody>
-          ${(freie||[]).map(f=>`<tr style="cursor:pointer" onclick="document.getElementById('e-pl').value='${f.bezeichnung}'"><td><span class="loc">${f.bezeichnung}</span></td><td>${f.regal}</td><td>${f.ebene}</td></tr>`).join('')}
-          </tbody></table>
-        </div></div>
-      </div>`;
-    document.getElementById('ef').onsubmit = async(e) => {
-      e.preventDefault();
-      const r = await this.api('/api/einlagerung', { method:'POST', body: JSON.stringify({ eb_nummer:document.getElementById('e-eb').value.trim(), lagerplatz:document.getElementById('e-pl').value.trim(), artikel_nr:document.getElementById('e-art').value.trim(), chargen_nr:document.getElementById('e-ch').value.trim(), bemerkung:document.getElementById('e-bem').value.trim() })});
-      if (r?.success) { this.toast('Eingelagert: '+r.lagerplatz,'success'); this.pgEinlagern(el); }
-      else this.toast(r?.error||'Fehler','error');
-    };
-  },
-
-  // ═══════ AUSLAGERN ═══════
-  async pgAuslagern(el) {
-    const abruf = await this.api('/api/bewegungen/abrufliste');
-    el.innerHTML = `
-      <div class="page-header"><h1>Auslagern</h1><button class="btn btn-primary" onclick="App.neuerAbruf()"><i class="fas fa-plus"></i> Neuer Abruf</button></div>
-      <div class="card"><div class="card-h"><h3>Abrufliste</h3><span style="font-size:12px;color:var(--text-muted)">${abruf?.length||0} Positionen</span><button class="btn btn-sm btn-dark" onclick="window.open('/api/berichte/abrufbeleg')"><i class="fas fa-print"></i> Beleg</button></div><div style="overflow-x:auto">
-        ${abruf?.length?`<table class="tbl"><thead><tr><th>#</th><th>EB-Nr.</th><th>Platz</th><th>LKW</th></tr></thead><tbody>${abruf.map(a=>`<tr><td>${a.lfd_nummer||'-'}</td><td><span class="eb">${a.eb_nummer}</span></td><td><span class="loc">${a.lagerplatz||'-'}</span></td><td>${a.lkw||'-'}</td></tr>`).join('')}</tbody></table>`:`<div style="padding:32px;text-align:center;color:var(--text-muted)">Keine offenen Abrufe</div>`}
-      </div></div>`;
-  },
-
-  neuerAbruf() {
-    const d = document.createElement('div');
-    d.className = 'modal-bg';
-    d.innerHTML = `<div class="modal-box"><div class="modal-top"><h3>Palette auslagern</h3><button class="modal-close" onclick="this.closest('.modal-bg').remove()">&times;</button></div><div class="modal-body">
-      <form id="af"><div class="field"><label>EB-Nummer</label><input id="a-eb" placeholder="EB-Nummer" required autofocus></div><div class="field"><label>Bemerkung</label><input id="a-bem"></div>
-      <div style="display:flex;gap:8px"><button type="submit" class="btn btn-primary"><i class="fas fa-arrow-up"></i> Auslagern</button><button type="button" class="btn btn-dark" onclick="const eb=document.getElementById('a-eb').value;if(eb)window.open('/api/berichte/auslagerungsbeleg?eb='+eb)"><i class="fas fa-file-pdf"></i> Beleg</button></div></form>
-    </div></div>`;
-    document.body.appendChild(d);
-    d.onclick = (e) => { if(e.target===d) d.remove(); };
-    document.getElementById('af').onsubmit = async(e) => {
-      e.preventDefault();
-      const eb = document.getElementById('a-eb').value.trim();
-      const r = await this.api('/api/auslagerung', { method:'POST', body: JSON.stringify({ eb_nummer:eb, bemerkung:document.getElementById('a-bem').value.trim() })});
-      if (r?.success) { document.querySelector('.modal-bg').remove(); this.toast(`${eb} ausgelagert`,'success'); this.pgAuslagern(document.getElementById('content')); }
-      else this.toast(r?.error||'Nicht gefunden','error');
-    };
-  },
-
-  // ═══════ LAGERPLAN ═══════
-  async pgLagerplan(el) {
-    const bereiche = await this.api('/api/dashboard/belegung-bereiche');
-    const regale = ['A','B','C','D','E','F'];
-    
-    el.innerHTML = `
-      <div class="page-header"><h1>Lagerplan</h1></div>
-      <div class="stats-row">
-        ${(bereiche||[]).filter(b=>b.bereich.startsWith('Regal')).map(b => {
-          const p = Math.round(b.belegt/b.gesamt*100);
-          const cls = p>95?'crit':p>80?'warn':'ok';
-          return `<div class="stat-card"><div class="stat-icon ${cls}"><i class="fas fa-grip-vertical"></i></div><div><div class="stat-val">${p}%</div><div class="stat-label">${b.bereich} (${b.belegt}/${b.gesamt})</div></div></div>`;
-        }).join('')}
-      </div>
-      <div class="card" style="margin-bottom:16px"><div class="card-h"><h3>Regal auswählen</h3></div><div class="card-b" style="display:flex;gap:8px;flex-wrap:wrap">
-        ${regale.map(r=>`<button class="btn btn-outline regal-btn" data-r="${r}" style="min-width:60px">Regal ${r}</button>`).join('')}
-        <button class="btn btn-outline regal-btn" data-r="Block" style="min-width:80px">Blocklager</button>
-      </div></div>
-      <div id="lp-grid"></div>
-    `;
-    el.querySelectorAll('.regal-btn').forEach(b => {
-      b.onclick = () => {
-        el.querySelectorAll('.regal-btn').forEach(x=>x.classList.remove('btn-primary','btn-outline'));
-        b.classList.remove('btn-outline'); b.classList.add('btn-primary');
-        this.loadRegalGrid(b.dataset.r);
-      };
-    });
-    el.querySelector('.regal-btn').click();
-  },
-
-  async loadRegalGrid(regal) {
-    const grid = document.getElementById('lp-grid');
-    grid.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Laden...</div>';
-    
-    let data;
-    if (regal === 'Block') {
-      data = await this.api('/api/lagerplaetze?bereich=Blocklager Halle 1&limit=300');
-      const data2 = await this.api('/api/lagerplaetze?bereich=Blocklager Halle 2&limit=300');
-      if (data2) data = (data||[]).concat(data2);
-    } else {
-      data = await this.api(`/api/lagerplaetze?regal=${regal}&limit=500`);
-    }
-    if (!data||!data.length) { grid.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Keine Plätze</div>'; return; }
-
-    const positions = {};
-    for (const p of data) {
-      const key = p.position;
-      if (!positions[key]) positions[key] = [];
-      positions[key].push(p);
-    }
-
-    const posKeys = Object.keys(positions).map(Number).sort((a,b)=>a-b);
-    const belegt = data.filter(d=>d.belegt).length;
-    const frei = data.length - belegt;
-    const pct = Math.round(belegt/data.length*100);
-
-    grid.innerHTML = `
-      <div class="card"><div class="card-h"><h3>${regal==='Block'?'Blocklager':'Regal '+regal}</h3><span style="font-size:12px;color:var(--text-muted)">${belegt} belegt / ${frei} frei (${pct}%)</span></div>
-      <div class="card-b">
-        <div style="display:flex;gap:6px;margin-bottom:12px;font-size:11px;color:var(--text-muted)">
-          <span><span style="display:inline-block;width:12px;height:12px;background:var(--danger);border-radius:3px;vertical-align:middle"></span> Belegt (EB)</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:3px;vertical-align:middle"></span> Belegt (ohne EB)</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:var(--success);border-radius:3px;vertical-align:middle"></span> Frei</span>
+        <div class="sidebar-footer">
+          <div class="user-name">${currentUser.vollname}</div>
+          <button onclick="doLogout()">Abmelden</button>
         </div>
-        <div class="lp-visual" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:3px;">
-          ${posKeys.map(pos => {
-            const slots = positions[pos];
-            return slots.map(s => {
-              let color = 'var(--success)';
-              let title = s.bezeichnung + ' – FREI';
-              if (s.belegt && s.eb_nummer) { color = '#c0392b'; title = s.bezeichnung + ' – ' + s.eb_nummer; }
-              else if (s.belegt) { color = 'var(--accent)'; title = s.bezeichnung + ' – belegt'; }
-              return `<div class="lp-cell" data-id="${s.id}" style="width:100%;aspect-ratio:1;background:${color};border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600;opacity:0.9;transition:opacity 0.1s" title="${title}">${s.position}${s.unter_position||''}</div>`;
-            }).join('');
-          }).join('')}
-        </div>
-      </div></div>
-    `;
+      </aside>
+      <main class="main-content" id="page-content"></main>
+    </div>`;
+  
+  document.querySelectorAll('.sidebar a[data-page]').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); navigate(a.dataset.page); });
+  });
+  navigate('dashboard');
+}
 
-    grid.querySelectorAll('.lp-cell').forEach(cell => {
-      cell.onmouseenter = () => cell.style.opacity='1';
-      cell.onmouseleave = () => cell.style.opacity='0.9';
-      cell.onclick = () => this.showPlatzDetail(parseInt(cell.dataset.id));
-    });
-  },
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.sidebar a[data-page="${page}"]`)?.classList.add('active');
+  const fn = pages[page];
+  if (fn) fn();
+}
 
-  async showPlatzDetail(id) {
-    const resp = await this.api(`/api/lagerplaetze/${id}`);
-    if (!resp) return;
-    const platz = resp;
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  currentUser = null;
+  renderLogin();
+}
 
-    let content = `
-      <div class="field-row"><div class="field"><label>Platz</label><input value="${platz.bezeichnung}" readonly></div><div class="field"><label>Regal / Bereich</label><input value="${platz.bereich}" readonly></div></div>
-      <div class="field-row"><div class="field"><label>Ebene</label><input value="${platz.ebene}" readonly></div><div class="field"><label>Status</label><input value="${platz.belegt?'Belegt':'Frei'}" readonly></div></div>
-    `;
+// ─── PAGES ───────────────────────────────────────────────────────────────────
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
 
-    if (platz.eb_nummer) {
-      content += `<div class="field-row"><div class="field"><label>EB-Nummer</label><input value="${platz.eb_nummer}" readonly style="font-weight:700;background:#fef9e7"></div><div class="field"><label>Kunde</label><input value="${platz.kunde_name||'Panpharma'}" readonly></div></div>`;
-      
-      const paletten = await this.api(`/api/paletten/suche?q=${platz.eb_nummer}`);
-      const pal = paletten?.[0];
-      if (pal?.artikel_nr) content += `<div class="field"><label>Artikel-Nr.</label><input value="${pal.artikel_nr}" readonly></div>`;
-      if (pal?.chargen_nr) content += `<div class="field"><label>Chargen-Nr.</label><input value="${pal.chargen_nr}" readonly></div>`;
-      if (pal?.eingelagert_am) content += `<div class="field"><label>Eingelagert am</label><input value="${new Date(pal.eingelagert_am).toLocaleDateString('de')}" readonly></div>`;
-    }
-
-    const d = document.createElement('div');
-    d.className = 'modal-bg';
-    d.innerHTML = `<div class="modal-box"><div class="modal-top"><h3>Platz ${platz.bezeichnung}</h3><button class="modal-close" onclick="this.closest('.modal-bg').remove()">&times;</button></div><div class="modal-body">${content}</div>
-    ${platz.eb_nummer?`<div class="modal-footer"><button class="btn btn-primary" onclick="window.open('/api/berichte/auslagerungsbeleg?eb=${platz.eb_nummer}&platz=${encodeURIComponent(platz.bezeichnung)}&kunde=${encodeURIComponent(platz.kunde_name||'Panpharma')}');this.closest('.modal-bg').remove()"><i class="fas fa-file-pdf"></i> Auslagerungsbeleg</button></div>`:''}</div>`;
-    document.body.appendChild(d);
-    d.onclick = (e) => { if(e.target===d) d.remove(); };
-  },
-
-  // ═══════ BERICHTE ═══════
-  async pgBerichte(el) {
-    const [stats, kont] = await Promise.all([
-      this.api('/api/dashboard/stats'),
-      this.api('/api/dashboard/kontingent-verlauf')
-    ]);
-    el.innerHTML = `
-      <div class="page-header"><h1>Berichte</h1></div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-icon info"><i class="fas fa-file-alt"></i></div><div><div class="stat-val">${stats?.kontingent?.kontingent_plaetze||642}</div><div class="stat-label">Kontingent</div></div></div>
-        <div class="stat-card"><div class="stat-icon warn"><i class="fas fa-warehouse"></i></div><div><div class="stat-val">${stats?.kontingent?.lagerbestand||'-'}</div><div class="stat-label">Bestand</div></div></div>
-        <div class="stat-card"><div class="stat-icon ok"><i class="fas fa-plus"></i></div><div><div class="stat-val">${stats?.kontingent?.verfuegbar||'-'}</div><div class="stat-label">Verfügbar</div></div></div>
-        <div class="stat-card"><div class="stat-icon crit"><i class="fas fa-exchange-alt"></i></div><div><div class="stat-val">${stats?.kontingent?.bewegungen_gesamt||'-'}</div><div class="stat-label">Bewegungen</div></div></div>
+// ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
+async function pgDashboard() {
+  const d = await api('/api/dashboard');
+  const pc = document.getElementById('page-content');
+  const pct = d.auslastung;
+  const barClass = pct > 90 ? 'red' : pct > 70 ? 'yellow' : 'green';
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Dashboard</h1></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Lagerplätze</div><div class="value">${d.plaetze_gesamt}</div><div class="sub">${d.plaetze_belegt} belegt · ${d.plaetze_frei} frei</div></div>
+      <div class="stat-card ${pct > 90 ? 'warning' : ''}"><div class="label">Auslastung</div><div class="value">${pct}%</div><div class="progress-bar"><div class="fill ${barClass}" style="width:${pct}%"></div></div></div>
+      <div class="stat-card"><div class="label">Aktive Paletten</div><div class="value">${d.paletten_aktiv}</div><div class="sub">mit Paletten-Nr.</div></div>
+      <div class="stat-card"><div class="label">Offene Abrufe</div><div class="value">${d.offene_abrufe}</div><div class="sub">Pickliste ausstehend</div></div>
+      <div class="stat-card"><div class="label">Bewegungen (30T)</div><div class="value">${d.bewegungen_30d}</div><div class="sub">Ein-/Auslagerungen</div></div>
+      <div class="stat-card"><div class="label">Kunden aktiv</div><div class="value">${d.kunden_aktiv}</div></div>
+    </div>
+    ${d.kontingent ? `
+    <div class="card">
+      <div class="card-header"><h3>Kontingent Panpharma</h3><span class="badge badge-warning">${d.kontingent.monat}</span></div>
+      <div class="form-row">
+        <div><strong>Stellplätze:</strong> ${d.kontingent.kontingent_plaetze}</div>
+        <div><strong>Bestand:</strong> ${d.kontingent.lagerbestand}</div>
+        <div><strong>Überkapazität:</strong> ${d.kontingent.saldo_ueberkapazitaet || 0}</div>
+        <div><strong>Bewegungen:</strong> ${d.kontingent.bewegungen_gesamt}</div>
       </div>
-      <div class="card"><div class="card-h"><h3>Kontingent-Verlauf</h3></div><div style="overflow-x:auto;max-height:450px;overflow-y:auto">
-        ${kont?.length?`<table class="tbl"><thead><tr><th>Monat</th><th>Bestand</th><th>Kontingent</th><th>Einlag.</th><th>Auslag.</th><th>Bew.</th></tr></thead><tbody>${kont.slice().reverse().map(k=>`<tr><td><strong>${k.monat}</strong></td><td>${k.lagerbestand||'-'}</td><td>${k.kontingent_plaetze||'-'}</td><td>${k.einlagerungen||'-'}</td><td>${k.auslagerungen||'-'}</td><td>${k.bewegungen_gesamt||'-'}</td></tr>`).join('')}</tbody></table>`:'<p style="padding:20px;color:var(--text-muted)">Keine Daten</p>'}
-      </div></div>`;
-  },
+    </div>` : ''}
+    <div class="card">
+      <div class="card-header"><h3>Bereiche</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Bereich</th><th>Gesamt</th><th>Belegt</th><th>Frei</th><th>%</th></tr></thead><tbody>
+        ${d.bereiche.map(b => `<tr><td>${b.bereich}</td><td>${b.gesamt}</td><td>${b.belegt}</td><td>${b.gesamt - b.belegt}</td><td>${Math.round(b.belegt / b.gesamt * 100)}%</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
 
-  // ═══════ PROTOKOLL ═══════
-  async pgProtokoll(el) {
-    const data = await this.api('/api/protokoll?limit=100');
-    const log = data?.rows || data || [];
-    el.innerHTML = `
-      <div class="page-header"><h1>Protokoll</h1></div>
-      <div class="card"><div style="overflow-x:auto;max-height:600px;overflow-y:auto">
-        <table class="tbl"><thead><tr><th>Zeit</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
-        ${log.map(l=>`<tr><td style="white-space:nowrap;font-size:12px">${l.zeitstempel?new Date(l.zeitstempel).toLocaleString('de'):'-'}</td><td><strong>${l.aktion}</strong></td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.details||'-'}</td><td>${l.benutzer||'-'}</td></tr>`).join('')}
-        </tbody></table>
-      </div></div>`;
-  },
-};
+// ═══ SUCHE ═══════════════════════════════════════════════════════════════════
+async function pgSuche() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Suche</h1></div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Paletten-Nr., Artikel, Charge oder Lagerplatz eingeben…" autofocus>
+      <select id="search-typ">
+        <option value="">Überall</option>
+        <option value="artikel">Artikel-Nr.</option>
+        <option value="charge">Chargen-Nr.</option>
+        <option value="lagerplatz">Lagerplatz</option>
+      </select>
+      <button class="btn btn-primary" onclick="doSearch()">Suchen</button>
+    </div>
+    <div id="search-results"></div>`;
+  document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+}
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  const typ = document.getElementById('search-typ').value;
+  if (!q) return;
+  
+  const results = await api(`/api/paletten/suche?q=${encodeURIComponent(q)}&typ=${typ}`);
+  const box = document.getElementById('search-results');
+  
+  if (!results.length) { box.innerHTML = '<p style="color:var(--text-muted);padding:20px">Keine Ergebnisse gefunden.</p>'; return; }
+  
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-header"><h3>${results.length} Ergebnis${results.length !== 1 ? 'se' : ''}</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Typ</th><th>Lagerplatz</th><th>Artikel</th><th>Charge</th><th>Kunde</th><th>Aktion</th></tr></thead><tbody>
+        ${results.map(r => `<tr>
+          <td><strong>${r.paletten_nr || r.bezeichnung || '—'}</strong></td>
+          <td><span class="badge badge-${(r.nummern_typ || '').toLowerCase() === 'eb' ? 'eb' : 'kw'}">${r.nummern_typ || '—'}</span></td>
+          <td>${r.platz || r.bezeichnung || '—'}</td>
+          <td>${r.artikel_nr || '—'}</td>
+          <td>${r.chargen_nr || '—'}</td>
+          <td>${r.kunde_name || '—'}</td>
+          <td>
+            ${r.paletten_nr ? `<button class="btn btn-sm btn-secondary" onclick="editPalette(${r.id})">✎</button>` : ''}
+            ${r.paletten_nr ? `<a class="btn btn-sm btn-primary" href="/api/berichte/auslagerungsbeleg/${r.paletten_nr}" target="_blank">PDF</a>` : ''}
+          </td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+// ═══ EINLAGERUNG ═════════════════════════════════════════════════════════════
+async function pgEinlagerung() {
+  const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Einlagerung</h1></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Neue Palette einlagern</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kunde *</label>
+          <select id="einl-kunde" onchange="einlKundeChange()">
+            ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}" data-format="${k.nummern_format || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
+          <input type="text" id="einl-nr" placeholder="z.B. 654321 oder KW...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Lagerplatz * <button class="btn btn-sm btn-secondary" onclick="showFreiePlaetze()" style="margin-left:8px">Freie anzeigen</button></label>
+          <input type="text" id="einl-platz" placeholder="z.B. A42, BL-H2-A1003">
+        </div>
+        <div class="form-group">
+          <label>Menge</label>
+          <input type="number" id="einl-menge" value="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Artikel-Nr.</label>
+          <input type="text" id="einl-artikel" placeholder="Optional">
+        </div>
+        <div class="form-group">
+          <label>Chargen-Nr.</label>
+          <input type="text" id="einl-charge" placeholder="z.B. CETV12345">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Bemerkung</label>
+        <textarea id="einl-bemerkung" rows="2" placeholder="Optional"></textarea>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="doEinlagern()">Einlagern</button>
+    </div>
+    <div id="freie-plaetze-box"></div>`;
+  
+  einlKundeChange();
+}
+
+async function einlKundeChange() {
+  const sel = document.getElementById('einl-kunde');
+  const opt = sel.options[sel.selectedIndex];
+  const hint = document.getElementById('einl-format-hint');
+  const prefix = opt.dataset.prefix;
+  const format = opt.dataset.format;
+  hint.textContent = format ? `(${format})` : '';
+  
+  if (prefix === 'EB') {
+    const r = await api(`/api/einlagerung/naechste-nr?kunde_id=${sel.value}`);
+    document.getElementById('einl-nr').placeholder = `Nächste: ${r.naechste}`;
+  }
+}
+
+async function showFreiePlaetze() {
+  const plaetze = await api('/api/einlagerung/freie-plaetze');
+  const box = document.getElementById('freie-plaetze-box');
+  box.innerHTML = `<div class="card"><div class="card-header"><h3>${plaetze.length} freie Plätze</h3><button class="btn btn-sm btn-secondary" onclick="this.closest('.card').remove()">Schließen</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Platz</th><th>Regal</th><th>Pos.</th><th>Bereich</th><th>Ebene</th></tr></thead><tbody>
+    ${plaetze.slice(0, 50).map(p => `<tr onclick="document.getElementById('einl-platz').value='${p.bezeichnung}';this.closest('.card').remove()" style="cursor:pointer"><td><strong>${p.bezeichnung}</strong></td><td>${p.regal}</td><td>${p.position}</td><td>${p.bereich}</td><td>${p.ebene}</td></tr>`).join('')}
+    ${plaetze.length > 50 ? `<tr><td colspan="5" style="color:var(--text-muted)">… und ${plaetze.length - 50} weitere</td></tr>` : ''}
+    </tbody></table></div></div>`;
+}
+
+async function doEinlagern() {
+  try {
+    const data = await api('/api/einlagerung', { method: 'POST', body: {
+      paletten_nr: document.getElementById('einl-nr').value.trim(),
+      kunde_id: document.getElementById('einl-kunde').value,
+      lagerplatz: document.getElementById('einl-platz').value.trim(),
+      artikel_nr: document.getElementById('einl-artikel').value.trim() || null,
+      chargen_nr: document.getElementById('einl-charge').value.trim() || null,
+      menge: parseInt(document.getElementById('einl-menge').value) || 1,
+      bemerkung: document.getElementById('einl-bemerkung').value.trim() || null
+    }});
+    toast(data.message, 'success');
+    pgEinlagerung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ AUSLAGERUNG ═════════════════════════════════════════════════════════════
+function pgAuslagerung() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Auslagerung</h1></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Einzelauslagerung</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Paletten-Nr.</label>
+          <input type="text" id="ausl-nr" placeholder="EB- oder KW-Nummer">
+        </div>
+        <div class="form-group">
+          <label>Bemerkung</label>
+          <input type="text" id="ausl-bem" placeholder="Optional">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doAuslagern()">Auslagern + Beleg</button>
+    </div>`;
+}
+
+async function doAuslagern() {
+  try {
+    const nr = document.getElementById('ausl-nr').value.trim();
+    const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung: document.getElementById('ausl-bem').value.trim() } });
+    toast(data.message, 'success');
+    window.open(`/api/berichte/auslagerungsbeleg/${nr}`, '_blank');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ PICKLISTE ═══════════════════════════════════════════════════════════════
+async function pgPickliste() {
+  const pc = document.getElementById('page-content');
+  const aktuell = await api('/api/pickliste/aktuell');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Pickliste / Abruf</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neue Pickliste</button></div></div>
+    <div class="tabs">
+      <button class="active" onclick="showPickTab('tablet')">Tablet-Ansicht</button>
+      <button onclick="showPickTab('liste')">Listenansicht</button>
+    </div>
+    <div id="pick-content">
+      ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine aktive Pickliste vorhanden.</p>' :
+      aktuell.map(item => `
+        <div class="picklist-item ${item.abgehakt ? 'done' : ''}" data-nr="${item.paletten_nr}">
+          <div class="check" onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')">${item.abgehakt ? '✓' : ''}</div>
+          <div class="nr">${item.paletten_nr}</div>
+          <div class="platz">${item.aktueller_platz || item.lagerplatz || '?'}</div>
+          <div class="info">${item.lkw || ''} · Pos. ${item.lfd_nummer}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+async function togglePickItem(el, abrufId, nr) {
+  const item = el.closest('.picklist-item');
+  const done = !item.classList.contains('done');
+  item.classList.toggle('done');
+  el.textContent = done ? '✓' : '';
+  await api('/api/pickliste/abhaken', { method: 'POST', body: { abruf_id: abrufId, paletten_nr: nr, abgehakt: done } });
+}
+
+function showNeuePickliste() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Neue Pickliste erstellen</h2>
+      <div class="form-group">
+        <label>Paletten-Nummern (eine pro Zeile)</label>
+        <textarea id="pick-nummern" rows="8" placeholder="654321&#10;654322&#10;654323"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Abruf-ID</label><input type="text" id="pick-abruf" placeholder="z.B. 2026/149-1"></div>
+        <div class="form-group"><label>LKW-Kapazität</label><input type="number" id="pick-kap" value="17"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="erstellePickliste()">Erstellen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function erstellePickliste() {
+  const nummern = document.getElementById('pick-nummern').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const abruf = document.getElementById('pick-abruf').value.trim();
+  const kap = parseInt(document.getElementById('pick-kap').value) || 17;
+  
+  try {
+    const data = await api('/api/pickliste/erstellen', { method: 'POST', body: { paletten_nummern: nummern, abruf_id: abruf, lkw_split: kap } });
+    document.querySelector('.modal-overlay')?.remove();
+    
+    const pc = document.getElementById('pick-content');
+    let html = `<div class="card"><div class="card-header"><h3>Pickliste: ${nummern.length} Paletten · ${data.lkw_anzahl} LKW</h3>
+      <button class="btn btn-sm btn-primary" onclick="picklistePDF()">PDF drucken</button></div>`;
+    
+    let lastLkw = '';
+    for (const item of data.items) {
+      if (item.lkw !== lastLkw) { html += `<div style="margin:12px 0 6px;font-weight:600;color:var(--info)">${item.lkw}</div>`; lastLkw = item.lkw; }
+      html += `<div class="picklist-item"><div class="check"></div><div class="nr">${item.paletten_nr}</div><div class="platz">${item.lagerplatz}</div><div class="info">${item.bereich} · ${item.artikel_nr || ''}</div></div>`;
+    }
+    html += '</div>';
+    pc.innerHTML = html;
+    
+    window._lastPickliste = data;
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function picklistePDF() {
+  if (!window._lastPickliste) return;
+  const form = document.createElement('form');
+  form.method = 'POST'; form.action = '/api/pickliste/pdf'; form.target = '_blank';
+  const input = document.createElement('input');
+  input.type = 'hidden'; input.name = 'data';
+  input.value = JSON.stringify(window._lastPickliste);
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit(); form.remove();
+}
+
+// ═══ MUSTERUNG ═══════════════════════════════════════════════════════════════
+async function pgMusterung() {
+  const pc = document.getElementById('page-content');
+  const muster = await api('/api/musterung');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Musterung</h1></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Neuen Musterzug anlegen</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Ein Tray/Muster wird aus der Palette entnommen. Es wird eine Handling-Gebühr erhoben.</p>
+      <div class="form-row-3">
+        <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="must-nr" placeholder="EB/KW-Nr."></div>
+        <div class="form-group"><label>Menge</label><input type="text" id="must-menge" value="1 Tray"></div>
+        <div class="form-group"><label>Bemerkung</label><input type="text" id="must-bem" placeholder="Optional"></div>
+      </div>
+      <button class="btn btn-primary" onclick="doMusterung()">Musterzug + Handling-Gebühr</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Bisherige Musterzüge (${muster.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Menge</th><th>Kunde</th><th>Datum</th></tr></thead><tbody>
+        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td>${m.paletten_nr}</td><td>${m.menge}</td><td>${m.kunde_name || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleDateString('de-DE') : '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+async function doMusterung() {
+  try {
+    const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: document.getElementById('must-menge').value.trim(), bemerkung: document.getElementById('must-bem').value.trim() } });
+    toast(data.message, 'success');
+    pgMusterung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ LAGERPLAN ═══════════════════════════════════════════════════════════════
+async function pgLagerplan() {
+  const pc = document.getElementById('page-content');
+  const uebersicht = await api('/api/lagerplaetze/plan/uebersicht');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Lagerplan</h1></div>
+    <div class="lagerplan-tabs" id="lp-tabs">
+      ${uebersicht.map(r => `<button onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei} frei)</small></button>`).join('')}
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:16px;font-size:12px">
+        <span><span style="display:inline-block;width:14px;height:14px;background:#e74c3c;border-radius:3px;vertical-align:middle"></span> Belegt (mit Nr.)</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#f39c12;border-radius:3px;vertical-align:middle"></span> Belegt (ohne Nr.)</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#95a5a6;border-radius:3px;vertical-align:middle"></span> Gesperrt/x</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#2ecc71;border-radius:3px;vertical-align:middle"></span> Frei</span>
+      </div>
+    </div>
+    <div id="lp-grid" class="card"></div>`;
+  
+  if (uebersicht.length) loadRegal(uebersicht[0].regal);
+}
+
+async function loadRegal(regal) {
+  document.querySelectorAll('.lagerplan-tabs button').forEach(b => b.classList.remove('active'));
+  const btns = document.querySelectorAll('.lagerplan-tabs button');
+  btns.forEach(b => { if (b.textContent.includes(regal)) b.classList.add('active'); });
+  
+  const plaetze = await api(`/api/lagerplaetze/plan/regal/${encodeURIComponent(regal)}`);
+  const grid = document.getElementById('lp-grid');
+  
+  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${plaetze.length} Plätze</h3></div>
+    <div class="lagerplan-grid">
+      ${plaetze.map(p => {
+        let cls = 'frei';
+        let label = p.position;
+        if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr.substring(0, 5); }
+        else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
+        else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
+        return `<div class="lagerplan-cell ${cls}" onclick="showPlatzDetail(${p.id})" title="${p.bezeichnung}">${label}</div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function showPlatzDetail(id) {
+  const p = await api(`/api/lagerplaetze/${id}`);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Lagerplatz ${p.bezeichnung}</h2>
+      <table style="width:100%;font-size:13px">
+        <tr><td style="color:var(--text-muted)">Bereich</td><td>${p.bereich}</td></tr>
+        <tr><td style="color:var(--text-muted)">Ebene</td><td>${p.ebene}</td></tr>
+        <tr><td style="color:var(--text-muted)">Typ</td><td>${p.typ}</td></tr>
+        <tr><td style="color:var(--text-muted)">Stapelbar</td><td>${p.stapelbar ? 'Ja (.a/.b)' : 'Nein'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Status</td><td>${p.belegt ? '<span class="badge badge-danger">Belegt</span>' : '<span class="badge badge-success">Frei</span>'}</td></tr>
+        ${p.paletten_nr ? `
+        <tr><td colspan="2" style="padding-top:12px"><strong>Palette</strong></td></tr>
+        <tr><td style="color:var(--text-muted)">Paletten-Nr.</td><td><strong>${p.paletten_nr}</strong> <span class="badge badge-${p.nummern_typ === 'EB' ? 'eb' : 'kw'}">${p.nummern_typ}</span></td></tr>
+        <tr><td style="color:var(--text-muted)">Artikel</td><td>${p.artikel_nr || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Charge</td><td>${p.chargen_nr || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Kunde</td><td>${p.kunde_name || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Eingelagert</td><td>${p.eingelagert_am ? new Date(p.eingelagert_am).toLocaleDateString('de-DE') : '—'}</td></tr>
+        ` : ''}
+        ${p.bemerkung ? `<tr><td style="color:var(--text-muted)">Bemerkung</td><td>${p.bemerkung}</td></tr>` : ''}
+      </table>
+      <div class="modal-actions">
+        ${p.paletten_nr ? `<a class="btn btn-primary" href="/api/berichte/auslagerungsbeleg/${p.paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// ═══ BEWEGUNGEN ══════════════════════════════════════════════════════════════
+async function pgBewegungen() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Bewegungen</h1></div>
+    <div class="card">
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group"><label>Von</label><input type="date" id="bew-von"></div>
+        <div class="form-group"><label>Bis</label><input type="date" id="bew-bis"></div>
+        <div class="form-group"><label>Typ</label>
+          <select id="bew-typ"><option value="">Alle</option><option value="Einlagerung">Einlagerung</option><option value="Auslagerung">Auslagerung</option><option value="Extra Handling">Extra Handling</option></select>
+        </div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadBewegungen()">Filtern</button></div>
+      </div>
+    </div>
+    <div id="bew-results"></div>`;
+  loadBewegungen();
+}
+
+async function loadBewegungen() {
+  const von = document.getElementById('bew-von')?.value || '';
+  const bis = document.getElementById('bew-bis')?.value || '';
+  const typ = document.getElementById('bew-typ')?.value || '';
+  
+  let url = '/api/bewegungen?kunde_id=1&limit=100';
+  if (von) url += `&von=${von}`;
+  if (bis) url += `&bis=${bis}`;
+  if (typ) url += `&typ=${encodeURIComponent(typ)}`;
+  
+  const data = await api(url);
+  const box = document.getElementById('bew-results');
+  
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-header"><h3>${data.total} Bewegungen</h3>
+        <div style="font-size:12px">${data.zusammenfassung.map(z => `${z.typ}: ${z.summe}`).join(' · ')}</div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Paletten</th><th>Abgerechnet</th><th></th></tr></thead><tbody>
+        ${data.bewegungen.map(b => `<tr>
+          <td>${b.datum ? new Date(b.datum).toLocaleDateString('de-DE') : '—'}</td>
+          <td><span class="badge badge-${b.typ === 'Einlagerung' ? 'success' : b.typ === 'Auslagerung' ? 'danger' : 'warning'}">${b.typ}</span></td>
+          <td>${b.anzahl}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.paletten_nummern || '—'}</td>
+          <td><input type="checkbox" ${b.abgerechnet ? 'checked' : ''} onchange="toggleAbrechnung(${b.id}, this.checked)"></td>
+          <td>${b.korrektur ? '<span class="badge badge-warning">Korrektur</span>' : ''}</td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+async function toggleAbrechnung(id, val) {
+  await api(`/api/bewegungen/${id}/abrechnung`, { method: 'PATCH', body: { abgerechnet: val } });
+}
+
+// ═══ KONTINGENT ══════════════════════════════════════════════════════════════
+async function pgKontingent() {
+  const pc = document.getElementById('page-content');
+  const data = await api('/api/kontingent/1');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Kontingent — ${data.kunde?.name || 'Panpharma'}</h1></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${data.kunde?.kontingent_plaetze || 642}</div><div class="sub">Stellplätze</div></div>
+      <div class="stat-card"><div class="label">Akt. Bestand</div><div class="value">${data.monate[0]?.lagerbestand || '—'}</div></div>
+      <div class="stat-card ${(data.monate[0]?.saldo_ueberkapazitaet || 0) > 0 ? 'warning' : ''}"><div class="label">Überkapazität</div><div class="value">${data.monate[0]?.saldo_ueberkapazitaet || 0}</div><div class="sub">zu berechnen</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Monatsverlauf</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Monat</th><th>Kontingent</th><th>Bestand</th><th>Einlag.</th><th>Auslag.</th><th>Bew.</th><th>Traffic</th><th>Überkapaz.</th></tr></thead><tbody>
+        ${data.monate.slice(0, 24).map(m => `<tr>
+          <td>${m.monat}</td><td>${m.kontingent_plaetze || '—'}</td><td>${m.lagerbestand || '—'}</td>
+          <td>${m.einlagerungen || 0}</td><td>${m.auslagerungen || 0}</td>
+          <td>${m.bewegungen_gesamt || 0}</td><td>${m.traffic_ratio ? (m.traffic_ratio * 100).toFixed(1) + '%' : '—'}</td>
+          <td>${m.saldo_ueberkapazitaet || 0}</td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+// ═══ BERICHTE / PDF ══════════════════════════════════════════════════════════
+function pgBerichte() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Berichte & PDF-Export</h1></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Monatsbericht (Abrechnungsdokument)</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen im Zeitraum — identisch zur Excel-Struktur.</p>
+      <div class="form-row-3">
+        <div class="form-group"><label>Von</label><input type="date" id="ber-von" value="2026-01-01"></div>
+        <div class="form-group"><label>Bis</label><input type="date" id="ber-bis" value="2026-01-31"></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genMonatsbericht()">PDF generieren</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Einzelbeleg</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="ber-nr" placeholder="z.B. 654321"></div>
+        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genEinzelbeleg()">Auslagerungsbeleg</button></div>
+      </div>
+    </div>`;
+}
+
+function genMonatsbericht() {
+  const von = document.getElementById('ber-von').value;
+  const bis = document.getElementById('ber-bis').value;
+  window.open(`/api/berichte/monatsbericht-pdf?kunde_id=1&von=${von}&bis=${bis}`, '_blank');
+}
+
+function genEinzelbeleg() {
+  const nr = document.getElementById('ber-nr').value.trim();
+  if (nr) window.open(`/api/berichte/auslagerungsbeleg/${nr}`, '_blank');
+}
+
+// ═══ KUNDEN ══════════════════════════════════════════════════════════════════
+async function pgKunden() {
+  const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Kunden</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuerKunde()">+ Neuer Kunde</button></div></div>
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Kürzel</th><th>Nr.-Prefix</th><th>Format</th><th>Kontingent</th><th>Ansprechpartner</th></tr></thead><tbody>
+        ${kunden.map(k => `<tr><td><strong>${k.name}</strong></td><td>${k.kuerzel || '—'}</td><td>${k.nummern_prefix || '—'}</td><td>${k.nummern_format || '—'}</td><td>${k.kontingent_plaetze || '—'}</td><td>${k.ansprechpartner || '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+function showNeuerKunde() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Neuer Kunde</h2>
+      <div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="nk-name"></div><div class="form-group"><label>Kürzel</label><input type="text" id="nk-kuerzel"></div></div>
+      <div class="form-row"><div class="form-group"><label>Nr.-Prefix</label><input type="text" id="nk-prefix" placeholder="z.B. EB, KW"></div><div class="form-group"><label>Format</label><input type="text" id="nk-format" placeholder="z.B. 6-stellig"></div></div>
+      <div class="form-group"><label>Kontingent (Stellplätze)</label><input type="number" id="nk-kont" value="0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveNeuerKunde()">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveNeuerKunde() {
+  try {
+    await api('/api/kunden', { method: 'POST', body: { name: document.getElementById('nk-name').value, kuerzel: document.getElementById('nk-kuerzel').value, nummern_prefix: document.getElementById('nk-prefix').value, nummern_format: document.getElementById('nk-format').value, kontingent_plaetze: parseInt(document.getElementById('nk-kont').value) || 0 } });
+    document.querySelector('.modal-overlay')?.remove();
+    toast('Kunde angelegt', 'success');
+    pgKunden();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ PROTOKOLL ═══════════════════════════════════════════════════════════════
+async function pgProtokoll() {
+  const pc = document.getElementById('page-content');
+  const logs = await api('/api/protokoll');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Protokoll</h1></div>
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th>Zeitstempel</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
+        ${logs.map(l => `<tr><td style="white-space:nowrap">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><strong>${l.aktion}</strong></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${l.details || ''}</td><td>${l.benutzer || '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+// ═══ PALETTE BEARBEITEN (Modal) ═══════════════════════════════════════════════
+async function editPalette(id) {
+  const p = await api(`/api/paletten/${id}`);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Palette bearbeiten</h2>
+      <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="ep-nr" value="${p.paletten_nr || ''}"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Lagerplatz</label><input type="text" id="ep-platz" value="${p.platz || p.lagerplatz_bezeichnung || ''}"></div>
+        <div class="form-group"><label>Menge</label><input type="number" id="ep-menge" value="${p.menge || 1}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Artikel-Nr.</label><input type="text" id="ep-artikel" value="${p.artikel_nr || ''}"></div>
+        <div class="form-group"><label>Chargen-Nr.</label><input type="text" id="ep-charge" value="${p.chargen_nr || ''}"></div>
+      </div>
+      <div class="form-group"><label>Bemerkung</label><textarea id="ep-bem" rows="2">${p.bemerkung || ''}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="savePalette(${id})">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function savePalette(id) {
+  try {
+    await api(`/api/paletten/${id}`, { method: 'PUT', body: {
+      paletten_nr: document.getElementById('ep-nr').value.trim(),
+      lagerplatz_bezeichnung: document.getElementById('ep-platz').value.trim(),
+      menge: parseInt(document.getElementById('ep-menge').value) || 1,
+      artikel_nr: document.getElementById('ep-artikel').value.trim() || null,
+      chargen_nr: document.getElementById('ep-charge').value.trim() || null,
+      bemerkung: document.getElementById('ep-bem').value.trim() || null
+    }});
+    document.querySelector('.modal-overlay')?.remove();
+    toast('Palette gespeichert', 'success');
+    if (currentPage === 'suche') doSearch();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── START ───────────────────────────────────────────────────────────────────
+init();

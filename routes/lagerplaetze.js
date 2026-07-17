@@ -2,78 +2,73 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
+// Alle Lagerplätze (mit Filter)
 router.get('/', (req, res) => {
-  const { bereich, belegt, regal, ebene, limit } = req.query;
-  let query = `SELECT l.*, p.eb_nummer, k.name as kunde_name 
-    FROM lagerplaetze l 
-    LEFT JOIN paletten p ON l.id = p.lagerplatz_id AND p.ausgelagert = 0 AND p.geloescht = 0 
-    LEFT JOIN kunden k ON p.kunde_id = k.id 
-    WHERE 1=1`;
+  const { regal, bereich, belegt, page = 1, limit = 100 } = req.query;
+  let where = 'WHERE 1=1';
   const params = [];
-
-  if (bereich) { query += ' AND l.bereich = ?'; params.push(bereich); }
-  if (regal) { query += ' AND l.regal = ?'; params.push(regal); }
-  if (ebene) { query += ' AND l.ebene = ?'; params.push(ebene); }
-  if (belegt === '0') { query += ' AND l.belegt = 0'; }
-  if (belegt === '1') { query += ' AND l.belegt = 1'; }
-
-  query += ' ORDER BY l.regal, l.position, l.unter_position, l.ebene_index';
-  if (limit) { query += ' LIMIT ?'; params.push(parseInt(limit)); }
-  const rows = db.prepare(query).all(...params);
-  res.json(rows);
-});
-
-router.get('/frei', (req, res) => {
-  const { regal, ebene } = req.query;
-  let query = 'SELECT * FROM lagerplaetze WHERE belegt = 0';
-  const params = [];
-  if (regal) { query += ' AND regal = ?'; params.push(regal); }
-  if (ebene) { query += ' AND ebene = ?'; params.push(ebene); }
-  query += ' ORDER BY regal, position, unter_position';
-  const rows = db.prepare(query).all(...params);
-  res.json(rows);
-});
-
-router.get('/:id', (req, res) => {
-  const row = db.prepare(`
-    SELECT l.*, p.eb_nummer, p.artikel_nr as pal_artikel, p.chargen_nr as pal_charge, 
-           p.eingelagert_am, k.name as kunde_name
+  
+  if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
+  if (bereich) { where += ' AND l.bereich = ?'; params.push(bereich); }
+  if (belegt !== undefined) { where += ' AND l.belegt = ?'; params.push(parseInt(belegt)); }
+  
+  const total = db.prepare(`SELECT COUNT(*) as c FROM lagerplaetze l ${where}`).get(...params);
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  
+  const plaetze = db.prepare(`
+    SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, p.chargen_nr, k.name as kunde_name
     FROM lagerplaetze l
-    LEFT JOIN paletten p ON l.id = p.lagerplatz_id AND p.ausgelagert = 0 AND p.geloescht = 0
+    LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+    LEFT JOIN kunden k ON p.kunde_id = k.id
+    ${where}
+    ORDER BY l.regal, l.position
+    LIMIT ? OFFSET ?
+  `).all(...params, parseInt(limit), offset);
+  
+  res.json({ total: total.c, plaetze });
+});
+
+// Einzelner Lagerplatz mit Details
+router.get('/:id', (req, res) => {
+  const platz = db.prepare(`
+    SELECT l.*, p.id as palette_id, p.paletten_nr, p.nummern_typ, p.artikel_nr, p.chargen_nr, 
+           p.eingelagert_am, p.bemerkung as palette_bemerkung, k.name as kunde_name
+    FROM lagerplaetze l
+    LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
     LEFT JOIN kunden k ON p.kunde_id = k.id
     WHERE l.id = ?
   `).get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-  res.json(row);
+  
+  if (!platz) return res.status(404).json({ error: 'Lagerplatz nicht gefunden' });
+  res.json(platz);
 });
 
-router.get('/uebersicht', (req, res) => {
+// Übersicht pro Regal (für Lagerplan-Visualisierung)
+router.get('/plan/uebersicht', (req, res) => {
   const regale = db.prepare(`
-    SELECT regal, 
-           COUNT(*) as gesamt,
-           SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
-           MIN(position) as von,
-           MAX(position) as bis
+    SELECT regal,
+      COUNT(*) as gesamt,
+      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
+      SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
     FROM lagerplaetze
-    WHERE typ = 'Regal'
     GROUP BY regal
     ORDER BY regal
   `).all();
   res.json(regale);
 });
 
-router.get('/ebenen', (req, res) => {
-  const { regal } = req.query;
-  let query = `
-    SELECT ebene, ebene_index, COUNT(*) as gesamt, 
-           SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt
-    FROM lagerplaetze WHERE typ = 'Regal'
-  `;
-  const params = [];
-  if (regal) { query += ' AND regal = ?'; params.push(regal); }
-  query += ' GROUP BY ebene, ebene_index ORDER BY ebene_index';
-  const rows = db.prepare(query).all(...params);
-  res.json(rows);
+// Raster eines bestimmten Regals (für interaktive Ansicht)
+router.get('/plan/regal/:regal', (req, res) => {
+  const regal = req.params.regal;
+  const plaetze = db.prepare(`
+    SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
+    FROM lagerplaetze l
+    LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+    LEFT JOIN kunden k ON p.kunde_id = k.id
+    WHERE l.regal = ?
+    ORDER BY l.position, l.unter_position
+  `).all(regal);
+  res.json(plaetze);
 });
 
 module.exports = router;
