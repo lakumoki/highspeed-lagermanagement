@@ -68,20 +68,19 @@ router.get('/naechste-nr', (req, res) => {
 // Freie Lagerplätze (nur echte, nicht-belegte, Echtzeit-Prüfung) + Gang-Plätze
 router.get('/freie-plaetze', (req, res) => {
   const { bereich, regal, hoehe } = req.query;
-  let where = 'WHERE ((l.belegt = 0 AND l.bemerkung IS NULL) OR l.typ = ?)';
-  const params = ['Gang'];
+  let where = "WHERE ((l.belegt = 0 AND l.bemerkung IS NULL) OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))";
+  const params = [];
   if (bereich) { where += ' AND l.bereich = ?'; params.push(bereich); }
   if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
-  if (hoehe) { where += ' AND (l.max_hoehe_cm >= ? OR l.max_hoehe_cm IS NULL OR l.typ = ?)'; params.push(parseFloat(hoehe)); params.push('Gang'); }
+  if (hoehe) { where += " AND (l.max_hoehe_cm >= ? OR l.max_hoehe_cm IS NULL OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))"; params.push(parseFloat(hoehe)); }
   
   const plaetze = db.prepare(`
     SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.typ, l.ebene, l.max_hoehe_cm 
     FROM lagerplaetze l
     LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-    ${where} AND (p.id IS NULL OR l.typ = 'Gang')
-    ORDER BY CASE WHEN l.typ = 'Gang' THEN 1 ELSE 0 END, ${hoehe ? 'l.max_hoehe_cm ASC,' : ''} l.regal, l.position
+    ${where} AND (p.id IS NULL OR l.typ IN ('Gang','Block'))
+    ORDER BY CASE WHEN l.typ IN ('Gang','Block') THEN 1 ELSE 0 END, ${hoehe ? 'l.max_hoehe_cm ASC,' : ''} l.regal, l.position
   `).all(...params);
-  // Deduplizieren (Gang-Plätze können mehrfach erscheinen durch JOIN)
   const seen = new Set();
   const unique = plaetze.filter(p => { if (seen.has(p.bezeichnung)) return false; seen.add(p.bezeichnung); return true; });
   res.json(unique);

@@ -238,7 +238,26 @@
         <div class="progress-bar"><div class="fill" style="width:${prozent}%"></div></div>`;
 
       if (erledigt === gesamt && gesamt > 0) {
-        html += `<div class="all-done"><h2>Alle Paletten eingelagert</h2><p style="color:#aaa">Auftrag abgeschlossen.</p></div>`;
+        const wareneingang = d.positionen.filter(p => p.lagerplatz === 'Wareneingang');
+        if (wareneingang.length > 0) {
+          html += `
+            <div style="background:#3a2a00;border:1px solid #e67e22;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center">
+              <h2 style="color:#e67e22;font-size:16px;margin-bottom:6px">${wareneingang.length} Palette(n) im Wareneingang</h2>
+              <p style="color:#aaa;font-size:13px">Plätze zuweisen, um endgültig einzulagern</p>
+            </div>`;
+          html += `
+            <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:600;color:#f5c518;margin-bottom:8px">Platz-Suche nach Höhe</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="number" id="hoehe-input" placeholder="Höhe in cm" style="flex:1;padding:10px 12px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:#f0f0f0;font-size:15px;outline:none">
+                <button onclick="sucheNachHoehe()" style="padding:10px 16px;background:#f5c518;color:#1a1a1a;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Suchen</button>
+              </div>
+            </div>`;
+          html += `<button class="btn-freie" onclick="toggleFreie()">Freie Plätze anzeigen</button>`;
+          html += `<div id="freie-box" class="freie-liste"></div>`;
+        } else {
+          html += `<div class="all-done"><h2>Alle Paletten eingelagert</h2><p style="color:#aaa">Auftrag abgeschlossen.</p></div>`;
+        }
       } else {
         html += `
           <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:12px">
@@ -257,7 +276,7 @@
       }
 
       for (const pos of d.positionen) {
-        if (pos.status === 'eingelagert') {
+        if (pos.status === 'eingelagert' && pos.lagerplatz !== 'Wareneingang') {
           html += `
             <div class="palette-card done">
               <div class="top-row">
@@ -265,6 +284,21 @@
                 <span class="status-icon">✓</span>
               </div>
               <div class="done-label">✓ ${pos.lagerplatz}</div>
+            </div>`;
+        } else if (pos.status === 'eingelagert' && pos.lagerplatz === 'Wareneingang') {
+          html += `
+            <div class="palette-card" id="card-${pos.id}" style="border-color:#e67e22">
+              <div class="top-row">
+                <span class="pal-nr">${pos.paletten_nr}</span>
+                <span style="font-size:11px;color:#e67e22;font-weight:600">Wareneingang</span>
+              </div>
+              <div class="input-row">
+                <input type="text" id="input-${pos.id}" placeholder="Endgültigen Platz eingeben" 
+                  onfocus="aktiverInput='input-${pos.id}'"
+                  onkeydown="if(event.key==='Enter')umlagernWE(${pos.id}, '${pos.paletten_nr}')">
+                <button class="btn-einlagern" onclick="umlagernWE(${pos.id}, '${pos.paletten_nr}')">→</button>
+              </div>
+              <div id="msg-${pos.id}"></div>
             </div>`;
         } else {
           html += `
@@ -325,7 +359,7 @@
         return;
       }
       const regale = plaetze.filter(p => p.typ !== 'Gang' && p.typ !== 'Block');
-      const bloecke = plaetze.filter(p => p.typ === 'Block');
+      const bloecke = plaetze.filter(p => p.typ === 'Block' && (p.regal === 'E' || p.regal === 'F'));
       const gaenge = plaetze.filter(p => p.typ === 'Gang');
       let html = '';
       if (regale.length > 0) {
@@ -409,6 +443,31 @@
         render();
       } catch (e) {
         alert('Fehler: ' + e.message);
+      }
+    }
+
+    async function umlagernWE(posId, palNr) {
+      const input = document.getElementById(`input-${posId}`);
+      const msg = document.getElementById(`msg-${posId}`);
+      const platz = input.value.trim();
+
+      if (!platz) { msg.innerHTML = '<div class="error-msg">Bitte Platz eingeben</div>'; return; }
+
+      try {
+        const res = await fetch('/api/umlagerung', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paletten_nr: palNr, nach_platz: platz, bemerkung: 'Staplerfahrer: Wareneingang → ' + platz })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        const pos = auftragData.positionen.find(p => p.id === posId);
+        if (pos) { pos.lagerplatz = platz; }
+        freiePlaetze = freiePlaetze.filter(p => p.bezeichnung !== platz);
+        render();
+      } catch (e) {
+        msg.innerHTML = `<div class="error-msg">${e.message}</div>`;
       }
     }
 
