@@ -303,20 +303,24 @@ function extractNr(cell) {
   return cell.trim();
 }
 
+function isValidEbNr(nr) {
+  // EB-Nummern sind rein numerisch (6-stellig ggf. mit führenden Nullen)
+  return /^\d+$/.test(nr);
+}
+
 function getKundeId(typ, cell) {
   if (typ === 'EB') return PPH_ID;
   if (typ === 'KW') return KW_ID;
-  if (cell.includes('HIGHSPEED') || cell.includes('Staplerschule')) return 3; // HS
+  if (cell.includes('HIGHSPEED') || cell.includes('Staplerschule') || cell.includes('Privat') || cell.includes('Constantinescu')) return 3;
   return null;
 }
 
 function processCell(cell, bez, regal, pos, sub, ebene, ebeneIdx, bereich, typ) {
   if (pos > 84 && cell === '') return;
 
-  // Gang-Markierungen (xA, xB, etc.) = Vorgang/Gang, kein Platz
-  if (cell.startsWith('↓') || cell.includes('Gang') || cell.includes('H A L L E')) return;
+  // Gang-Markierungen = kein Platz
+  if (cell.startsWith('↓') || cell.includes('Gang') || cell.includes('H A L L E') || cell.includes('Zwischenbuchung')) return;
   
-  // Stapelbar: .a/.b Positionen = ja (zwei Ebenen möglich)
   const stapelbar = sub ? 1 : 0;
   const istBelegt = (cell !== '') ? 1 : 0;
   
@@ -324,23 +328,36 @@ function processCell(cell, bez, regal, pos, sub, ebene, ebeneIdx, bereich, typ) 
   if (cell === 'x') bemerkung = 'Nicht nutzbar (Palette zu hoch)';
   else if (cell.includes('Staplerschule')) { bemerkung = 'Staplerschule'; }
   else if (cell.includes('HIGHSPEED')) { bemerkung = cell; }
+  else if (cell.includes('Privat')) { bemerkung = cell; }
+  else if (cell.includes('Constantinescu')) { bemerkung = cell; }
+  else if (cell.includes('PODEST')) { bemerkung = cell; }
   
   insertPlatz.run(bez, regal, pos, sub || null, ebene, ebeneIdx, bereich, typ, stapelbar, istBelegt, bemerkung);
   stats.plaetze++;
 
-  // Palette mit Nummer?
-  if (cell.startsWith('eb0') || cell.match(/^Kw|^KW/)) {
-    const nrTyp = detectNrTyp(cell);
+  // Palette mit gültiger Nummer?
+  if (cell.startsWith('eb0')) {
+    const nr = extractNr(cell);
+    if (nr && isValidEbNr(nr)) {
+      const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
+      if (platz) {
+        insertPalette.run(nr, 'EB', PPH_ID, platz.id, bez, 'Import', null);
+        stats.paletten++;
+      }
+    } else if (nr && nr.length >= 3) {
+      // Spezial-Label wie GrKis3, ArbKor → belegt ohne gültige Paletten-Nr
+      stats.belegtOhneNr++;
+    }
+  } else if (cell.match(/^Kw|^KW/)) {
     const nr = extractNr(cell);
     if (nr && nr.length >= 3) {
       const platz = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(bez);
       if (platz) {
-        insertPalette.run(nr, nrTyp, getKundeId(nrTyp, cell), platz.id, bez, 'Import', null);
+        insertPalette.run(nr, 'KW', KW_ID, platz.id, bez, 'Import', null);
         stats.paletten++;
       }
     }
   } else if (cell !== '') {
-    // x, Staplerschule, HIGHSPEED etc. = belegt ohne Palettennummer
     stats.belegtOhneNr++;
   }
 }
@@ -355,6 +372,7 @@ const importTransaction = db.transaction(() => {
     const col1 = r[1];
     const col1Str = String(col1 || '').trim();
     
+    // Etage-Tracking
     if (col0 === 'EG') { currentEbene = 'EG'; ebeneIdx = 0; }
     else if (col0.match(/^1\.?\s*OG$/)) { currentEbene = '1.OG'; ebeneIdx = 1; }
     else if (col0.match(/^2\.?\s*OG$/)) { currentEbene = '2.OG'; ebeneIdx = 2; }
@@ -362,29 +380,34 @@ const importTransaction = db.transaction(() => {
     
     // Skip Halle 2 (positions >= 1000)
     if (typeof col1 === 'number' && col1 >= 1000) continue;
-    // Skip navigation rows
-    if (col0 === 'Block' || col1Str.includes('↓') || col1Str.includes('HALLE')) continue;
+    // Skip pure navigation/header rows (but NOT "Block" rows which have data!)
+    if (col1Str.includes('↓') || col1Str.includes('HALLE') || col1Str.includes('H A L L E')) continue;
+    if (col1Str === '' && col0 === '' && !r.some((c, i) => i >= 2 && String(c).trim() !== '')) continue;
     
-    // Unterposition (.a / .b) = stapelbar
-    const subMatch = col1Str.match(/^(\d+)\.([ab])$/);
+    // Unterposition (.a / .b) = stapelbar — auch "79b" Schreibweise abfangen
+    const subMatch = col1Str.match(/^(\d+)[.]?([ab])$/);
     if (subMatch) {
       const pos = parseInt(subMatch[1]);
       const sub = subMatch[2];
       for (const [regal, colIdx] of Object.entries(regalCols)) {
         const cell = String(r[colIdx] || '').trim();
         const bez = `${regal}${pos}${sub}`;
-        processCell(cell, bez, regal, pos, sub, currentEbene, ebeneIdx, `Regal ${regal}`, 'Regal');
+        const bereich = pos >= 901 ? 'Block' : `Regal ${regal}`;
+        processCell(cell, bez, regal, pos, sub, currentEbene, ebeneIdx, bereich, pos >= 901 ? 'Block' : 'Regal');
       }
       continue;
     }
     
-    // Hauptposition (1-100+)
+    // Hauptposition (1-970) — inklusive Block-Positionen 901-970
     if (typeof col1 === 'number' && col1 >= 1 && col1 < 1000) {
       const pos = col1;
+      const isBlock = pos >= 901;
       for (const [regal, colIdx] of Object.entries(regalCols)) {
         const cell = String(r[colIdx] || '').trim();
-        const bez = `${regal}${pos}`;
-        processCell(cell, bez, regal, pos, null, currentEbene, ebeneIdx, `Regal ${regal}`, 'Regal');
+        if (!isBlock && pos > 108 && cell === '') continue;
+        const bez = isBlock ? `Block${regal}${pos}` : `${regal}${pos}`;
+        const bereich = isBlock ? 'Block' : `Regal ${regal}`;
+        processCell(cell, bez, regal, pos, null, isBlock ? 'EG' : currentEbene, isBlock ? 0 : ebeneIdx, bereich, isBlock ? 'Block' : 'Regal');
       }
     }
   }
@@ -471,16 +494,29 @@ const bewTransaction = db.transaction(() => {
     const d = XLSX.utils.sheet_to_json(pphWb.Sheets[name], { header: 1, defval: '' });
     if (d.length < 7) continue;
     
-    const kontingent = typeof d[0]?.[10] === 'number' ? d[0][10] : null;
-    const verfuegbar = typeof d[1]?.[10] === 'number' ? d[1][10] : null;
-    const uebertrag = typeof d[2]?.[5] === 'number' ? d[2][5] : null;
+    // Kontingent: kann bei Index 10 ODER 11 stehen (Label vs. Wert)
+    let kontingent = null;
+    if (typeof d[0]?.[10] === 'number') kontingent = d[0][10];
+    else if (typeof d[0]?.[11] === 'number') kontingent = d[0][11];
+    
+    let verfuegbar = null;
+    if (typeof d[1]?.[10] === 'number') verfuegbar = d[1][10];
+    else if (typeof d[1]?.[11] === 'number') verfuegbar = d[1][11];
+    
+    // Übertrag: steht in Zeile 2, Spalte 5 (Wert) oder Spalte 0 als Zahl
+    let uebertrag = null;
+    if (typeof d[2]?.[5] === 'number') uebertrag = d[2][5];
+    else if (typeof d[2]?.[0] === 'number') uebertrag = d[2][0];
+    
+    // Monatssummen in Zeile 5
     const lagerbestand = typeof d[5]?.[5] === 'number' ? d[5][5] : 0;
     const sumEinl = typeof d[5]?.[6] === 'number' ? d[5][6] : 0;
     const sumAusl = typeof d[5]?.[7] === 'number' ? d[5][7] : 0;
-    const sumBew = typeof d[5]?.[9] === 'number' ? d[5][9] : 0;
-    const trafficRatio = typeof d[5]?.[11] === 'number' ? d[5][11] : null;
+    const sumBew = typeof d[5]?.[9] === 'number' ? d[5][9] : (typeof d[5]?.[8] === 'number' ? d[5][8] : 0);
+    let trafficRatio = null;
+    if (typeof d[5]?.[11] === 'number') trafficRatio = d[5][11];
+    else if (typeof d[4]?.[11] === 'number') trafficRatio = d[4][11];
     
-    // Saldo Überkapazität = Lagerbestand - Kontingent (wenn > 0)
     const saldo = (lagerbestand && kontingent) ? Math.max(0, lagerbestand - kontingent) : 0;
     
     if (lagerbestand > 0 || sumBew > 0) {
@@ -489,6 +525,7 @@ const bewTransaction = db.transaction(() => {
       monateCount++;
     }
     
+    // Einzelbewegungen ab Zeile 6
     for (let i = 6; i < d.length; i++) {
       const row = d[i];
       if (!row?.[0] || typeof row[0] !== 'number') continue;
@@ -498,23 +535,35 @@ const bewTransaction = db.transaction(() => {
       const einl = parseInt(row[1]) || 0;
       const ausl = parseInt(row[2]) || 0;
       const extra = parseInt(row[4]) || 0;
-      const palNummern = String(row[10] || '').trim();
-      const bemerkung = String(row[11] || '').trim();
       
-      // Extract Abruf-ID (format: 2026/148-1)
+      // EB-Nummern und Bemerkung: Position hängt von Spaltenanzahl ab
+      let palNummern = '';
+      let bemerkung = '';
+      // Suche nach Text-Spalten ab Position 9+
+      for (let col = 9; col < (row.length || 12); col++) {
+        const v = String(row[col] || '').trim();
+        if (v && !palNummern && v.match(/\d{6}|eb|EB|Handling|MUSTER|Direkt|Einl/i)) { palNummern = v; }
+        else if (v && palNummern && !bemerkung) { bemerkung = v; }
+      }
+      if (!palNummern) {
+        palNummern = String(row[10] || '').trim();
+        bemerkung = String(row[11] || '').trim();
+      }
+      
       let abrufId = null;
-      const abrufMatch = bemerkung.match(/(\d{4}\/\d+-\d+)/);
+      const abrufMatch = (palNummern + ' ' + bemerkung).match(/(\d{4}\/\d+-\d+)/);
       if (abrufMatch) abrufId = abrufMatch[1];
       
-      // Extract Direktanlieferung-ID
       let direktId = null;
-      const direktMatch = bemerkung.match(/Direktanlieferung\s+(?:am\s+)?(\d{2}\.\d{2}\.\d{2}_\d+)/);
+      const direktMatch = (palNummern + ' ' + bemerkung).match(/(\d{2}\.\d{2}\.\d{2}_\d+)/);
       if (direktMatch) direktId = direktMatch[1];
       
-      // Handling-Art erkennen
       let handlingArt = null;
-      if (palNummern.includes('Handling')) handlingArt = 'Handling Zwischenlager';
-      if (palNummern.includes('MUSTERZUG')) handlingArt = 'Musterzug';
+      const combined = palNummern + ' ' + bemerkung;
+      if (combined.includes('Handling')) handlingArt = 'Handling';
+      if (combined.includes('MUSTERZUG') || combined.includes('Musterzug')) handlingArt = 'Musterzug';
+      if (combined.includes('Bereitstellung')) handlingArt = 'Bereitstellung';
+      if (combined.includes('Rücklagerung')) handlingArt = 'Rücklagerung';
       
       if (einl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,paletten_nummern,abruf_id,direktanlieferung_id,handling_art,bemerkung,monat) VALUES (?,?,?,?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Einlagerung', einl, palNummern, abrufId, direktId, null, bemerkung, name); bewCount++; }
       if (ausl > 0) { db.prepare('INSERT INTO bewegungen (kunde_id,datum,typ,anzahl,paletten_nummern,abruf_id,direktanlieferung_id,handling_art,bemerkung,monat) VALUES (?,?,?,?,?,?,?,?,?,?)').run(PPH_ID, datum, 'Auslagerung', ausl, palNummern, abrufId, direktId, null, bemerkung, name); bewCount++; }
@@ -568,42 +617,66 @@ if (abrufSheet) {
     const nr = String(row[1]);
     const platz = String(row[2] || '').trim();
     
-    // Auto LKW-Trennung
-    const autoLkwNr = Math.ceil((count + 1) / lkwKap);
-    const autoLkw = `LKW ${autoLkwNr}`;
-    
     db.prepare('INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, datum, kunde_id) VALUES (?,?,?,?,?,?,?,?)').run(abrufId, row[0] || count + 1, nr, platz, lkw, lkwNr, abrufDatum, PPH_ID);
     
-    // Update palette location
-    const palette = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
-    if (palette && platz) {
-      db.prepare("UPDATE paletten SET lagerplatz_bezeichnung = ? WHERE id = ?").run(platz, palette.id);
+    // Palette suchen oder anlegen
+    let palette = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
+    if (!palette && platz) {
+      // Palette existiert nicht im Lagerplan → anlegen mit Platz aus Abrufliste
+      const platzRec = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(platz);
+      db.prepare("INSERT INTO paletten (paletten_nr, nummern_typ, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, eingelagert_von, bemerkung) VALUES (?,?,?,?,?,?,?)")
+        .run(nr, 'EB', PPH_ID, platzRec?.id || null, platz, 'Import (Abrufliste)', `Aus Abrufliste ${abrufId}`);
+      stats.paletten++;
+    } else if (palette && platz) {
+      // Palette existiert → Platz aktualisieren (Abrufliste hat aktuellere Positionen)
+      const platzRec = db.prepare("SELECT id FROM lagerplaetze WHERE bezeichnung = ?").get(platz);
+      db.prepare("UPDATE paletten SET lagerplatz_bezeichnung = ?, lagerplatz_id = ? WHERE id = ?").run(platz, platzRec?.id || null, palette.id);
     }
     count++;
   }
   console.log(`  Abrufliste ${abrufId}: ${count} Pos. (${lkwNr} LKW)`);
 }
 
-// DirektABHOLUNG
+// DirektABHOLUNG — Two-pass: erst Gruppen identifizieren, dann Charge korrekt zuordnen
 const direktSheet = abrufWb.Sheets['DirektABHOLUNG'];
 if (direktSheet) {
   const d = XLSX.utils.sheet_to_json(direktSheet, { header: 1, defval: '' });
-  let count = 0, currentArtikel = '', currentCharge = '';
+  let count = 0;
+  
+  // Pass 1: Alle Einträge mit ihren Roh-Infos sammeln
+  const entries = [];
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
     if (String(row[0]) === 'lfd. Nummer') continue;
-    const info = String(row[3] || '').trim();
-    if (info.match(/^[A-Z]{3}\d/)) currentArtikel = info;
-    if (info.match(/^Charge/i)) currentCharge = info.replace(/Charge\.?:?\s*/i, '').trim();
-    const nr = String(row[1]);
-    const platz = String(row[2] || '').trim();
+    entries.push({ lfd: row[0], nr: String(row[1]), platz: String(row[2] || '').trim(), info: String(row[3] || '').trim() });
+  }
+  
+  // Pass 2: Artikel/Chargen-Gruppen zuweisen (Artikel-Header = neuer Gruppenstart)
+  let currentArtikel = '', currentCharge = '';
+  for (let i = 0; i < entries.length; i++) {
+    const info = entries[i].info;
+    if (info.match(/^[A-Z]{3}\d/)) {
+      currentArtikel = info;
+      // Neuer Artikel → Charge aus nächster Zeile holen (Look-ahead)
+      currentCharge = '';
+      if (i + 1 < entries.length && entries[i + 1].info.match(/^Charge/i)) {
+        currentCharge = entries[i + 1].info.replace(/Charge\.?:?\s*/i, '').trim();
+      }
+    } else if (info.match(/^Charge/i)) {
+      currentCharge = info.replace(/Charge\.?:?\s*/i, '').trim();
+    }
+    entries[i].artikel = currentArtikel;
+    entries[i].charge = currentCharge;
+  }
+  
+  // Pass 3: Einfügen
+  for (const e of entries) {
     db.prepare('INSERT INTO direktabholungen (lfd_nummer, paletten_nr, lagerplatz, artikel_nr, chargen_nr, kunde_id) VALUES (?,?,?,?,?,?)')
-      .run(row[0], nr, platz, currentArtikel, currentCharge, PPH_ID);
-    // Link to palette
-    const pal = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
-    if (pal && (currentArtikel || currentCharge)) {
-      db.prepare("UPDATE paletten SET artikel_nr = ?, chargen_nr = ? WHERE id = ?").run(currentArtikel || null, currentCharge || null, pal.id);
+      .run(e.lfd, e.nr, e.platz, e.artikel || null, e.charge || null, PPH_ID);
+    const pal = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(e.nr);
+    if (pal && (e.artikel || e.charge)) {
+      db.prepare("UPDATE paletten SET artikel_nr = ?, chargen_nr = ? WHERE id = ?").run(e.artikel || null, e.charge || null, pal.id);
     }
     count++;
   }
@@ -636,8 +709,11 @@ if (musterSheet) {
   for (let i = 4; i < d.length; i++) {
     const row = d[i];
     if (!row[1] || typeof row[1] !== 'number') continue;
+    if (String(row[0]) === 'lfd. Nummer') continue;
+    const nr = String(row[1]);
+    const platz = String(row[2] || '').trim();
     db.prepare('INSERT INTO musterzuege (lfd_nummer, paletten_nr, lagerplatz, menge, abholort, kunde_id) VALUES (?,?,?,?,?,?)')
-      .run(row[0], String(row[1]), String(row[2] || ''), String(row[3] || ''), 'Abholtisch', PPH_ID);
+      .run(row[0], nr, platz, '1 Tray', 'Abholtisch', PPH_ID);
     count++;
   }
   console.log(`  Musterzüge: ${count}`);
@@ -663,12 +739,15 @@ const invSheet = abrufWb.Sheets['Inventur PPH-nur Archiv'];
 if (invSheet) {
   const d = XLSX.utils.sheet_to_json(invSheet, { header: 1, defval: '' });
   let count = 0;
-  for (let i = 3; i < d.length; i++) {
+  for (let i = 4; i < d.length; i++) {
     const row = d[i];
     const palNr = String(row[1] || '').trim();
-    if (!palNr || palNr === 'Pal.Nr. (Archiv)') continue;
+    if (!palNr || palNr === 'Pal.Nr. (Archiv)' || palNr === '0') continue;
+    const lagerort = String(row[2] || '').trim();
+    const vorhanden = String(row[3] || '').trim();
+    if (!lagerort && !vorhanden) continue;
     db.prepare('INSERT INTO inventur (palette_nr, lagerort, vorhanden) VALUES (?,?,?)')
-      .run(palNr, String(row[2] || '').trim() || null, String(row[3] || '').trim());
+      .run(palNr, lagerort === '0' ? null : lagerort, vorhanden || 'ja');
     count++;
   }
   console.log(`  Inventur-Archiv: ${count} (Archiv-Nr., nicht EB!)`);

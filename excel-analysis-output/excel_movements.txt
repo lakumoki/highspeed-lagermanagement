@@ -1,0 +1,1523 @@
+
+=== 11.16 === (49 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","",""]
+  Row 2: ["","","","","",0,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 44: ["","","",0,"","","","","",""]
+  Row 45: ["","","",0,"","","","","",""]
+  Row 46: ["","","",0,"","","","","",""]
+  Row 47: ["","","",0,"","","","","",""]
+  Row 48: ["","","",0,"","","","","",""]
+
+=== 12.16 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","",""]
+  Row 2: ["","","","","",208,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","",""]
+  Row 2: ["","","","","",196,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","",""]
+  Row 2: ["","","","","",165,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager ","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",199,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",225,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",233,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",181,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",243,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",243,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",241,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",248,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",253,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.17 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",357,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",277,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",423,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",418,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",389,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.18 === (45 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",478,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","",0,"","","","","",""]
+
+=== 06.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",550,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",428,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",456,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",398,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",369,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",443,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.18 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",502,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",481,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",464,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",491,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",453,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",440,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",480,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",485,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",474,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",497,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",569,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",549,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.19 === (44 rows)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",553,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.20 === (45 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",535,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","",0,"","","","","",""]
+
+=== 02.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",572,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",478,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",476,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",378,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",405,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",432,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",436,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.20 === (52 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",449,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 47: [44103,11,0,11,"","","","","",""]
+  Row 48: [44104,3,3,0,"","","","","",""]
+  Row 49: ["","","",0,"","","","","",""]
+  Row 50: ["","","",0,"","","","","",""]
+  Row 51: ["","","",0,"","","","","",""]
+
+=== 10.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",481,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",464,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.20 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",518,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",448,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",454,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",556,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",529,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",443,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: [44342,8,0,8,"","","","","",""]
+  Row 40: [44342,29,0,29,"","","","","",""]
+  Row 41: [44344,0,36,-36,"","","","","",""]
+  Row 42: [44344,0,1,-1,"","","","","",""]
+  Row 43: [44347,0,0,0,7,"","","","",""]
+
+=== 06.21 === (57 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",484,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 52: [44376,1,1,0,1,"","","","",""]
+  Row 53: [44376,8,0,8,"","","","","",""]
+  Row 54: [44377,0,0,0,14,"","","","",""]
+  Row 55: ["","","",0,"","","","","",""]
+  Row 56: ["","","",0,"","","","","",""]
+
+=== 07.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",476,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.21 === (45 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",563,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","",0,"","","","","",""]
+
+=== 09.21 === (43 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",487,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 38: [44463,0,22,-22,"","","","","",""]
+  Row 39: [44466,0,3,-3,"","","","","",""]
+  Row 40: [44466,14,0,14,"","","","","",""]
+  Row 41: [44469,0,18,-18,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+
+=== 10.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",575,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",558,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.21 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",507,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",524,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",476,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",453,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",417,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",354,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.22 === (45 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",338,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","",0,"","","","","",""]
+
+=== 07.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",380,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",580,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",659,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",667,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",719,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.22 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",726,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",729,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",726,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",761,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",750,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",765,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",811,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",804,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",837,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",851,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",851,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",850,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.23 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",816,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",783,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",749,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",785,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",745,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",769,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",764,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",755,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 08.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",711,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",662,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",742,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 11.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",680,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 12.24 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",695,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",676,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 02.25 === (42 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",626,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 37: ["","","",0,"","","","","",""]
+  Row 38: ["","","",0,"","","","","",""]
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+
+=== 03.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",658,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.25 === (42 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",685,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 37: ["","","",0,"","","","","",""]
+  Row 38: ["","","",0,"","","","","",""]
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+
+=== 05.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",636,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",610,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 07.25 === (42 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",615,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 37: ["","","",0,"","","","","",""]
+  Row 38: ["","","",0,"","","","","",""]
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+
+=== 08.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",553,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 09.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",558,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 10.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",606,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: [45957,20,0,20,"","","","","",""]
+  Row 40: [45957,0,1,-1,"","","","","",""]
+  Row 41: [45958,0,0,0,26,"","","","",""]
+  Row 42: [45958,13,0,13,"","","","","",""]
+  Row 43: [45959,0,18,-18,"","","","","",""]
+
+=== 11.25 === (45 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",669,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","",0,"","","","","",""]
+
+=== 12.25 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",695,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 01.26 === (47 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",677,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+  Row 44: ["","","","","","","","","",""]
+  Row 45: ["","","","","","","","","",""]
+  Row 46: ["","","","","","","","","",""]
+
+=== 02.26 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",752,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 03.26 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",715,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 04.26 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",715,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 05.26 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",744,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== 06.26 === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",676,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== VORLAGE === (44 rows)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:"]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:"]
+  Row 2: ["","","","","",636,"","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen"]
+  Row 4: ["","","","","","","","","",""]
+  ...
+  Row 39: ["","","",0,"","","","","",""]
+  Row 40: ["","","",0,"","","","","",""]
+  Row 41: ["","","",0,"","","","","",""]
+  Row 42: ["","","",0,"","","","","",""]
+  Row 43: ["","","",0,"","","","","",""]
+
+=== Traffic alle Jahre === (0 rows)

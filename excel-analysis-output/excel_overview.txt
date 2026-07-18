@@ -1,0 +1,1201 @@
+Sheets: [
+  '11.16', '12.16', '01.17', '02.17', '03.17', '04.17', '05.17',
+  '06.17', '07.17', '08.17', '09.17', '10.17', '11.17', '12.17',
+  '01.18', '02.18', '03.18', '04.18', '05.18', '06.18', '07.18',
+  '08.18', '09.18', '10.18', '11.18', '12.18', '01.19', '02.19',
+  '03.19', '04.19', '05.19', '06.19', '07.19', '08.19', '09.19',
+  '10.19', '11.19', '12.19', '01.20', '02.20', '03.20', '04.20',
+  '05.20', '06.20', '07.20', '08.20', '09.20', '10.20', '11.20',
+  '12.20', '01.21', '02.21', '03.21', '04.21', '05.21', '06.21',
+  '07.21', '08.21', '09.21', '10.21', '11.21', '12.21', '01.22',
+  '02.22', '03.22', '04.22', '05.22', '06.22', '07.22', '08.22',
+  '09.22', '10.22', '11.22', '12.22', '01.23', '02.23', '03.23',
+  '04.23', '05.23', '06.23', '07.23', '08.23', '09.23', '10.23',
+  '11.23', '12.23', '01.24', '02.24', '03.24', '04.24', '05.24',
+  '06.24', '07.24', '08.24', '09.24', '10.24', '11.24', '12.24',
+  '01.25', '02.25',
+  ... 19 more items
+]
+Total sheets: 119
+
+=== 11.16 === (49 rows x 11 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","",""]
+  Row 2: ["","","","","",0,"","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)"]
+  Row 4: ["","","","","","","","","","",""]
+  Row 5: ["","","","","",208,208,0,"",208,""]
+  Row 6: [42682,40,"",40,"","","","","","","469387, 471423, 471424, 471425, 471426, 471427, 471428, 469381, 469382, 469383, \r\n469384, 469385, 469386, 471325, 471326, 471327, 471328, 471329, 471330, 471413, \r\n471414, 471415, 471416, 471417, 471418, 471419, 471420, 471421, 471422, 468400, \r\n468401, 468402, 468403, 469861, 469862, 469863, 469864, 469865, 469866, 469867"]
+  Row 7: [42683,58,"",58,"","","","","","","411219, 467551, 467552, 467553, 467554, 456633, 456634, 467365, 467366, 467367, 467369, 468965, 468966, 468967, 468968, 469955, 469956, 469957, 469958, 469959, 469960, 469961, 469962, 469963, 469964, 469965, 469966, 469967, 469968, 469969, 469970, 469971, 469972, 416989, 435089, 435122, 448095, 449589, 449590, 449591, 449592, 449593, 449594, 449595, 449596, 449597, 449598, 466984, 466985, 466986, 363722, 363723, 363724, 363725, 363726, 363727, 636728, 363729"]
+
+=== 12.16 === (44 rows x 11 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","",""]
+  Row 2: ["","","","","",208,"","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)"]
+  Row 4: ["","","","","","","","","","",""]
+  Row 5: ["","","","","",196,0,12,"",12,""]
+  Row 6: [42716,0,5,-5,"","","","","","","472255, 472256, 472257, 472258, 472259"]
+  Row 7: [42732,0,7,-7,"","","","","","","469381, 469382, 469383, 469384, 469385, 469386, 469387"]
+
+=== 01.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","","",""]
+  Row 2: ["","","","","",196,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",165,10,41,"",51,"",0.3090909090909091]
+  Row 6: [42739,0,8,-8,"","","","","","","468965, 468966, 468967, 468968, 472332, 472333, 472335",""]
+  Row 7: [42740,0,1,-1,"","","","","","",448095,""]
+
+=== 02.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","","",""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","","",""]
+  Row 2: ["","","","","",165,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",199,70,36,"",106,"",0.5326633165829145]
+  Row 6: [42767,1,0,1,"","","","","","","Lösemittelentsorgungskanister ","Abgeholt und eingelagert nach Rg.Schluss am 31.01.17"]
+  Row 7: [42772,16,0,16,"","","","","","","477377, 477378, 477379, 477380, 477381, 477382, 477383, 477384, 477385, 477386, \r\n477387, 477388, 477389, 477390, 477391, 477392",""]
+
+=== 03.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager ","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",27,""]
+  Row 2: ["","","","","",199,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",225,58,32,"",90,"",0.35714285714285715]
+  Row 6: [42796,0,3,-3,"","","","","","","471419, 471420, 471421",""]
+  Row 7: [42802,27,0,27,"","","","","","","457925 (+457696+457970+457971+457972+457973=Stapel1)\r\n457974 (+457976+457977+457978+457980+457981=Stapel2)\r\n457982 (+457983+457984+457985+457986+457987=Stapel3)\r\n479307, 479308, 479309, 479810, 399339, 448256, 462771, 462772, 462773VS, 477039, \r\n456180, 439506, 465539VS, 471862, 471863, 471867, 471868, 471869, 471870, 459742, 459743VS, 459744, 447579, 448261","Lager-Erweiterung ab heute auf 252 Plätze"]
+
+=== 04.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",19,""]
+  Row 2: ["","","","","",225,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",233,42,34,"",76,"",0.30158730158730157]
+  Row 6: [42828,4,0,4,"","","","","","","415514, 363724, 363723, Arbeitskorb",""]
+  Row 7: [42835,0,11,-11,"","","","","","","441385, 462178, 471427, 471428, 478662, 478663, 478664, 469969, 469970, 469971, \r\n469972",""]
+
+=== 05.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",71,""]
+  Row 2: ["","","","","",233,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",181,48,100,"",148,"",0.5873015873015873]
+  Row 6: [42857,0,6,-6,"","","","","","","468041, 469090, 477567, 477568, 477569, 469535",""]
+  Row 7: [42857,8,0,8,"","","","","","","482761, 482762, 482763, 482764, 482765, 482766, 482767, 482768",""]
+
+=== 06.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",9,""]
+  Row 2: ["","","","","",181,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",243,86,24,"",110,"",0.4365079365079365]
+  Row 6: [42887,0,1,-1,"","","","","","","eb0 Arbeitskorb",""]
+  Row 7: [42894,1,1,0,"","","","","","","eb0 Arbeitskorb abgeholt für Datalogger, danach direkt wieder zurück",""]
+
+=== 07.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",9,""]
+  Row 2: ["","","","","",243,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",243,1,1,"",2,"",0.007936507936507936]
+  Row 6: [42919,1,1,0,"","","","","","","363722 Teilentnahme",""]
+  Row 7: ["","","",0,"","","","","","","",""]
+
+=== 08.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",252,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",11,""]
+  Row 2: ["","","","","",243,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",241,41,43,"",84,"",0.3333333333333333]
+  Row 6: [42956,1,1,0,"","","","","","","431519  Teilentnahme (26 Kartons)",""]
+  Row 7: [42956,0,1,-1,"","","","","","",439228,""]
+
+=== 09.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",264,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",16,""]
+  Row 2: ["","","","","",241,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",248,66,59,"",125,"",0.4734848484848485]
+  Row 6: [42982,0,1,-1,"","","","","","",428130,""]
+  Row 7: [42990,0,3,-3,"","","","","","","480038, 480039, 437052",""]
+
+=== 10.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",276,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",23,""]
+  Row 2: ["","","","","",248,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",253,38,33,"",71,"",0.2572463768115942]
+  Row 6: [43012,1,0,1,"","","","","","","eb0ArbKor",""]
+  Row 7: [43018,0,1,-1,"","","","","","",490336,"Lager-Erweiterung ab heute auf 276 Plätze"]
+
+=== 11.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",420,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",63,""]
+  Row 2: ["","","","","",253,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",357,163,59,"",240,"",0.5714285714285714]
+  Row 6: [43046,0,12,-12,"","","","","","","490337 bis 490348 = 12 Pal. Auslagern, jeweils 62 Vials entnehmen, \r\nin Karton packen, beschriften, auf EWP verpacken",""]
+  Row 7: [43047,12,0,12,"","","","","","","490337 bis 490348 = 12 Pal. Einlagern",""]
+
+=== 12.17 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",420,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",143,""]
+  Row 2: ["","","","","",357,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",277,27,107,"",134,"",0.319047619047619]
+  Row 6: [43070,0,9,-9,"","","","","","","493965, 493966, 493465, 493466, 485328, 485329, 487758, 491997, 467367",""]
+  Row 7: [43076,0,21,-21,"","","","","","","494444, 494445, 494446, 494447, 494448, 489596, 490064, 490065, 490066, 493473, \r\n493474, 493475, 493476, 486295, 486296, 486297, 493720, 493721, 493722, 493723, \r\n491998",""]
+
+=== 01.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",456,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",33,""]
+  Row 2: ["","","","","",277,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",423,252,106,"",401,"",0.8793859649122807]
+  Row 6: [43103,1,17,-16,"","","","","","","444963, 431956, 416424, 426168, 462771, 439326, 448261, 456180, 448256, 477039, \r\n399339, 416795, 428129, 000022, 000023, 000024, 476272 (Teilentnahme!)",""]
+  Row 7: [43103,40,0,40,"","","","","","","496598, 496599, 496600, 496601, 496602, 496603, 496604, 496605, 496607, 496608, \r\n496609, 496610, 496611, 496612, 496613, 496614, 496615, 496616, 496618, 496619, \r\n496620, 496621, 496622, 496623, 496624, 496625, 496626, 496627, 496628, 496629, \r\n496630, 496632, 496633, 496635, 496636, 496637, 496638, 496639, 496671, ArbKor",""]
+
+=== 02.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",492,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",74,""]
+  Row 2: ["","","","","",423,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",418,123,128,"",303,"",0.6158536585365854]
+  Row 6: [43132,10,0,10,"","","","","","","498507, 498508, 498509, 498510, 498511, 498512, 498513, 498514, 498515, 498516",""]
+  Row 7: [43133,0,25,-25,"","","","","","","497501, 497502, 497503, 497504, 497505, 497506, 497507, 497508, 497509, 497510, \r\n497511, 497512, 497513, 497514, 498062, 498063, 494948, 494949, 494950, 496602, \r\n496603, 496604, 490077, 490080, 490081",""]
+
+=== 03.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",492,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",103,""]
+  Row 2: ["","","","","",418,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",389,99,128,"",229,"",0.4654471544715447]
+  Row 6: [43161,0,20,-20,"","","","","","","498783, 498784, 498785, 498786, 498787, 498788, 498789, 498790, 498791, 498792, 498793, 498794, 498795, 498796, 498797, 498798, 498367, 498368, 498369, 498370",""]
+  Row 7: [43164,0,2,-2,"","","","","","","479308, 479310",""]
+
+=== 04.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",492,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",14,""]
+  Row 2: ["","","","","",389,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",478,208,119,"",393,"",0.7987804878048781]
+  Row 6: [43193,21,0,21,"","","","","","","501904, 501905, 501906, 501907, 501908, 501895, 501896, 501897, 501898, 501915, 501916, 501917, 501918, 501919, 501920, 501927, 501928, 501929, 501930, 501931, 501926",""]
+  Row 7: [43194,0,5,-5,"","","","","","","497937, 497938, 497939, 497940, 497941","Sonderfahrt"]
+
+=== 05.18 === (45 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",44,""]
+  Row 2: ["","","","","",478,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",550,218,146,"",412,"",0.6936026936026936]
+  Row 6: [43222,0,18,-18,"","","","","","","501118, 501119, 501120, 501121, 501122, 501123, 501124, 501125, 502148, 502149, 498151, 486259, 486260, 486261, 486263, 498507, 498508, 498509",""]
+  Row 7: [43222,8,0,8,"","","","","","","504000, 504001, 504002, 504003, 503997, 503998, 503999, ArbKor",""]
+
+=== 06.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",166,""]
+  Row 2: ["","","","","",550,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",428,87,209,"",335,"",0.563973063973064]
+  Row 6: [43252,0,9,-9,"","","","","","","502571, 502572, 502573, 502574, 502575, 502576, 502577, 501550, 501551","Sonderfahrt LKW"]
+  Row 7: [43252,0,3,-3,"","","","","","","498159, 503064, 505349","Sonderfahrt Sprinter"]
+
+=== 07.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",138,""]
+  Row 2: ["","","","","",428,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",456,46,18,"",67,"",0.1127946127946128]
+  Row 6: [43283,0,1,-1,"","","","","","",501907,"Sonderfahrt Sprinter"]
+  Row 7: [43284,0,2,-2,"","","","","","","504708, 504709","Sonderfahrt Sprinter"]
+
+=== 08.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",196,""]
+  Row 2: ["","","","","",456,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",398,83,141,"",226,"",0.38047138047138046]
+  Row 6: [43313,0,3,-3,"","","","","","","420039, 421352, 439506",""]
+  Row 7: [43313,24,0,24,"","","","","","","508387, 508388, 508389, 508390, 508391, 508392, 508393, 508394, 508395, 508396, 508397, 508398, 508399, 508400, 508401, 508402, 508403, 508404, 508405, 508406, 000019A, 000019B, 000018A, 000018B",""]
+
+=== 09.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",225,""]
+  Row 2: ["","","","","",398,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",369,108,137,"",245,"",0.41245791245791247]
+  Row 6: [43347,0,5,-5,"","","","","","","506445, 506446, 506447, 506448, 506449","SONDERFAHRT LKW"]
+  Row 7: [43347,18,0,18,"","","","","","","510203, 510204, 510205, 510206, 510207, 510208, 510209, 510210, 510211, 510212, 510213, 510214, 510215, 510216, 510217, 510218, 510219, 510220","i.V. mit SoFa-Anlieferung"]
+
+=== 10.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",151,""]
+  Row 2: ["","","","","",369,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",443,173,99,"",336,"",0.5656565656565656]
+  Row 6: [43378,0,21,-21,"","","","","","","508706, 509803, 509668, 504321, 504322, 504478, 504479, 504480, 504481, 504482, \r\n497554, 510208, 510209, 510210, 510211, 510212, 510213, 510214, 510215, 510216, \r\n510217",""]
+  Row 7: [43378,0,6,-6,"","","","","","","505731, 511700, 505691, 509828, 509829, 509830","SONDERFAHRT LKW"]
+
+=== 11.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",92,""]
+  Row 2: ["","","","","",443,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",502,191,132,"",400,"",0.6734006734006734]
+  Row 6: [43405,0,15,-15,"","","","","","","511907, 513487, 504323, 504324, 513029, 505051, 505052, 507928, 507929, 507930, 507931, 507932, 507933, 507934, 507935","SONDERFAHRT LKW"]
+  Row 7: [43406,0,0,0,9,"","","","","","Handling Zwischenlager Block - Paletten labeln","direktanlieferung"]
+
+=== 12.18 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",113,""]
+  Row 2: ["","","","","",502,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",481,41,62,"",552,"",0.9292929292929293]
+  Row 6: [43437,0,16,-16,"","","","","","","515300, 515301, 515302, 509811, 509812, 509813, 515220, 515221, 508711, 513035, \r\n513036, 513037, 515661, 515662, 515663, 515664",""]
+  Row 7: [43438,0,1,-1,"","","","","","",516636,"SONDERFAHRT TRA"]
+
+=== 01.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",130,""]
+  Row 2: ["","","","","",481,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",464,4,21,"",29,"",0.04882154882154882]
+  Row 6: [43475,1,1,0,1,"","","","","","Eb0000026 Auslagern-Bereitstellen; Neuverpacken; Einlagern","zur Bearbeitung durch Hr.Ihde bereitstellen und danach wieder einlagern"]
+  Row 7: [43476,3,3,0,3,"","","","","","519354, 373323, 373324 ","(Muster ziehen) lt. Email 11.01.19"]
+
+=== 02.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",103,""]
+  Row 2: ["","","","","",464,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",491,63,36,"",99,"",0.16666666666666666]
+  Row 6: [43496,8,0,8,"","","","","","","521292, 521293, 521294, 521295, 521296, 521297, 521298, 521299",""]
+  Row 7: [43501,0,6,-6,"","","","","","","495334, 505757, 505760, 505761, 506339, 506341",""]
+
+=== 03.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",141,""]
+  Row 2: ["","","","","",491,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",453,67,105,"",172,"",0.2895622895622896]
+  Row 6: [43525,0,15,-15,"","","","","","","519970, 511490, 519901, 490505, 510238, 510240, 510243, 510244, 510246, 510248, 510249, 510223, 510224, 510225, 510226",""]
+  Row 7: [43525,0,4,-4,"","","","","","","502173, 448164, 519903, 519902","SONDERFAHRT LKW"]
+
+=== 04.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",154,""]
+  Row 2: ["","","","","",453,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",440,60,73,"",159,"",0.2676767676767677]
+  Row 6: [43557,0,31,-31,"","","","","","","511493, 511492, 519112, 519111, 519110, 519971, 000040, 510227, 510228, 510229, 510230, 512891, 512892, 512893, 512894, 512895, 512896, 512897, 498516, 515238, 521987, 521986, 521985, 521984, 508995, 511495, 511494, 508994, 503899, 511491, ArbKor",""]
+  Row 7: [43557,2,0,2,"","","","","","","524219, 524220",""]
+
+=== 05.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",114,""]
+  Row 2: ["","","","","",440,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",480,114,74,"",209,"",0.35185185185185186]
+  Row 6: [43592,0,17,-17,"","","","","","","518382, 515243, 515244, 521295, 521294, 519975, 519974, 518379, 517145, 518380, 518381, 518375, 518377, 518376, 517147, 517149, 523541",""]
+  Row 7: [43592,9,0,9,"","","","","","","525520, 525521, 525522, 525523, 525526, 525527, 525528, 525529, 525531",""]
+
+=== 06.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",109,""]
+  Row 2: ["","","","","",480,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",485,105,100,"",205,"",0.3451178451178451]
+  Row 6: [43620,0,8,-8,"","","","","","","450797, 518384, 497035, 463265, 517950, 517951, 517952, 517953",""]
+  Row 7: [43620,15,0,15,"","","","","","","527378, 527379, 527380, 527381, 527382, 527383, 527384, 527385, 527386, 527387, 527388, 527389, 527390, 527391, 527392",""]
+
+=== 07.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",120,""]
+  Row 2: ["","","","","",485,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",474,68,79,"",175,"",0.2946127946127946]
+  Row 6: [43648,0,20,-20,"","","","","","","523116, 516117, 516118, 516119, 516120, 516121, 516122, 524939, 524940, 524941, 524942, 524943, 524944, 524945, 524946, 522894, 522895, 522896, 507233, 515094",""]
+  Row 7: [43649,0,3,-3,"","","","","","","521425, 521529, 522010",""]
+
+=== 08.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",97,""]
+  Row 2: ["","","","","",474,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",497,92,69,"",173,"",0.29124579124579125]
+  Row 6: [43692,0,10,-10,"","","","","","","526755, 526756, 526757, 526514, 526515, 526517, 508109, 508110, 508111, 508112",""]
+  Row 7: [43692,9,9,0,9,"","","","","","Je 1 Muster: \r\n530157, 530158, 530160, 530173, 530174, 530175, 530177, 530178, 530179",""]
+
+=== 09.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",25,""]
+  Row 2: ["","","","","",497,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",569,234,162,"",571,"",0.9612794612794613]
+  Row 6: [43711,0,13,-13,"","","","","","","526775, 526776, 526777, 526778, 526761, 526762, 526443, 526444, 526445, 526446, 525952, 000064, 000082","SONDERFAHRT LKW 2019/344-1"]
+  Row 7: [43711,5,0,5,"","","","","","","531233, 531234, 531235, 531236, 531237",""]
+
+=== 10.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",45,""]
+  Row 2: ["","","","","",569,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",549,110,130,"",288,"",0.48484848484848486]
+  Row 6: [43739,0,5,-5,"","","","","","","527925, 527926, 527927, 527928, 527929",""]
+  Row 7: [43742,0,16,-16,"","","","","","","530147, 530148, 526522, 526523, 517195, 517196, 517197, 517198, 517199, 530539, 531573, 531574, 531575, 531577, 531578, 000078",""]
+
+=== 11.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",41,""]
+  Row 2: ["","","","","",549,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",553,81,77,"",158,"",0.265993265993266]
+  Row 6: [43774,0,13,-13,"","","","","","","526416, 526417, 532629, 532630, 532631, 532632, 532633, 530672, 530673, 530674, 530675, 530676, 530677","Sonderfahrt 2019/422-1"]
+  Row 7: [43774,24,0,24,"","","","","","","534487, 534488, 534489, 534490, 534491, 534492, 534465, 534471, 534472, 534473, 534474, 534475, 534476, 534477, 534478, 534479, 534480, 534481, 534482, 534483, 534484, 534485, 534486, 000087",""]
+
+=== 12.19 === (44 rows x 12 cols)
+  Row 0: ["Rotexmedica Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",59,""]
+  Row 2: ["","","","","",553,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",535,39,57,"",384,"",0.6464646464646465]
+  Row 6: [43804,0,8,-8,"","","","","","","531914, 531913, 530685, 530686, 531993, 531994, 531995, 533534",""]
+  Row 7: [43804,6,0,6,"","","","","","","536316, 536315, 536318, 536319, 536320, 536321",""]
+
+=== 01.20 === (45 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",22,""]
+  Row 2: ["","","","","",535,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",572,123,86,"",209,"",0.35185185185185186]
+  Row 6: [43837,0,3,-3,"","","","","","","536607, 532990, 532991","SONDERFAHRT LKW 2020/11-1"]
+  Row 7: [43837,18,0,18,"","","","","","","537290, 537291, 537292, 537293, 537294, 537295, 537296, 537297, 537299, 537300, 537301, 537302, 537303, 537304, 537305, 537306, 537307, 537308",""]
+
+=== 02.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",116,""]
+  Row 2: ["","","","","",572,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",478,59,153,"",228,"",0.3838383838383838]
+  Row 6: [43864,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","direktanlieferung"]
+  Row 7: [43864,12,0,12,"","","","","","","538827, 538828, 538829, 538830, 538831, 538832, 538833, 538834, 538835, 538836, 538837, 538838","aus direktanlieferung vom 03.02.20"]
+
+=== 03.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",118,""]
+  Row 2: ["","","","","",478,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",476,109,111,"",220,"",0.37037037037037035]
+  Row 6: [43893,23,0,23,"","","","","","","540448, 540449, 540450, 540451, 540453, 540454, 540455, 540456, 540459, 540460, 540461, 540462, 540463, 540464, 540465, 540466, 540467, 540468, 540473, 540474, 540475, 540476, 540477","SONDERFAHRT 2020/100-1"]
+  Row 7: [43894,12,0,12,"","","","","","","540510, 540511, 540512, 540513, 540514, 540515, 540516, 540517, 540518, 540519, 540520, 540521",""]
+
+=== 04.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",216,""]
+  Row 2: ["","","","","",476,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",378,53,151,"",247,"",0.4158249158249158]
+  Row 6: [43922,0,18,-18,"","","","","","","537304, 537305, 537955, 537956, 537957, 541057, 541058, 541059, 541060, 540453, 540454, 540455, 540456, 537006, 537007, 537008, 537009, 537010","SONDERFAHRT 2020/139-1"]
+  Row 7: [43922,10,0,10,"","","","","","","542064, 542062, 542061, 542063, 542070, 542071, 542065, 542066, 542067, 000102",""]
+
+=== 05.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",189,""]
+  Row 2: ["","","","","",378,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",405,109,82,"",240,"",0.40404040404040403]
+  Row 6: [43951,21,0,21,"","","","","","","543656, 543657, 543658, 543659, 543660, 543661, 543662, 543663, 543664, 543665, 543666, 543667, 543668, 543669, 543670, 543671, 543672, 543673, 543674, 543653, 543654",""]
+  Row 7: [43957,0,25,-25,"","","","","","","542136, 542137, 542138, 542139, 542140, 542141, 542142, 542143, 542144, 542145, \r\n542146, 542147, 542148, 542149, 542150, 542151, 542152, 542153 , 541621, 541461,\r\n539793, 539794, 543666, 543667, 543668","Sonderfahrt 2020/176-1"]
+
+=== 06.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",162,""]
+  Row 2: ["","","","","",405,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",432,123,96,"",290,"",0.4882154882154882]
+  Row 6: [43984,0,11,-11,"","","","","","","544195, 544196, 544197, 544198, 540465, 540466, 540467, 540468, 543656, 543657, 543658","Sonderfahrt (der 2. Teil) 2020/206-1"]
+  Row 7: [43984,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","direktanlieferung"]
+
+=== 07.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",158,""]
+  Row 2: ["","","","","",432,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",436,116,112,"",328,"",0.5521885521885522]
+  Row 6: [44012,0,0,0,26,"","","","","","Handling Zwischenlager Block - Paletten labeln","direktanlieferung"]
+  Row 7: [44013,26,0,26,"","","","","","","546898, 546899, 546900, 546901, 546902, 546903, 546904, 546905, 546906, 546907, \r\n546908, 546909, 546910, 546911, 546912, 546913, 546914, 546915, 546916, 546917, \r\n546918, 546919, 546920, 546921, 546922, 546923","Einlagerung aus Direktanlieferung vom 30.06.2020"]
+
+=== 08.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",145,""]
+  Row 2: ["","","","","",436,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",449,141,128,"",417,"",0.702020202020202]
+  Row 6: [44050,0,14,-14,"","","","","","","541072, 541073, 545904, 545905, 545897, 545898, (541638), 548390, 546379, 402096, 415512, 415513, 415515, 426170, 450798","541638 wurde zwar heute ausgeliefert, aber bereits am 22.07.2020 ausgebucht"]
+  Row 7: [44050,0,2,-2,"","","","","","","545912, 545913",""]
+
+=== 09.20 === (52 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",113,""]
+  Row 2: ["","","","","",449,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",481,203,171,"",486,"",0.8181818181818182]
+  Row 6: [44074,0,0,0,23,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 31.08.2020_1 PANPHARMA"]
+  Row 7: [44074,9,0,9,"","","","","","","549274, 549275, 549276, 549277, 549278, 549279, 549280, 549281, 549282","Einlagerung aus Direktanlieferung am 28.08.2020_1 PANPHARMA"]
+
+=== 10.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",130,""]
+  Row 2: ["","","","","",481,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",464,170,187,"",459,"",0.7727272727272727]
+  Row 6: [44105,0,30,-30,"","","","","","","545252, 545253, 545254, 545255, 546446, 546447, 546448, 546449, 546450, 546451, \r\n548951, 548952, 548953, 548954, 550734, 550735, 549620, 549621, 548395, 548396, \r\n545463, 469540, 547905, 547906, 547907, 548551, 549680, 549681, 547895, 543653",""]
+  Row 7: [44105,17,0,17,"","","","","","","550943, 550944, 551056, 551057, 551058, 551059, 550945, 550946, 550947, 550948, \r\n550949, 550950, 550951, 550952, 000109, 000110, 000111",""]
+
+=== 11.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",76,""]
+  Row 2: ["","","","","",464,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",518,199,145,"",475,"",0.7996632996632996]
+  Row 6: [44134,14,0,14,"","","","","","","552792, 552793, 552794, 552795, 552796, 552797, 552798, 552799, 552800, 552809, 552810, 552811, 552812, 552813",""]
+  Row 7: [44134,0,0,0,17,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 30.10.2020_1 PANPHARMA"]
+
+=== 12.20 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",146,""]
+  Row 2: ["","","","","",518,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",448,63,133,"",482,"",0.8114478114478114]
+  Row 6: [44169,0,0,0,259,"","","","","","Vereinfachte Inventur Lagerbestand per 04.12.2020: 0,5 Aufwand x 518 Paletten ","nur das Vorhandensein der EB-Nummern abgleichen."]
+  Row 7: [44169,0,44,-44,"","","","","","","550742, 551792, 551793, 553563, 553564, 553565, 553566, 548975, 548976, 548977, 548978, 552880, 552881, 552882, 552883, 552884, 552885, 552886, 552887, 552888, 552889, 552794, 552795, 000059, 418776, 547908, 551877, 551878, 551879, 551880, 551881, 551882, 551292, 551293, 551294, 548598, 548599, 551863, 551864, 551865, 551866, 548568, 548569, 552941",""]
+
+=== 01.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",140,""]
+  Row 2: ["","","","","",448,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",454,134,128,"",379,"",0.6380471380471381]
+  Row 6: [44203,0,31,-31,"","","","","","","552604, 552605, 554073, 549798, 549799, 549800, 549337, 549338, 549339, 549340, 552325, 552326, 552327, 552328, 552329, 552330, 552331, 552332, 552333, 552334, 552335, 552336, 552337, 533103, 531895, 552798, 552799, 551958, 551283, 550965, 000089",""]
+  Row 7: [44203,3,0,3,"","","","","","","000083, 000093, 000094",""]
+
+=== 02.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",38,""]
+  Row 2: ["","","","","",454,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",556,259,157,"",579,"",0.9747474747474747]
+  Row 6: [44228,1,1,0,1,"","","","","","523119 Auslagern, zählen, einlagern",""]
+  Row 7: [44228,19,0,19,"","","","","","","556946, 556947, 556948, 556949, 556950, 556951, 556952, 556953, 556955, 556938, 556939, 556940, 556941, 556942, 556943, 556931, 556932, 556933, 556934",""]
+
+=== 03.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",65,""]
+  Row 2: ["","","","","",556,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",529,117,144,"",339,"",0.5707070707070707]
+  Row 6: [44257,0,5,-5,"","","","","","","555390, 555391, 555392, 555393, 555394","SONDERFAHRT 2021/47-1"]
+  Row 7: [44257,5,0,5,"","","","","","","558654, 558655, 558656, 558657, 558658",""]
+
+=== 04.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",151,""]
+  Row 2: ["","","","","",529,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",443,92,178,"",325,"",0.5471380471380471]
+  Row 6: [44287,0,2,-2,"","","","","","","558371, 558372","SONDERFAHRT 2021/75-1"]
+  Row 7: [44292,0,10,-10,"","","","","","","558538, 558539, 558373, 558374, 558375, 558376, 558377, 558378, 558379, 558380",""]
+
+=== 05.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",110,""]
+  Row 2: ["","","","","",443,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",484,211,170,"",563,"",0.9478114478114478]
+  Row 6: [44319,0,0,0,20,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.05.2021_1 PANPHARMA"]
+  Row 7: [44320,20,0,20,"","","","","","","561499, 561500, 561501, 561502, 561503, 561504, 561505, 561506, 561507, 561508, 561509, 561510, 561511, 561512, 561513, 561514, 561515, 561516, 561517, 561518","Einlagerung aus Direktanlieferung am 03.05.2021_1 PANPHARMA"]
+
+=== 06.21 === (57 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",118,""]
+  Row 2: ["","","","","",484,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",476,221,229,"",656,"",1.1043771043771045]
+  Row 6: [44348,7,0,7,"","","","","","","562709, 562711, 562712, 562713, 562714, 562715, 562716",""]
+  Row 7: [44348,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.06.2021_1 PANPHARMA"]
+
+=== 07.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",31,""]
+  Row 2: ["","","","","",476,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",563,136,49,"",266,"",0.4478114478114478]
+  Row 6: [44378,1,1,0,1,"","","","","","Handling Zwischenlager Block - Paletten labeln","Umzugsverpackung"]
+  Row 7: [44378,0,23,-23,"","","","","","","561628, 561629, 561630, 563713, 563714, 563715, 555397, 553396, 558416, 562846, \r\n562847, 562848, 562849, 562850, 562851, 562852, 557208, 560246, 563476, 563469, \r\n563470, 563450, 469548","Sonderfahrt 2021/154-1"]
+
+=== 08.21 === (45 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",594,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",107,""]
+  Row 2: ["","","","","",563,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",487,72,148,"",269,"",0.45286195286195285]
+  Row 6: [44410,0,0,0,13,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.08.2021_1 PANPHARMA"]
+  Row 7: [44410,4,4,0,4,"","","","","","je 1 Tray Musterzug aus\r\n565440, 565441, 565424, 565425",""]
+
+=== 09.21 === (43 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",31,""]
+  Row 2: ["","","","","",487,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",575,244,156,"",638,"",1.0528052805280528]
+  Row 6: [44441,0,0,0,22,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.09.2021_1 PANPHARMA"]
+  Row 7: [44442,0,34,-34,"","","","","","","558585, 558586, 565887, 565888, 565889, 561535, 561536, 558677, 564491, 564085, 564086, 560596, 560598, 560606, 562446, 562447, 562448, 562449, 565781, 565782, 565783, 565269, 556674, 556675, 556676, 565441, 565442, 565443, 565444, 561518, 563900, 563901, 563902, 563903",""]
+
+=== 10.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",48,""]
+  Row 2: ["","","","","",575,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",558,100,117,"",300,"",0.49504950495049505]
+  Row 6: [44474,0,0,0,8,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 05.10.2021_1 PANPHARMA"]
+  Row 7: [44475,8,0,8,"","","","","","","569245, 569246, 569247, 569248, 569249, 569250, 569251, 569252","Einlagerung aus Direktanlieferung am 05.10.2021_1 PANPHARMA"]
+
+=== 11.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",99,""]
+  Row 2: ["","","","","",558,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",507,54,105,"",159,"",0.2623762376237624]
+  Row 6: [44501,25,0,25,"","","","","","","570542, 570543, 570544, 570545, 570546, 570547, 570548, 570549, 570550, 570551, \r\n570526, 570527, 570528, 570529, 570530, 570531, 570532, 570533, 570534, 570535, \r\n570536, 570537, 570538, 570539, 570540","Sonderfahrt 2021/256-1"]
+  Row 7: [44505,0,19,-19,"","","","","","","569726, 569727, 569728, 569729, 569730, 569731, 569732, 568824, 568825, 568396, 568397, 567877, 567878, 562992, 562993, 562994, 569346, 569347, 569348","Sonderfahrt 2021/256-2"]
+
+=== 12.21 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",82,""]
+  Row 2: ["","","","","",507,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",524,133,116,"",334,"",0.5511551155115512]
+  Row 6: [44531,0,0,0,17,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.12.2021_1 PANPHARMA"]
+  Row 7: [44531,17,0,17,"","","","","","","572181, 572182, 572183, 572184, 572185, 572186, 572187, 572188, 572189, 572190, 572191, 572192, 572193, 572194, 572195, 572196, 572197","Einlagerung aus Direktanlieferung am 01.12.2021_1 PANPHARMA"]
+
+=== 01.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",130,""]
+  Row 2: ["","","","","",524,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",476,63,111,"",430,"",0.7095709570957096]
+  Row 6: [44567,0,33,-33,"","","","","","","565356, 565357, 564228, 564229, 564230, 564231, 533104, 573140, 571430, 571431, 571432, 573137, 573138, 573139, 572546, 572547, 572548, 572549, 567553, 567554, 567555, 563461, 567887, 567888, 567889, 569349, 569350, 568409, 568410, 572193, 572194, 568422, 568423","SONDERFAHRT 2022/12-1"]
+  Row 7: [44569,0,0,0,243,"","","","","","Vereinfachte Inventur Lagerbestand per 08.01.2022: 487 Paletten *0,5 Aufwand ","nur das Vorhandensein der EB-Nummern abgleichen. (+4 Stellplätze zu 567286) = 491 am 08.01.2022"]
+
+=== 02.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",153,""]
+  Row 2: ["","","","","",476,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",453,79,102,"",252,"",0.4158415841584158]
+  Row 6: [44593,4,4,0,4,"","","","","","MUSTER je 1 Tray aus: 574344, 574345, 574346, 574347","mit nächstem Abruf liefern"]
+  Row 7: [44594,0,15,-15,"","","","","","","573142, 574021, 574022, 574023, 574024, 574152, 574153, 574154, 574155, 574156, 574157, 568411, 534477, 564750, Pal093","SONDERFAHRT 2022/39-1"]
+
+=== 03.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",189,""]
+  Row 2: ["","","","","",453,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",417,108,144,"",337,"",0.5561056105610561]
+  Row 6: [44621,1,1,0,1,"","","","","","eb00000132","(Bereitstellung zur Prüfung; Wiedereinlagerung)"]
+  Row 7: [44623,0,16,-16,"","","","","","","573838, 573844, 573845, 573846, 573847, 573848, 573849, 573850, 565358, 569353, 572188, 572189, 572190, 573216, 572988, 000126","SONDERFAHRT 2022/65-1"]
+
+=== 04.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",252,""]
+  Row 2: ["","","","","",417,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",354,2,65,"",67,"",0.11056105610561057]
+  Row 6: [44657,0,24,-24,"","","","","","","568429, 568430, 568431, 568432, 568433, 568434, 568435, 568436, 568437, 568438, 568439, 568440, 568441, 568442, 568443, 568444, 571892, 571893, 571894, 571895, 567894, 567895, 567896, 573220","SONDERFAHRT 2022/93-1"]
+  Row 7: [44672,0,23,-23,"","","","","","","576396, 576401, 576402, 576404, 576405, 576406, 576407, 576408, 576409, 576410, 576411, 576412, 567893, 570277, 570278, 570279, 570280, 568414, 568415, 575588, 575589, 569815, 573221","SONDERFAHRT 2022/98-1"]
+
+=== 05.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",268,""]
+  Row 2: ["","","","","",354,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",338,21,37,"",58,"",0.09570957095709572]
+  Row 6: [44687,0,19,-19,"","","","","","","576901, 576902, 576903, 576904, 576905, 576906, 576907, 576908, 575590, 575591, 575602, 575603, 575604, 534478, 577229, 577230, 577231, 577232, 577233","SONDERFAHRT 2022/114-1"]
+  Row 7: [44687,9,0,9,"","","","","","","578459, 578460, 578461, 578462, 578463, 578465, 578466, 578467, 578468",""]
+
+=== 06.22 === (45 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",226,""]
+  Row 2: ["","","","","",338,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",380,93,51,"",198,"",0.32673267326732675]
+  Row 6: [44714,0,13,-13,"","","","","","","573223, 573224, 573225, 572989, 575592, 575593, 575594, 575595, 575596, 562796, 562797, 562798, 562799","SONDERFAHRT 2022/131-1"]
+  Row 7: [44714,17,0,17,"","","","","","","580704, 580705, 580706, 580707, 580708, 580633, 580634, 580635, 580636, 580637, 580638, 580639, 580640, 580624, 580625, 580626, 580627",""]
+
+=== 07.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",606,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",26,""]
+  Row 2: ["","","","","",380,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",580,231,31,"",440,"",0.7260726072607261]
+  Row 6: [44743,18,0,18,"","","","","","","582302, 582303, 582304, 582305, 582306, 582307, 582308, 582309, 582310, 582311, \r\n582312, 582313, 582314, 582315, 582316, 582317, 582318, 582320","SONDERFAHRT 2022/176-1"]
+  Row 7: [44747,0,0,0,24,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 05.07.22_1 PANPHARMA"]
+
+=== 08.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-17,""]
+  Row 2: ["","","","","",580,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",659,210,131,"",515,"",0.8021806853582555]
+  Row 6: [44774,0,0,0,32,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.08.22_1 PANPHARMA"]
+  Row 7: [44774,0,0,0,25,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.08.22_2 PANPHARMA"]
+
+=== 09.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-25,""]
+  Row 2: ["","","","","",659,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",667,161,153,"",434,"",0.67601246105919]
+  Row 6: [44805,0,23,-23,"","","","","","","583643, 583345, 583346, 583347, 583348, 583349, 583210, 583211, 583212, 583213, 580706, 580707, 580708, 581829, 581830, 581831, 581832, 581833, 570281, 556398, 556939, 556940, 573235","SONDERFAHRT 2022/220-1"]
+  Row 7: [44805,21,0,21,"","","","","","","584897, 584898, 584899, 584900, 584901, 584902, 584903, 584904, 584905, 584906, 584969, 584970, 584860, 584861, 584863, 584864, 584865, 584866, 584867, 584868, 584857",""]
+
+=== 10.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-77,""]
+  Row 2: ["","","","","",667,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",719,144,92,"",357,"",0.5560747663551402]
+  Row 6: [44839,0,14,-14,"","","","","","","584539, 584540, 584541, 584542, 584543, 584544, 584545, 584546, 585864, 585865, 584685, 584686, 583258, 583259","SONDERFAHRT 2022/252-1"]
+  Row 7: [44841,0,0,0,25,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 07.10.22_1 PANPHARMA\r\nSALDO: 678 (Verfügbar: -36)"]
+
+=== 11.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-84,""]
+  Row 2: ["","","","","",719,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",726,149,142,"",447,"",0.6962616822429907]
+  Row 6: [44868,0,19,-19,"","","","","","","585886, 585887, 585888, 585889, 585890, 585891, 587459, 587460, 587461, 587462, 583467, 583468, 587382, 587383, 577176, 577177, 585293, 585294, 585295","SONDERFAHRT  2022/278-1"]
+  Row 7: [44872,0,3,-3,"","","","","","","585518, 585522, 585523","SONDERFAHRT  2022/283-1"]
+
+=== 12.22 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-87,""]
+  Row 2: ["","","","","",726,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",729,123,120,"",648,"",1.0093457943925233]
+  Row 6: [44896,0,17,-17,"","","","","","","587472, 587473, 587474, 587475, 587476, 587477, 585298, 585301, 580803, 584130, 584131, 577181, 584699, 584700, 584701, 584902, 584903","SONDERFAHRT 2022/299-1"]
+  Row 7: [44903,15,0,15,"","","","","","","589770, 589771, 589772, 589773, 589774, 589775, 589776, 589777, 589778, 589779, 589780, 589781, 589782, 589783, 589784","SONDERFAHRT 2022/299-2"]
+
+=== 01.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-84,""]
+  Row 2: ["","","","","",729,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",726,126,129,"",381,"",0.5934579439252337]
+  Row 6: [44932,0,5,-5,"","","","","","","584450, 584451, 584452, 584453, 584454","SONDERFAHRT 2023/7-1"]
+  Row 7: [44935,0,0,0,36,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 09.01.23_1 PANPHARMA\r\nSALDO: 760 (Verfügbar: --118)"]
+
+=== 02.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-119,""]
+  Row 2: ["","","","","",726,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",761,157,122,"",400,"",0.6230529595015576]
+  Row 6: [44959,0,25,-25,"","","","","","","590420, 590421, 590422, 590423, 590424, 590425, 590426, 590427, 590428, 590429, 588469, 588127, 588128, 583137, 583138, 583139, 583140, 583141, 565884, 565885, 584149, 584150, 591162, 577189, 586795","SONDERFAHRT 2023/20-1"]
+  Row 7: [44959,24,0,24,"","","","","","","593458, 593459, 593460, 593461, 593462, 593463, 593464, 593465, 593466, 593467, 593468, 593469, 593470, 593471, 593472, 593473, 593474, 593475, 593476, 593477, 593555, 593556, 593557, 593558",""]
+
+=== 03.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-108,""]
+  Row 2: ["","","","","",761,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",750,127,138,"",480,"",0.7476635514018691]
+  Row 6: [44986,0,0,0,14,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.03.23_1 PANPHARMA\r\nSALDO: 775 (Verfügbar: --133)"]
+  Row 7: [44987,14,0,14,"","","","","","","594992, 594993, 594994, 594995, 594996, 594997, 594998, 595000, 595001, 595002, 595003, 595004, 595005, 595006","Einlagerung aus Direktanlieferung am 01.03.23_1 PANPHARMA"]
+
+=== 04.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-123,""]
+  Row 2: ["","","","","",750,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",765,159,144,"",451,"",0.7024922118380063]
+  Row 6: [45019,0,0,0,30,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.04.23_1 PANPHARMA\r\nSALDO: 780 (Verfügbar: --138)"]
+  Row 7: [45020,30,0,30,"","","","","","","597017, 597018, 597019, 597020, 597021, 597022, 597023, 597024, 597025, 597026, 597027, 597028, 597029, 597030, 597031, 597032, 597033, 597034, 597035, 597036, 597037, 597038, 597039, 597040, 597041, 597045, 597046, 597047, 597048, 597049","Einlagerung aus Direktanlieferung am 03.04.23_1 PANPHARMA"]
+
+=== 05.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-169,""]
+  Row 2: ["","","","","",765,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",811,182,136,"",443,"",0.6900311526479751]
+  Row 6: [45048,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.05.23_1 PANPHARMA\r\nSALDO: 777 (Verfügbar: --135)"]
+  Row 7: [45049,12,0,12,"","","","","","","598399, 598400, 598401, 598402, 598403, 598404, 598405, 598406, 598407, 598408, 598412, 598413","Einlagerung aus Direktanlieferung am 02.05.23_1 PANPHARMA"]
+
+=== 06.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-162,""]
+  Row 2: ["","","","","",811,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",804,128,135,"",362,"",0.5638629283489096]
+  Row 6: [45078,0,24,-24,"","","","","","","593741, 593742, 593743, 593744, 594997, 596279, 596280, 594678, 596197, 596237, 596241, 596242, 596243, 596244, 596245, 597473, 591144, 591145, 586251, 565886, 591350, 591351, 591352, 591353","SONDERFAHRT 2023/110-1"]
+  Row 7: [45078,17,0,17,"","","","","","","599723, 599724, 599725, 599726, 599727, 599728, 599729, 599730, 599731, 599732, 599733, 599734, 599735, 599736, 599737, 599738, 599739",""]
+
+=== 07.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-195,""]
+  Row 2: ["","","","","",804,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",837,80,47,"",175,"",0.27258566978193144]
+  Row 6: [45113,0,27,-27,"","","","","","","598760, 598761, 598762, 598763, 593804, 593805, 596149, 596150, 596151, 596152, 596153, 598793, 598794, 598795, 598796, 590055, 590056, 590057, 590058, 590059, 590060, 585305, 583413, 583414, 597047, 597048, 597049","SONDERFAHRT 2023/141-1"]
+  Row 7: [45113,16,0,16,"","","","","","","601712, 601713, 601714, 601715, 601716, 601717, 601718, 601719, 601720, 601721, 601722, 601723, 601724, 601725, 601726, 601711",""]
+
+=== 08.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-209,""]
+  Row 2: ["","","","","",837,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",851,123,109,"",340,"",0.5295950155763239]
+  Row 6: [45141,0,6,-6,"","","","","","","596154, 596155, 582417, 591175, 591176, 583419","SONDERFAHRT 2023/156-1"]
+  Row 7: [45141,10,0,10,"","","","","","","602879, 602880, 602881, 602882, 602883, 602884, 602885, 602886, 602887, 602888","SALDO: 841 (Verfügbar: --199"]
+
+=== 09.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-209,""]
+  Row 2: ["","","","","",851,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",851,57,57,"",156,"",0.24299065420560748]
+  Row 6: [45170,0,0,0,13,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.09.23_1 PANPHARMA\r\nSALDO: 864 (Verfügbar: --222)"]
+  Row 7: [45173,13,0,13,"","","","","","","604219, 604220, 604221, 604222, 604223, 604224, 604225, 604226, 604227, 604228, 604229, 604230, 604231","Einlagerung aus Direktanlieferung am 01.09.23_1 PANPHARMA"]
+
+=== 10.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-208,""]
+  Row 2: ["","","","","",851,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",850,89,90,"",251,"",0.3909657320872274]
+  Row 6: [45204,0,24,-24,"","","","","","","597945, 597946, 597947, 597948, 597949, 597950, 597951, 597952, 597953, 597954, 597955, 597956, 597957, 597958, 597959, 597019, 597020, 597021, 597022, 593458, 593459, 593460, 593461, 585306","SONDERFAHRT 2023/212-1"]
+  Row 7: [45211,0,27,-27,"","","","","","","587664, 587665, 587666, 587667, 587668, 587669, 594807, 579754, 579755, 579756, 579757, 579758, 582686, 582687, 594424, 605097, 597023, 597024, 599136, 582429, 582430, 589056, 596036, 583425, 583426, 586031, 596031","SONDERFAHRT 2023/212-2"]
+
+=== 11.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-174,""]
+  Row 2: ["","","","","",850,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",816,83,117,"",271,"",0.4221183800623053]
+  Row 6: [45226,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 27.10.23_2 PANPHARMA\r\nSALDO: 862 (Verfügbar: --220)"]
+  Row 7: [45231,12,0,12,"","","","","","","606654, 606655, 606656, 606657, 606658, 606659, 606660, 606661, 606662, 606663, 606664, 606665","Einlagerung aus Direktanlieferung am 27.10.23_2 PANPHARMA"]
+
+=== 12.23 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-141,""]
+  Row 2: ["","","","","",816,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",783,20,53,"",459,"",0.7149532710280374]
+  Row 6: [45267,0,11,-11,"","","","","","","606685, 606686, 606687, 606427, 606428, 599103, 599104, 599105, 599106, 598865, 598866","SONDERFAHRT 2023/271-1"]
+  Row 7: [45267,6,0,6,"","","","","","","608432, 608433, 608434, 608435, 608436, 608437",""]
+
+=== 01.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-107,""]
+  Row 2: ["","","","","",783,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",749,42,76,"",195,"",0.3037383177570093]
+  Row 6: [45293,0,0,0,43,"","","","","","Vereinfachte Inventur (Archiv) 86 Paletten prüfen *0,5 Aufwand ","nur das Vorhandensein der Archiv-Nummern abgleichen.  \r\nLagerbestand = 86 am 02.01.2024"]
+  Row 7: [45295,0,17,-17,"","","","","","","600757, 600758, 600759, 600760, 600761, 600762, 600763, 600764, 600765, 600766, 600767, 600768, 600769, 600770, 600771, 601314, 606688","SONDERFAHRT 2024/12-1"]
+
+=== 02.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-143,""]
+  Row 2: ["","","","","",749,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",785,165,129,"",447,"",0.6962616822429907]
+  Row 6: [45323,0,17,-17,"","","","","","","594795, 594796, 590229, 599137, 599138, 599139, 599140, 599141, 602228, 602229, 593471, 593472, 593473, 593474, 593475, 593476, 593477","SONDERFAHRT 2024/34-1"]
+  Row 7: [45327,0,0,0,24,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 05.02.24_1 PANPHARMA\r\nSALDO: 756 (Verfügbar: --114)"]
+
+=== 03.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-103,""]
+  Row 2: ["","","","","",785,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",745,92,132,"",335,"",0.5218068535825545]
+  Row 6: [45352,0,0,0,25,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.03.24_1 PANPHARMA\r\nSALDO: 810 (Verfügbar: --168)"]
+  Row 7: [45352,25,0,25,"","","","","","","612314, 612315, 612316, 612317, 612318, 612319, 612320, 612321, 612322, 612323, 612324, 612325, 612326, 612327, 612328, 612329, 612330, 612331, 612332, 612333, 612334, 612335, 612336, 612337, 612338","Einlagerung aus Direktanlieferung am 01.03.24_1 PANPHARMA"]
+
+=== 04.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-127,""]
+  Row 2: ["","","","","",745,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",769,121,97,"",318,"",0.4953271028037383]
+  Row 6: [45384,0,0,0,12,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.04.24_1 PANPHARMA\r\nSALDO: 757 (Verfügbar: --115)"]
+  Row 7: [45384,12,0,12,"","","","","","","613805, 613806, 613807, 613808, 613809, 613810, 613811, 613812, 613813, 613814, 613815, 613816","Einlagerung aus Direktanlieferung am 02.04.24_1 PANPHARMA"]
+
+=== 05.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-122,""]
+  Row 2: ["","","","","",769,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",764,106,111,"",318,"",0.4953271028037383]
+  Row 6: [45418,0,7,-7,1,"","","","","","612985, 612986, 612987, 598940, 598941, 598950, 586206","SONDERFAHRT 2024/130-1.1"]
+  Row 7: [45418,1,1,0,1,"","","","","","MUSTERZUG je 1 Tray von 614979","SONDERFAHRT 2024/130-1.1"]
+
+=== 06.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-113,""]
+  Row 2: ["","","","","",764,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",755,90,99,"",264,"",0.411214953271028]
+  Row 6: [45443,0,0,0,8,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 31.05.24_1 PANPHARMA "]
+  Row 7: [45446,8,0,8,"","","","","","","618715, 618716, 618717, 618718, 618719, 618720, 618721, 618722","Einlagerung aus Direktanlieferung am 31.05.24_1 PANPHARMA \r\nSALDO: 772 (Verfügbar: --130)"]
+
+=== 07.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-69,""]
+  Row 2: ["","","","","",755,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",711,65,109,"",242,"",0.37694704049844235]
+  Row 6: [45477,0,0,0,18,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 04.07.24_1 PANPHARMA \r\nSALDO: 773 (Verfügbar: --131)"]
+  Row 7: [45478,18,0,18,"","","","","","","620320, 620321, 620322, 620323, 620324, 620325, 620326, 620327, 620328, 620329, 620330, 620331, 620333, 620334, 620335, 620336, 620337, 620338","Einlagerung aus Direktanlieferung am 04.07.24_1 PANPHARMA "]
+
+=== 08.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-20,""]
+  Row 2: ["","","","","",711,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",662,79,128,"",239,"",0.37227414330218067]
+  Row 6: [45505,0,0,0,20,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.08.24_1 PANPHARMA \r\nSALDO: 731 (Verfügbar: --89)"]
+  Row 7: [45505,20,0,20,"","","","","","","626937, 626938, 626939, 626940, 626941, 626942, 626943, 626944, 626945, 626946, 626947, 626948, 626949, 626950, 626951, 626952, 626953, 626954, 626955, 626956","Einlagerung aus Direktanlieferung am 01.08.24_1 PANPHARMA "]
+
+=== 09.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-100,""]
+  Row 2: ["","","","","",662,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",742,123,43,"",320,"",0.4984423676012461]
+  Row 6: [45538,0,0,0,20,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.09.24_1 PANPHARMA \r\nSALDO: 682 (Verfügbar: --40)"]
+  Row 7: [45539,20,0,20,"","","","","","","628315, 628316, 628317, 628318, 628319, 628320, 628321, 628322, 628323, 628324, 628325, 628326, 628327, 628328, 628329, 628330, 628331, 628332, 628333, 628334","Einlagerung aus Direktanlieferung am 03.09.24_1 PANPHARMA "]
+
+=== 10.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-38,""]
+  Row 2: ["","","","","",742,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",680,32,94,"",158,"",0.24610591900311526]
+  Row 6: [45567,0,18,-18,"","","","","","","629193, 607274, 619230, 619231, 619232, 619233, 626483, 626484, 626485, 626486, 626487, 626488, 589355, 611747, 611748, 611749, 615013, 619646","SONDERFAHRT 2024/273-1"]
+  Row 7: [45567,2,2,0,2,"","","","","","MUSTERZUG je 1 Tray von 629108, 629113",""]
+
+=== 11.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-53,""]
+  Row 2: ["","","","","",680,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",695,88,73,"",247,"",0.3847352024922118]
+  Row 6: [45602,2,2,0,"","","","","","","611757, 627030","Bereitstellung zur Überprüfung"]
+  Row 7: [45603,0,2,-2,"","","","","","","611757, 627030","SONDERFAHRT 2024/310-1"]
+
+=== 12.24 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-34,""]
+  Row 2: ["","","","","",695,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",676,70,89,"",535,"",0.8333333333333334]
+  Row 6: [45628,0,0,0,27,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.12.24_1 PANPHARMA \r\nSALDO: 722 (Verfügbar: --80)"]
+  Row 7: [45628,27,0,27,"","","","","","","633076, 633077, 633078, 633079, 633080, 633081, 633082, 633083, 633084, 633085, 633086, 633087, 633088, 633089, 633090, 633091, 633092, 633093, 633094, 633095, 633096, 633097, 633098, 633099, 633100, 633101, 633102","Einlagerung aus Direktanlieferung am 02.12.24_1 PANPHARMA "]
+
+=== 01.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",16,""]
+  Row 2: ["","","","","",676,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",626,29,79,"",137,"",0.21339563862928349]
+  Row 6: [45666,0,0,0,15,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 09.01.25_1 PANPHARMA \r\nSALDO: 691 (Verfügbar: --49)"]
+  Row 7: [45666,0,35,-35,"","","","","","","629209, 629210, 629211, 629212, 619135, 614711, 620337, 620338, 633084, 603298, 603304, 603305, 603306, 603307, 612196, 612197, 612198, 612199, 612200, 612201, 612202, 612203, 612204, 612205, 612206, 612207, 612208, 612209, 612210, 629001, 629002, 614566, 629377, 633818, 627027","2025/15-1"]
+
+=== 02.25 === (42 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-16,""]
+  Row 2: ["","","","","",626,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",658,139,107,"",385,"",0.5996884735202492]
+  Row 6: [45691,0,0,0,28,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.02.25_1 PANPHARMA \r\nSALDO: 654 (Verfügbar: --12)"]
+  Row 7: [45691,28,0,28,"","","","","","","635177, 635178, 635179, 635180, 635181, 635182, 635183, 635184, 635185, 635186, 635187, 635188, 635189, 635190, 635191, 635192, 635193, 635194, 635195, 635196, 635197, 635198, 635199, 635200, 635201, 635202, 635203, 635204","Einlagerung Direktanlieferung am 03.02.25_1 PANPHARMA"]
+
+=== 03.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-43,""]
+  Row 2: ["","","","","",658,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",685,99,72,"",270,"",0.4205607476635514]
+  Row 6: [45719,0,0,0,31,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.03.25_1 PANPHARMA \r\nSALDO: 689 (Verfügbar: --47)"]
+  Row 7: [45719,31,0,31,"","","","","","","636306, 636307, 636308, 636309, 636310, 636311, 636312, 636313, 636314, 636315, 636316, 636317, 636318, 636319, 636320, 636321, 636322, 636323, 636324, 636325, 636326, 636327, 636328, 636330, 636331, 636332, 636333, 636334, 636335, 636336, 636337","Einlagerung aus Direktanlieferung am 03.03.25_1 PANPHARMA "]
+
+=== 04.25 === (42 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",6,""]
+  Row 2: ["","","","","",685,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",636,56,105,"",227,"",0.35358255451713394]
+  Row 6: [45743,0,15,-15,"","","","","","","626434, 626435, 626436, 606638, 606639, 636907, 636908, 636909, 636910, 636911, 636912, 605947, 630288, 635393, 634252","2025/96-1 "]
+  Row 7: [45743,1,0,1,"","","","","","","Eb0000073","2025/96-1\r\nSALDO: 671 (Verfügbar: --29)"]
+
+=== 05.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",32,""]
+  Row 2: ["","","","","",636,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",610,31,57,"",136,"",0.2118380062305296]
+  Row 6: [45785,0,0,0,16,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 08.05.25_1 PANPHARMA \r\nSALDO: 644 (Verfügbar: --02)"]
+  Row 7: [45792,8,0,8,"","","","","","","639208, 639204, 639205, 639206, 639207, 639208, 639209, 639210","Einlagerung aus Direktanlieferung am 08.05.25_1 PANPHARMA "]
+
+=== 06.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",27,""]
+  Row 2: ["","","","","",610,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",615,58,53,"",224,"",0.34890965732087226]
+  Row 6: [45811,0,0,0,32,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 03.06.25_1 PANPHARMA \r\nSALDO: 626 (Verfügbar: +16)"]
+  Row 7: [45811,16,0,16,"","","","","","","639860, 639861, 639862, 639863, 639864, 639865, 639866, 639867, 639868, 639869, 639870, 639871, 639872, 639873, 639874, 639875","Einlagerung aus Direktanlieferung am 03.06.25_1 PANPHARMA "]
+
+=== 07.25 === (42 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",89,""]
+  Row 2: ["","","","","",615,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",553,53,115,"",196,"",0.3052959501557632]
+  Row 6: [45841,0,29,-29,"","","","","","","615902, 615903, 615904, 615905, 615906, 615907, 615908, 615909, 615910, 619660, 619661, 619662, 633085, 633086, 632516, 632517, 614574, 635420, 638751, 638752, 638753, 638754, 638755, 638756, 628712, 628713, 628714, 633822, 634868","2025/169-2"]
+  Row 7: [45841,16,0,16,"","","","","","","640973, 640974, 640975, 640976, 640977, 640978, 640979, 640980, 640981, 640985, 640986, 640987, 640988, 640989, 640990, 640991","2025/169-2"]
+
+=== 08.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",84,""]
+  Row 2: ["","","","","",553,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",558,84,79,"",321,"",0.5]
+  Row 6: [45870,0,0,0,44,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.08.25_1 PANPHARMA "]
+  Row 7: [45870,2,2,0,2,"","","","","","MUSTERZUG je 1 Tray aus Ch.-Nr. 1639780 + 1639790","wird abgeholt"]
+
+=== 09.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",36,""]
+  Row 2: ["","","","","",558,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",606,93,45,"",264,"",0.411214953271028]
+  Row 6: [45904,2,2,0,2,"","","","","","MUSTERZUG je 1 Tray aus 643274 + 643275","aus DA vom 28.08.25 / Auslieferung mit Abrufen"]
+  Row 7: [45904,0,11,-11,"","","","","","","628721, 628722, 628723, 636310, 636319, 636320, 583586, 640978, 635411, 635437, 640985","2025/225-1"]
+
+=== 10.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-27,""]
+  Row 2: ["","","","","",606,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",669,181,118,"",637,"",0.9922118380062306]
+  Row 6: [45932,0,17,-17,"","","","","","","636195, 636196, 636197, 636198, 636199, 636321, 636322, 636419, 636420, 636421, 636422, 643869, 643870, 643871, 639862, 639863, 639323","2025/244-1"]
+  Row 7: [45932,2,0,2,"","","","","","","644474, 644475","2025/244-1"]
+
+=== 11.25 === (45 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-53,""]
+  Row 2: ["","","","","",669,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",695,134,108,"",485,"",0.7554517133956387]
+  Row 6: [45960,0,0,0,14,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 30.10.25_1 PANPHARMA\r\nSALDO: 676 (Verfügbar: --34)"]
+  Row 7: [45964,7,0,7,"","","","","","","645697, 645698, 645699, 645700, 645701, 645702, 645703","Einlagerung aus Direktanlieferung am 30.10.25_1 PANPHARMA"]
+
+=== 12.25 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-35,""]
+  Row 2: ["","","","","",695,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",677,52,70,"",534,"",0.8317757009345794]
+  Row 6: [45992,0,0,0,54,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.12.25_1 PANPHARMA\r\nSALDO: 722 (Verfügbar: --80)"]
+  Row 7: [45992,27,0,27,"","","","","","","647271, 647272, 647273, 647274, 647275, 647276, 647277, 647278, 647279, 647280, 647281, 647282, 647283, 647284, 647285, 647286, 647287, 647288, 647289, 647290, 647291, 647292, 647293, 647294, 647295, 647296, 647297","Einlagerung aus Direktanlieferung am 01.12.25_1 PANPHARMA"]
+
+=== 01.26 === (47 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-110,""]
+  Row 2: ["","","","","",677,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",752,163,88,"",548,"",0.8535825545171339]
+  Row 6: [46028,0,1,-1,"","","","","","",597788,"2026/5-1"]
+  Row 7: [46030,0,17,-17,"","","","","","","642273, 642274, 642182, 642183, 636440, 636441, 645924, 645925, 645926, 639588, 597789, 635428, 647997, 647998, 647999, 648006, 643107","2026/5-2"]
+
+=== 02.26 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-73,""]
+  Row 2: ["","","","","",752,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",715,75,112,"",315,"",0.49065420560747663]
+  Row 6: [46055,0,0,0,30,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 02.02.26_1 PANPHARMA\r\nSALDO: 767 (Verfügbar: --125)"]
+  Row 7: [46055,15,0,15,"","","","","","","649692, 649693, 649694, 649695, 649696, 649697, 649698, 649699, 649700, 649701, 649702, 649703, 649704, 649705, 649706","Einlagerung aus Direktanlieferung am 02.02.26_1 PANPHARMA"]
+
+=== 03.26 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-73,""]
+  Row 2: ["","","","","",715,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",715,102,102,"",374,"",0.5825545171339563]
+  Row 6: [46080,0,2,-2,"","","","","","","648687, 648688","2026/48-1"]
+  Row 7: [46086,0,17,-17,"","","","","","","645032, 645033, 645034, 645035, 645036, 648914, 644845, 648007, 648008, 642082, 644175, 644176, 644630, 647271, 647272, 647273, 647274","2026/48-2"]
+
+=== 04.26 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-102,""]
+  Row 2: ["","","","","",715,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",744,148,119,"",544,"",0.8473520249221184]
+  Row 6: [46113,0,0,0,24,"","","","","","Handling Zwischenlager Block - Paletten labeln","Direktanlieferung am 01.04.26_1 PANPHARMA\r\nSALDO: 727 (Verfügbar: --85)"]
+  Row 7: [46114,12,0,12,"","","","","","","652268, 652269, 652270, 652271, 652272, 652273, 652274, 652276, 652277, 652278, 652279, 652280","Einlagerung aus Direktanlieferung am 01.04.26_1 PANPHARMA"]
+
+=== 05.26 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",-34,""]
+  Row 2: ["","","","","",744,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",676,39,107,"",202,"",0.3146417445482866]
+  Row 6: [46142,4,0,4,"","","","","","","653257, 653258, 653259, 653260","2026/104-2\r\nSALDO: 748 (Verfügbar: --106)"]
+  Row 7: [46149,0,16,-16,"","","","","","","648483, 647287, 647288, 647289, 653210, 653211, 653212, 653213, 639591, 649676, 649677, 645514, 645515, 645107, 645108, 645109","2026/114-1"]
+
+=== 06.26 === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",6,""]
+  Row 2: ["","","","","",676,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",636,90,130,"",490,"",0.7632398753894081]
+  Row 6: [46176,0,0,0,54,"","","","","","Bereitstellung zur DIREKTABHOLUNG: (54 Pal. lt. Abruf)","x"]
+  Row 7: [46176,0,0,0,10,"","","","","","Rücklagerung, da diese Ware nun doch nicht raus geht (10 Pal.)","x"]
+
+=== VORLAGE === (44 rows x 12 cols)
+  Row 0: ["Panpharma Lager","","","","","","","","","Kontingent:",642,""]
+  Row 1: ["","","","","","Übertrag aus Vormonat:","","","","Verfügbar:",6,""]
+  Row 2: ["","","","","",636,"","","","","",""]
+  Row 3: ["Datum","Ein-\r\nlagerung","Aus-\r\nlagerung","Zu- / \r\nAbgang","Extra \r\nHandling","Lagerbestand\r\nist","Bewegung\r\nEinlagerung","Bewegung\r\nAuslagerung","","Summe\r\nBewegungen","EB-Nummer(n)",""]
+  Row 4: ["","","","","","","","","","","","Traffic Bewegungen : Kontingent"]
+  Row 5: ["","","","","",636,0,0,"",0,"",0]
+  Row 6: ["","","",0,"","","","","","","",""]
+  Row 7: ["","","",0,"","","","","","","",""]
+
+=== Traffic === (145 rows x 12 cols)
+  Row 0: ["Monat","Traffic\r\nBewegungen\r\n: Kontingent","Paletten-\r\nBewegungen\r\nje Monat","Paletten-\r\nBewegungen\r\nper Jahr","Umsatz\r\nnur\r\nHandling","Jahresdurchschnitt\r\nHandling p.M.","Traffic über gesamten Zeitraum",0.5220437803765987,"","","",""]
+  Row 1: [42736,0.3090909090909091,51,"",306,"","","","","","",""]
+  Row 2: [42767,0.5326633165829145,106,"",636,"","","","","","",""]
+  Row 3: [42795,0.35714285714285715,90,"",540,"","","","","","",""]
+  Row 4: [42826,0.30158730158730157,76,"",456,"","","","","","",""]
+  Row 5: [42856,0.5873015873015873,148,"",888,"","","","","","",""]
+  Row 6: [42887,0.4365079365079365,110,"",660,"","","","","","",""]
+  Row 7: [42917,0.007936507936507936,2,"",12,"","","","","","",""]
+
+=== Traffic alle Jahre === (0 rows)
