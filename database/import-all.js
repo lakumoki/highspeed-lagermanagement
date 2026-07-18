@@ -473,6 +473,14 @@ if (hoehenSheet) {
   console.log(`  Regalhöhen: ${Object.keys(regalHoehen).length} Regale, ${hCount} Plätze mit max_hoehe_cm`);
 }
 
+// Zwischenlager / Gang-Plätze anlegen (XA, XB, XC, XD, XE1, XE2, XF1, XF2 + Wareneingang)
+const gangPlaetze = ['XA', 'XB', 'XC', 'XD', 'XE1', 'XE2', 'XF1', 'XF2', 'Wareneingang'];
+const insertGang = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, stapelbar, belegt, bemerkung) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+for (const g of gangPlaetze) {
+  insertGang.run(g, g, 0, null, 'EG', 0, 'Gang/Zwischenlager', 'Gang', 1, 0, 'Mehrfachbelegung erlaubt');
+}
+console.log(`  Gang-/Zwischenlagerplätze: ${gangPlaetze.length} (XA-XF2 + Wareneingang)`);
+
 // ════════════════════════════════════════════════════════════════════════════════
 // 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT
 // ════════════════════════════════════════════════════════════════════════════════

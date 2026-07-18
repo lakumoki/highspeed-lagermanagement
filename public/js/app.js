@@ -1171,22 +1171,39 @@ async function saveNeuerKunde() {
 // ═══ PROTOKOLL ═══════════════════════════════════════════════════════════════
 async function pgProtokoll() {
   const pc = document.getElementById('page-content');
-  const logs = await api('/api/protokoll?limit=200');
   
   pc.innerHTML = `
     <div class="page-header"><h1>Veränderungsprotokoll</h1></div>
     <div class="card" style="margin-bottom:12px">
-      <p style="font-size:12px;color:var(--text-muted);margin:0">
+      <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px 0">
         Alle Buchungen systemweit mit Zeitstempel und Benutzer. 
         Kunden-spezifische Übersichten finden Sie unter <a href="#" onclick="navigate('kunden');return false">Kunden → Details</a>.
       </p>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="flex:1;margin-bottom:0">
+          <input type="text" id="protokoll-suche" placeholder="Suche nach Palette, Platz, Datum, Aktion, Benutzer..." onkeydown="if(event.key==='Enter')protokollSuchen()">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="protokollSuchen()" style="margin-bottom:0;height:38px">Suchen</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('protokoll-suche').value='';protokollSuchen()" style="margin-bottom:0;height:38px">Reset</button>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-header"><h3>Letzte ${logs.length} Einträge</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Zeitstempel</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
-        ${logs.map(l => `<tr><td style="white-space:nowrap;font-size:12px">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><span class="badge ${l.aktion === 'Einlagerung' ? 'badge-success' : l.aktion === 'Auslagerung' || l.aktion === 'Abruf ausgeführt' ? 'badge-danger' : l.aktion === 'Musterzug' ? 'badge-warning' : l.aktion === 'Umlagerung' ? '' : 'badge-info'}">${l.aktion}</span></td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;font-size:12px">${l.details || ''}</td><td style="font-size:12px">${l.benutzer || '—'}</td></tr>`).join('')}
-      </tbody></table></div>
+    <div class="card" id="protokoll-tabelle">
+      <p style="color:var(--text-muted)">Lade...</p>
     </div>`;
+  
+  protokollSuchen();
+}
+
+async function protokollSuchen() {
+  const q = document.getElementById('protokoll-suche')?.value?.trim() || '';
+  const url = q ? `/api/protokoll?limit=500&q=${encodeURIComponent(q)}` : '/api/protokoll?limit=200';
+  const logs = await api(url);
+  const box = document.getElementById('protokoll-tabelle');
+  box.innerHTML = `
+    <div class="card-header"><h3>${q ? `Suche: "${q}" — ${logs.length} Treffer` : `Letzte ${logs.length} Einträge`}</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>Zeitstempel</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
+      ${logs.map(l => `<tr><td style="white-space:nowrap;font-size:12px">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><span class="badge ${l.aktion === 'Einlagerung' || l.aktion === 'Einlagerung (Stapler)' ? 'badge-success' : l.aktion === 'Auslagerung' || l.aktion === 'Abruf ausgeführt' ? 'badge-danger' : l.aktion === 'Musterzug' ? 'badge-warning' : l.aktion === 'Direktanlieferung erstellt' || l.aktion === 'Direktanlieferung (Stapler)' ? 'badge-warning' : l.aktion === 'Zwischengelagert' ? 'badge-warning' : 'badge-info'}">${l.aktion}</span></td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;font-size:12px">${l.details || ''}</td><td style="font-size:12px">${l.benutzer || '—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
 }
 
 // ═══ PALETTE BEARBEITEN (Modal) ═══════════════════════════════════════════════

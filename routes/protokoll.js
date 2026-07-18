@@ -4,7 +4,16 @@ const db = require('../database/init');
 
 // Gesamt-Veränderungsprotokoll (alle Kunden, alle Aktionen)
 router.get('/', (req, res) => {
-  const { limit = 100 } = req.query;
+  const { limit = 100, q } = req.query;
+  if (q && q.trim()) {
+    const search = `%${q.trim()}%`;
+    const logs = db.prepare(`
+      SELECT * FROM protokoll 
+      WHERE aktion LIKE ? OR details LIKE ? OR benutzer LIKE ? OR zeitstempel LIKE ?
+      ORDER BY zeitstempel DESC, id DESC LIMIT ?
+    `).all(search, search, search, search, parseInt(limit));
+    return res.json(logs);
+  }
   const logs = db.prepare('SELECT * FROM protokoll ORDER BY zeitstempel DESC, id DESC LIMIT ?').all(parseInt(limit));
   res.json(logs);
 });

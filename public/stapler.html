@@ -242,6 +242,10 @@
       } else {
         html += `<button class="btn-freie" onclick="toggleFreie()">Freie Plätze anzeigen</button>`;
         html += `<div id="freie-box" class="freie-liste"></div>`;
+        const offeneAnzahl = d.positionen.filter(p => p.status !== 'eingelagert').length;
+        if (offeneAnzahl > 1) {
+          html += `<button class="btn-freie" style="border-color:#e67e22;color:#e67e22" onclick="alleZwischenlagern()">Alle ${offeneAnzahl} in Wareneingang zwischenlagern</button>`;
+        }
       }
 
       for (const pos of d.positionen) {
@@ -335,6 +339,24 @@
         msg.innerHTML = `<div class="error-msg">${e.message}</div>`;
         btn.disabled = false;
         input.disabled = false;
+      }
+    }
+
+    async function alleZwischenlagern() {
+      if (!confirm('Alle offenen Paletten in den Wareneingang zwischenlagern?')) return;
+      try {
+        const res = await fetch(`/api/auftraege/${token}/zwischenlagern`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        for (const pos of auftragData.positionen) {
+          if (pos.status !== 'eingelagert') { pos.status = 'eingelagert'; pos.lagerplatz = 'Wareneingang'; }
+        }
+        render();
+      } catch (e) {
+        alert('Fehler: ' + e.message);
       }
     }
 

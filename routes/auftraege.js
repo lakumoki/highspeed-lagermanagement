@@ -164,7 +164,8 @@ router.post('/:token/positionen/:id', (req, res) => {
     platzBez, platzBez.toUpperCase(), platzBez.toLowerCase()
   );
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
-  if (platz.belegt) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
+  // Gang-/Zwischenplätze erlauben Mehrfachbelegung
+  if (platz.belegt && platz.typ !== 'Gang') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
 
   const nr = position.paletten_nr;
 
@@ -245,16 +246,70 @@ router.get('/:token/freie-plaetze', (req, res) => {
   const auftrag = db.prepare('SELECT * FROM einlagerungsauftraege WHERE token = ?').get(req.params.token);
   if (!auftrag) return res.status(404).json({ error: 'Auftrag nicht gefunden' });
 
+  // Reguläre freie Plätze + Gang-/Zwischenplätze (immer verfügbar)
   const plaetze = db.prepare(`
-    SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.ebene, l.max_hoehe_cm
+    SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.ebene, l.max_hoehe_cm, l.typ
     FROM lagerplaetze l
     LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-    WHERE l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL
-    ORDER BY l.regal, l.position
-    LIMIT 30
+    WHERE (l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL) OR l.typ = 'Gang'
+    ORDER BY CASE WHEN l.typ = 'Gang' THEN 1 ELSE 0 END, l.regal, l.position
+    LIMIT 50
   `).all();
 
   res.json(plaetze);
+});
+
+// POST /:token/zwischenlagern — Alle offenen Positionen in Wareneingang parken
+router.post('/:token/zwischenlagern', (req, res) => {
+  const auftrag = db.prepare('SELECT * FROM einlagerungsauftraege WHERE token = ?').get(req.params.token);
+  if (!auftrag) return res.status(404).json({ error: 'Auftrag nicht gefunden' });
+
+  const offene = db.prepare('SELECT * FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? AND status = ?').all(auftrag.id, 'offen');
+  if (offene.length === 0) return res.status(400).json({ error: 'Keine offenen Positionen' });
+
+  const wareneingang = db.prepare("SELECT * FROM lagerplaetze WHERE bezeichnung = 'Wareneingang'").get();
+  if (!wareneingang) return res.status(500).json({ error: 'Wareneingang-Platz nicht konfiguriert' });
+
+  const heute = new Date().toISOString().split('T')[0];
+  const jetzt = new Date().toISOString();
+  let count = 0;
+
+  const transaction = db.transaction(() => {
+    for (const pos of offene) {
+      const nr = pos.paletten_nr;
+      const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
+      if (duplikat) continue;
+
+      let nummernTyp = 'Sonstige';
+      if (nr.match(/^\d{6}$/)) nummernTyp = 'EB';
+      else if (nr.match(/^KW|^Kw/i)) nummernTyp = 'KW';
+
+      db.prepare(`INSERT INTO paletten (paletten_nr, nummern_typ, kunde_id, lagerplatz_id, lagerplatz_bezeichnung, artikel_nr, chargen_nr, menge, eingelagert_von, bemerkung)
+        VALUES (?,?,?,?,?,?,?,?,?,?)`).run(nr, nummernTyp, auftrag.kunde_id, wareneingang.id, 'Wareneingang', pos.artikel_nr || null, pos.chargen_nr || null, 1, 'Staplerfahrer', 'Zwischengelagert');
+
+      if (auftrag.typ === 'direktanlieferung') {
+        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Einlagerung', nr, auftrag.direkt_id, 'Direktanlieferung - LKW-Entladung', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
+        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Extra Handling', nr, auftrag.direkt_id, 'Direktanlieferung - Handling', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
+        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Einlagerung', nr, auftrag.direkt_id, 'Direktanlieferung - Einlagerung', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
+      } else {
+        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?)").run(auftrag.kunde_id, heute, 'Einlagerung', nr, 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
+      }
+
+      db.prepare('UPDATE einlagerungsauftrag_positionen SET lagerplatz = ?, status = ?, eingelagert_am = ? WHERE id = ?').run('Wareneingang', 'eingelagert', jetzt, pos.id);
+      count++;
+    }
+
+    db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(wareneingang.id);
+    db.prepare('UPDATE einlagerungsauftraege SET status = ? WHERE id = ?').run('abgeschlossen', auftrag.id);
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Zwischengelagert', `${count} Paletten → Wareneingang`, 'Staplerfahrer', jetzt);
+  });
+
+  try {
+    transaction();
+    res.json({ ok: true, message: `${count} Paletten im Wareneingang zwischengelagert`, count });
+  } catch (e) {
+    res.status(500).json({ error: 'Fehler: ' + e.message });
+  }
 });
 
 module.exports = router;
