@@ -507,6 +507,7 @@ async function pgDirektanlieferung() {
           <input type="text" id="da-bemerkung" placeholder="Optional">
         </div>
         <button class="btn btn-primary btn-lg" onclick="erstelleDirektanlieferung()">Auftrag erstellen & QR generieren</button>
+        <button class="btn btn-lg" onclick="direktWareneingang()" style="background:#e67e22;color:#fff;margin-left:10px">Wareneingang (alle zwischenlagern)</button>
       </div>
       <div id="da-ergebnis"></div>
     </div>
@@ -567,6 +568,44 @@ async function erstelleDirektanlieferung() {
       </div>`;
 
     generateQRInElement('da-qr-box', data.url);
+    document.getElementById('da-nummern').value = '';
+    loadDirektanlieferungen();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function direktWareneingang() {
+  const kundeId = document.getElementById('da-kunde').value;
+  const lkwNr = document.getElementById('da-lkw').value.trim();
+  const text = document.getElementById('da-nummern').value.trim();
+  const bemerkung = document.getElementById('da-bemerkung').value.trim();
+
+  if (!text) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
+
+  const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
+  if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  if (!confirm(`${nummern.length} Paletten direkt in den Wareneingang buchen?\n\nPro Palette werden 3 Bewegungen erzeugt.`)) return;
+
+  try {
+    // 1. Auftrag erstellen
+    const data = await api('/api/auftraege', { method: 'POST', body: {
+      kunde_id: kundeId,
+      typ: 'direktanlieferung',
+      lkw_nr: lkwNr || null,
+      positionen: nummern.map(nr => ({ paletten_nr: nr })),
+      bemerkung: bemerkung || null
+    }});
+
+    // 2. Sofort zwischenlagern
+    const zw = await api(`/api/auftraege/${data.token}/zwischenlagern`, { method: 'POST' });
+
+    document.getElementById('da-ergebnis').innerHTML = `
+      <div class="card" style="margin-top:16px;border:2px solid var(--success)">
+        <h3 style="color:var(--success);margin-bottom:8px">✓ ${zw.count} Paletten im Wareneingang</h3>
+        <p style="font-size:13px;color:var(--text-muted)">${zw.count * 3} Bewegungen gebucht (3 pro Palette).${data.direkt_id ? ' ID: ' + data.direkt_id : ''}</p>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Die Paletten können über <strong>Umlagerung</strong> auf ihre endgültigen Plätze verschoben werden.</p>
+      </div>`;
+
     document.getElementById('da-nummern').value = '';
     loadDirektanlieferungen();
   } catch (e) { toast(e.message, 'error'); }
