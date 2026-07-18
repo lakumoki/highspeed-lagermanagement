@@ -115,4 +115,50 @@ router.patch('/:id/abrechnung', (req, res) => {
   res.json({ ok: true });
 });
 
+// Bewegung rückgängig machen
+router.post('/:id/rueckgaengig', (req, res) => {
+  const bewegung = db.prepare('SELECT * FROM bewegungen WHERE id = ?').get(req.params.id);
+  if (!bewegung) return res.status(404).json({ error: 'Bewegung nicht gefunden' });
+  
+  const benutzer = req.session?.user?.benutzername || 'System';
+  const jetzt = new Date().toISOString();
+  
+  if (bewegung.typ === 'Auslagerung') {
+    // Paletten wieder einlagern
+    const nummern = (bewegung.paletten_nummern || '').split(',').map(s => s.trim()).filter(Boolean);
+    let restored = 0;
+    for (const nr of nummern) {
+      const pal = db.prepare("SELECT id, lagerplatz_id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 1").get(nr);
+      if (pal) {
+        db.prepare("UPDATE paletten SET ausgelagert = 0, ausgelagert_am = NULL, ausgelagert_von = NULL WHERE id = ?").run(pal.id);
+        if (pal.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(pal.lagerplatz_id);
+        restored++;
+      }
+    }
+    db.prepare("UPDATE bewegungen SET korrektur = 1, bemerkung = COALESCE(bemerkung,'') || ' [RÜCKGÄNGIG ' || ? || ' von ' || ? || ']' WHERE id = ?").run(jetzt, benutzer, bewegung.id);
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Rückgängig', `Auslagerung rückgängig: ${nummern.join(', ')} (${restored} wiederhergestellt)`, benutzer, jetzt);
+    return res.json({ ok: true, message: `Auslagerung rückgängig: ${restored} Palette(n) wiederhergestellt` });
+  }
+  
+  if (bewegung.typ === 'Einlagerung') {
+    // Palette wieder entfernen
+    const nummern = (bewegung.paletten_nummern || '').split(',').map(s => s.trim()).filter(Boolean);
+    let removed = 0;
+    for (const nr of nummern) {
+      const pal = db.prepare("SELECT id, lagerplatz_id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
+      if (pal) {
+        db.prepare("UPDATE paletten SET geloescht = 1, geloescht_am = ?, geloescht_von = ? WHERE id = ?").run(jetzt, benutzer, pal.id);
+        if (pal.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.lagerplatz_id);
+        db.prepare("INSERT INTO papierkorb (tabelle, datensatz_id, daten, geloescht_von) VALUES ('paletten', ?, ?, ?)").run(pal.id, JSON.stringify({ paletten_nr: nr }), benutzer);
+        removed++;
+      }
+    }
+    db.prepare("UPDATE bewegungen SET korrektur = 1, bemerkung = COALESCE(bemerkung,'') || ' [RÜCKGÄNGIG ' || ? || ' von ' || ? || ']' WHERE id = ?").run(jetzt, benutzer, bewegung.id);
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Rückgängig', `Einlagerung rückgängig: ${nummern.join(', ')} (${removed} entfernt)`, benutzer, jetzt);
+    return res.json({ ok: true, message: `Einlagerung rückgängig: ${removed} Palette(n) entfernt` });
+  }
+  
+  return res.status(400).json({ error: `Typ "${bewegung.typ}" kann nicht rückgängig gemacht werden` });
+});
+
 module.exports = router;

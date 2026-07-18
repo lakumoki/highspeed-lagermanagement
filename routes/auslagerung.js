@@ -27,8 +27,8 @@ router.post('/', (req, res) => {
     db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(palette.platz_id);
   }
   
-  // Bewegung dokumentieren
-  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer, monat) VALUES (?, ?, ?, 1, ?, ?, ?)').run(palette.kunde_id, heute, 'Auslagerung', paletten_nr, benutzer, heute.substring(0, 7));
+  // Bewegung dokumentieren (Platz in bemerkung für Nachvollziehbarkeit)
+  db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer, monat, bemerkung) VALUES (?, ?, ?, 1, ?, ?, ?, ?)').run(palette.kunde_id, heute, 'Auslagerung', paletten_nr, benutzer, heute.substring(0, 7), `Platz: ${palette.lagerplatz_bezeichnung || '?'}`);
   
   // Protokoll (mit Zeitstempel + Login)
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Auslagerung', `${paletten_nr} von ${palette.lagerplatz_bezeichnung}`, benutzer, jetzt);

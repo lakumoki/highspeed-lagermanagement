@@ -320,16 +320,26 @@ function pgAuslagerung() {
           <input type="text" id="ausl-bem" placeholder="Optional">
         </div>
       </div>
-      <button class="btn btn-primary" onclick="doAuslagern()">Auslagern + Beleg</button>
+      <button class="btn btn-primary" onclick="doAuslagern()">Auslagern</button>
+      <div id="ausl-result" style="margin-top:16px"></div>
     </div>`;
 }
 
 async function doAuslagern() {
+  const nr = document.getElementById('ausl-nr').value.trim();
+  if (!nr) { toast('Paletten-Nr. eingeben', 'error'); return; }
+  if (!confirm(`Palette "${nr}" wirklich auslagern?`)) return;
+  
   try {
-    const nr = document.getElementById('ausl-nr').value.trim();
     const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung: document.getElementById('ausl-bem').value.trim() } });
-    toast(data.message, 'success');
-    window.open(`/api/berichte/auslagerungsbeleg/${nr}`, '_blank');
+    document.getElementById('ausl-result').innerHTML = `
+      <div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px">
+        <strong style="color:var(--success, #28a745)">✓ Auslagerung erfolgreich</strong>
+        <p style="margin:8px 0 0;font-size:13px">${data.message}</p>
+        <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="window.open('/api/berichte/auslagerungsbeleg/${nr}','_blank')">PDF-Beleg öffnen</button>
+      </div>`;
+    document.getElementById('ausl-nr').value = '';
+    document.getElementById('ausl-bem').value = '';
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -763,6 +773,7 @@ async function pgKunden() {
 }
 
 async function showKundeDetail(id) {
+  window._currentKundeId = id;
   const data = await api(`/api/kunden/${id}`);
   const { kunde, bewegungen, muster, kontingent, monatsStats } = data;
   const pc = document.getElementById('page-content');
@@ -808,10 +819,19 @@ async function showKundeDetail(id) {
     
     <div class="card">
       <div class="card-header"><h3>Letzte Bewegungen (${bewegungen.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Pal.-Nr.</th><th>Benutzer</th></tr></thead><tbody>
-        ${bewegungen.map(b => `<tr><td>${b.datum || '—'}</td><td><span class="badge ${b.typ === 'Einlagerung' ? 'badge-success' : b.typ === 'Auslagerung' ? 'badge-danger' : 'badge-warning'}">${b.typ}</span></td><td>${b.anzahl}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.paletten_nummern || '—'}</td><td>${b.benutzer || '—'}</td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Pal.-Nr.</th><th>Platz</th><th>Benutzer</th><th></th></tr></thead><tbody>
+        ${bewegungen.map(b => `<tr><td>${b.datum || '—'}</td><td><span class="badge ${b.typ === 'Einlagerung' ? 'badge-success' : b.typ === 'Auslagerung' ? 'badge-danger' : 'badge-warning'}">${b.typ}</span></td><td>${b.anzahl}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.paletten_nummern || '—'}</td><td>${b.bemerkung || '—'}</td><td>${b.benutzer || '—'}</td><td>${b.typ === 'Auslagerung' || b.typ === 'Einlagerung' ? `<button class="btn btn-sm btn-danger" onclick="rueckgaengigBewegung(${b.id}, '${b.typ}', '${(b.paletten_nummern||'').replace(/'/g,'')}')" title="Rückgängig">↩</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
+}
+
+async function rueckgaengigBewegung(bewegungId, typ, palNr) {
+  if (!confirm(`Bewegung "${typ}" für "${palNr}" wirklich rückgängig machen?\n\nDies kann nicht erneut rückgängig gemacht werden.`)) return;
+  try {
+    const data = await api(`/api/bewegungen/${bewegungId}/rueckgaengig`, { method: 'POST' });
+    toast(data.message, 'success');
+    if (window._currentKundeId) showKundeDetail(window._currentKundeId);
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 function showNeuerKunde() {
