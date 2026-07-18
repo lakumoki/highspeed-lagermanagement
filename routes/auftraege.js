@@ -246,15 +246,23 @@ router.get('/:token/freie-plaetze', (req, res) => {
   const auftrag = db.prepare('SELECT * FROM einlagerungsauftraege WHERE token = ?').get(req.params.token);
   if (!auftrag) return res.status(404).json({ error: 'Auftrag nicht gefunden' });
 
-  // Reguläre freie Plätze + Gang-/Zwischenplätze (immer verfügbar)
+  const { hoehe } = req.query;
+  let where = '((l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL) OR l.typ IN (\'Gang\',\'Block\'))';
+  const params = [];
+
+  if (hoehe && parseInt(hoehe) > 0) {
+    where += ' AND (l.max_hoehe_cm >= ? OR l.typ IN (\'Gang\',\'Block\'))';
+    params.push(parseInt(hoehe));
+  }
+
   const plaetze = db.prepare(`
     SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.ebene, l.max_hoehe_cm, l.typ
     FROM lagerplaetze l
     LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-    WHERE (l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL) OR l.typ = 'Gang'
-    ORDER BY CASE WHEN l.typ = 'Gang' THEN 1 ELSE 0 END, l.regal, l.position
-    LIMIT 50
-  `).all();
+    WHERE ${where}
+    ORDER BY CASE WHEN l.typ IN ('Gang','Block') THEN 1 ELSE 0 END, ${hoehe ? 'l.max_hoehe_cm ASC,' : ''} l.regal, l.position
+    LIMIT 80
+  `).all(...params);
 
   res.json(plaetze);
 });

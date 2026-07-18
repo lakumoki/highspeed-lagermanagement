@@ -240,7 +240,15 @@
       if (erledigt === gesamt && gesamt > 0) {
         html += `<div class="all-done"><h2>Alle Paletten eingelagert</h2><p style="color:#aaa">Auftrag abgeschlossen.</p></div>`;
       } else {
-        html += `<button class="btn-freie" onclick="toggleFreie()">Freie Plätze anzeigen</button>`;
+        html += `
+          <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:#f5c518;margin-bottom:8px">Platz-Suche nach Höhe</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" id="hoehe-input" placeholder="Höhe in cm" style="flex:1;padding:10px 12px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:#f0f0f0;font-size:15px;outline:none">
+              <button onclick="sucheNachHoehe()" style="padding:10px 16px;background:#f5c518;color:#1a1a1a;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Suchen</button>
+            </div>
+          </div>`;
+        html += `<button class="btn-freie" onclick="toggleFreie()">Alle freien Plätze anzeigen</button>`;
         html += `<div id="freie-box" class="freie-liste"></div>`;
         const offeneAnzahl = d.positionen.filter(p => p.status !== 'eingelagert').length;
         if (offeneAnzahl > 1) {
@@ -290,11 +298,55 @@
         const res = await fetch(`/api/auftraege/${token}/freie-plaetze`);
         freiePlaetze = await res.json();
       }
-      box.innerHTML = freiePlaetze.map(p =>
-        `<span class="platz-chip" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' (' + p.max_hoehe_cm + 'cm)' : ''}</span>`
-      ).join('');
+      renderFreiePlaetze(freiePlaetze);
       box.classList.add('visible');
       freieSichtbar = true;
+    }
+
+    async function sucheNachHoehe() {
+      const hoehe = document.getElementById('hoehe-input').value.trim();
+      if (!hoehe || parseInt(hoehe) <= 0) {
+        const res = await fetch(`/api/auftraege/${token}/freie-plaetze`);
+        freiePlaetze = await res.json();
+      } else {
+        const res = await fetch(`/api/auftraege/${token}/freie-plaetze?hoehe=${encodeURIComponent(hoehe)}`);
+        freiePlaetze = await res.json();
+      }
+      const box = document.getElementById('freie-box');
+      renderFreiePlaetze(freiePlaetze);
+      box.classList.add('visible');
+      freieSichtbar = true;
+    }
+
+    function renderFreiePlaetze(plaetze) {
+      const box = document.getElementById('freie-box');
+      if (plaetze.length === 0) {
+        box.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:10px">Keine passenden Plätze gefunden</div>';
+        return;
+      }
+      const regale = plaetze.filter(p => p.typ !== 'Gang' && p.typ !== 'Block');
+      const bloecke = plaetze.filter(p => p.typ === 'Block');
+      const gaenge = plaetze.filter(p => p.typ === 'Gang');
+      let html = '';
+      if (regale.length > 0) {
+        html += '<div style="font-size:11px;color:#999;margin-bottom:4px;font-weight:600">REGALPLÄTZE</div>';
+        html += regale.map(p =>
+          `<span class="platz-chip" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' <span style="opacity:0.7;font-size:11px">(' + p.max_hoehe_cm + 'cm)</span>' : ''}</span>`
+        ).join('');
+      }
+      if (bloecke.length > 0) {
+        html += '<div style="font-size:11px;color:#e67e22;margin:8px 0 4px;font-weight:600">BLOCK-PLÄTZE</div>';
+        html += bloecke.map(p =>
+          `<span class="platz-chip" style="border-color:#e67e22;color:#e67e22" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}</span>`
+        ).join('');
+      }
+      if (gaenge.length > 0) {
+        html += '<div style="font-size:11px;color:#888;margin:8px 0 4px;font-weight:600">GÄNGE (Zwischenlager)</div>';
+        html += gaenge.map(p =>
+          `<span class="platz-chip" style="border-color:#888;color:#888" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}</span>`
+        ).join('');
+      }
+      box.innerHTML = html;
     }
 
     function fillPlatz(bez) {
