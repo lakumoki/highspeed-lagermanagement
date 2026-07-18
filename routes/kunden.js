@@ -19,11 +19,11 @@ router.get('/:id', (req, res) => {
   
   const kid = parseInt(req.params.id);
   
-  // Paletten-Statistik
+  // Paletten-Statistik (LIVE aus DB, nicht aus importierten Daten)
   const palettenCount = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
   kunde.aktive_paletten = palettenCount.c;
   
-  // Überbelegung
+  // Überbelegung LIVE berechnen
   kunde.ueberbelegung = Math.max(0, palettenCount.c - (kunde.kontingent_plaetze || 0));
   
   // Letzte Bewegungen (50)
@@ -32,12 +32,36 @@ router.get('/:id', (req, res) => {
   // Musterzüge
   const muster = db.prepare("SELECT * FROM musterzuege WHERE kunde_id = ? ORDER BY id DESC LIMIT 20").all(kid);
   
-  // Kontingent aktuell
-  const kontingent = db.prepare("SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC LIMIT 1").get(kid);
+  // Kontingent: AKTUELLER Monat (MM.YY Format wie in Excel)
+  const heute = new Date();
+  const aktuellerMonat = String(heute.getMonth() + 1).padStart(2, '0') + '.' + String(heute.getFullYear()).slice(-2);
+  let kontingent = db.prepare("SELECT * FROM kontingent WHERE kunde_id = ? AND monat = ?").get(kid, aktuellerMonat);
   
-  // Bewegungen Zusammenfassung (letzter Monat)
-  const heute = new Date().toISOString().split('T')[0];
-  const monatStart = heute.substring(0, 8) + '01';
+  // Wenn kein Eintrag für aktuellen Monat → LIVE-Kontingent berechnen
+  if (!kontingent) {
+    const letztes = db.prepare("SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC LIMIT 1").get(kid);
+    const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
+    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Einlagerung'").get(kid, monatStart);
+    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Auslagerung'").get(kid, monatStart);
+    const extra = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Extra Handling'").get(kid, monatStart);
+    
+    kontingent = {
+      monat: aktuellerMonat,
+      kontingent_plaetze: kunde.kontingent_plaetze || letztes?.kontingent_plaetze || 0,
+      verfuegbar: (kunde.kontingent_plaetze || letztes?.kontingent_plaetze || 0) - palettenCount.c,
+      lagerbestand: palettenCount.c,
+      uebertrag_vormonat: letztes?.lagerbestand || 0,
+      einlagerungen: einl?.s || 0,
+      auslagerungen: ausl?.s || 0,
+      extra_handling: extra?.s || 0,
+      bewegungen_gesamt: (einl?.s || 0) + (ausl?.s || 0) + (extra?.s || 0),
+      saldo_ueberkapazitaet: Math.max(0, palettenCount.c - (kunde.kontingent_plaetze || letztes?.kontingent_plaetze || 0)),
+      live: true
+    };
+  }
+  
+  // Bewegungen aktueller Monat (echtes Datum, nicht importierter Monat)
+  const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
   const monatsStats = db.prepare("SELECT typ, SUM(anzahl) as summe FROM bewegungen WHERE kunde_id = ? AND datum >= ? GROUP BY typ").all(kid, monatStart);
   
   res.json({ kunde, bewegungen, muster, kontingent, monatsStats });

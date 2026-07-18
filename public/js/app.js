@@ -148,10 +148,11 @@ async function pgDashboard() {
     
     ${d.kontingent ? `
     <div class="card">
-      <div class="card-header"><h3>Kontingent Panpharma</h3><span class="badge badge-warning">${d.kontingent.monat}</span></div>
+      <div class="card-header"><h3>Kontingent Panpharma</h3><span class="badge badge-warning">${d.kontingent.monat}${d.kontingent.live ? ' (Live)' : ''}</span></div>
       <div class="form-row">
         <div><strong>Stellplätze:</strong> ${d.kontingent.kontingent_plaetze}</div>
         <div><strong>Bestand:</strong> ${d.kontingent.lagerbestand}</div>
+        <div><strong>Verfügbar:</strong> <span style="color:${d.kontingent.verfuegbar < 0 ? 'var(--danger)' : 'var(--success)'}">${d.kontingent.verfuegbar}</span></div>
         <div><strong>Überkapazität:</strong> ${d.kontingent.saldo_ueberkapazitaet || 0}</div>
         <div><strong>Bewegungen:</strong> ${d.kontingent.bewegungen_gesamt}</div>
       </div>

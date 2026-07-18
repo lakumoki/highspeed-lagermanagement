@@ -10,8 +10,32 @@ router.get('/', (req, res) => {
   const paletten = db.prepare("SELECT COUNT(*) as total FROM paletten WHERE ausgelagert = 0 AND geloescht = 0").get();
   const kunden = db.prepare('SELECT COUNT(*) as total FROM kunden WHERE aktiv = 1').get();
   
-  // Kontingent aktuell (neuester Monat PPH)
-  const kontingent = db.prepare('SELECT * FROM kontingent WHERE kunde_id = 1 ORDER BY id DESC LIMIT 1').get();
+  // Kontingent: aktueller Monat LIVE berechnen wenn kein Import vorhanden
+  const heute = new Date();
+  const aktuellerMonat = String(heute.getMonth() + 1).padStart(2, '0') + '.' + String(heute.getFullYear()).slice(-2);
+  let kontingent = db.prepare("SELECT * FROM kontingent WHERE kunde_id = 1 AND monat = ?").get(aktuellerMonat);
+  
+  if (!kontingent) {
+    const pphPaletten = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = 1 AND ausgelagert = 0 AND geloescht = 0").get();
+    const letztes = db.prepare("SELECT * FROM kontingent WHERE kunde_id = 1 ORDER BY id DESC LIMIT 1").get();
+    const kp = letztes?.kontingent_plaetze || 642;
+    const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
+    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Einlagerung'").get(monatStart);
+    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Auslagerung'").get(monatStart);
+    
+    kontingent = {
+      monat: aktuellerMonat,
+      kontingent_plaetze: kp,
+      verfuegbar: kp - pphPaletten.c,
+      lagerbestand: pphPaletten.c,
+      uebertrag_vormonat: letztes?.lagerbestand || 0,
+      einlagerungen: einl?.s || 0,
+      auslagerungen: ausl?.s || 0,
+      bewegungen_gesamt: (einl?.s || 0) + (ausl?.s || 0),
+      saldo_ueberkapazitaet: Math.max(0, pphPaletten.c - kp),
+      live: true
+    };
+  }
   
   // Bewegungen letzte 30 Tage
   const bew30 = db.prepare("SELECT COUNT(*) as total FROM bewegungen WHERE datum >= date('now', '-30 days')").get();
