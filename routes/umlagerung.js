@@ -17,7 +17,7 @@ router.post('/', (req, res) => {
   // Neuen Platz prüfen
   const neuerPlatz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(nach_platz, nach_platz.toUpperCase(), nach_platz.toLowerCase());
   if (!neuerPlatz) return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" nicht gefunden` });
-  if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang' && neuerPlatz.id !== palette.alter_platz_id) return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" ist bereits belegt` });
+  if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang' && neuerPlatz.typ !== 'Block' && neuerPlatz.id !== palette.alter_platz_id) return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" ist bereits belegt` });
   
   // Alten Platz freigeben
   if (palette.alter_platz_id) {
@@ -50,7 +50,7 @@ router.post('/bulk', (req, res) => {
 
   const neuerPlatz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(nach_platz, nach_platz.toUpperCase(), nach_platz.toLowerCase());
   if (!neuerPlatz) return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" nicht gefunden` });
-  if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang') return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" ist bereits belegt und kein Gang/Block-Platz` });
+  if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang' && neuerPlatz.typ !== 'Block') return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" ist bereits belegt und kein Gang/Block-Platz` });
 
   let count = 0;
   const errors = [];

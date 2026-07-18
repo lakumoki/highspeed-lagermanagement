@@ -164,8 +164,8 @@ router.post('/:token/positionen/:id', (req, res) => {
     platzBez, platzBez.toUpperCase(), platzBez.toLowerCase()
   );
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
-  // Gang-/Zwischenplätze erlauben Mehrfachbelegung
-  if (platz.belegt && platz.typ !== 'Gang') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
+  // Gang-/Zwischenplätze und Block-Plätze erlauben Mehrfachbelegung
+  if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
 
   const nr = position.paletten_nr;
 

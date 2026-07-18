@@ -26,8 +26,8 @@ router.post('/', (req, res) => {
   // Lagerplatz prüfen (case-insensitive)
   const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(platzBez, platzBez.toUpperCase(), platzBez.toLowerCase());
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
-  // Gang-/Zwischenplätze erlauben Mehrfachbelegung
-  if (platz.belegt && platz.typ !== 'Gang') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
+  // Gang-/Zwischenplätze und Block-Plätze erlauben Mehrfachbelegung
+  if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
   
   // Höhenprüfung
   if (paletten_hoehe_cm && platz.max_hoehe_cm && parseFloat(paletten_hoehe_cm) > platz.max_hoehe_cm) {

@@ -980,7 +980,7 @@ function weCheckChanged() {
   const hint = document.getElementById('we-block-hint');
   if (count > 3) {
     hint.style.display = 'block';
-    hint.innerHTML = `Bei ${count} Paletten empfohlen: Block/Gang-Platz (z.B. <a href="#" onclick="document.getElementById('we-bulk-platz').value='XA';return false" style="color:#e67e22">XA</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XB';return false" style="color:#e67e22">XB</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XC';return false" style="color:#e67e22">XC</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XD';return false" style="color:#e67e22">XD</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XE1';return false" style="color:#e67e22">XE1</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XF1';return false" style="color:#e67e22">XF1</a>)`;
+    hint.innerHTML = `Bei ${count} Paletten empfohlen: Block-Platz (z.B. <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockF902';return false" style="color:#e67e22">BlockF</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockA901';return false" style="color:#e67e22">BlockA</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockB901';return false" style="color:#e67e22">BlockB</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockC901';return false" style="color:#e67e22">BlockC</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockE901';return false" style="color:#e67e22">BlockE</a>)`;
   } else {
     hint.style.display = 'none';
   }
@@ -1141,7 +1141,7 @@ function lpUpdateToolbar() {
     document.getElementById('lp-sel-count').textContent = `${count} ausgewählt`;
     const hint = document.getElementById('lp-block-hint');
     if (count > 3) {
-      hint.textContent = `Empfohlen: Gang/Block (XA, XB, XC, XD, XE1, XF1)`;
+      hint.textContent = `Empfohlen: Block-Platz (BlockF, BlockA, BlockB, BlockC)`;
     } else {
       hint.textContent = '';
     }
