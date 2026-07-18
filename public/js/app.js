@@ -506,6 +506,15 @@ async function pgDirektanlieferung() {
           <label>Bemerkung</label>
           <input type="text" id="da-bemerkung" placeholder="Optional">
         </div>
+        <div style="margin-bottom:16px;padding:12px;background:var(--bg-secondary,#f8f9fa);border-radius:8px;border:1px solid var(--border,#e0e0e0)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <strong style="font-size:13px">Freie Plätze</strong>
+            <input type="number" id="da-hoehe" placeholder="Höhe in cm" style="width:120px;padding:6px 10px;font-size:13px">
+            <button class="btn btn-sm btn-secondary" onclick="zeigeFreiePlaetzeDirekt()">Anzeigen</button>
+            <span id="da-freie-count" style="font-size:12px;color:var(--text-muted)"></span>
+          </div>
+          <div id="da-freie-liste" style="max-height:200px;overflow-y:auto"></div>
+        </div>
         <button class="btn btn-primary btn-lg" onclick="erstelleDirektanlieferung()">Auftrag erstellen & QR generieren</button>
         <button class="btn btn-lg" onclick="direktWareneingang()" style="background:#e67e22;color:#fff;margin-left:10px">Wareneingang (alle zwischenlagern)</button>
       </div>
@@ -526,6 +535,26 @@ function direktTab(tab) {
     document.getElementById(`direkt-tab-${t}`).style.display = t === tab ? '' : 'none';
     document.getElementById(`dtab-${t}`).className = t === tab ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
   });
+}
+
+async function zeigeFreiePlaetzeDirekt() {
+  const hoehe = document.getElementById('da-hoehe')?.value?.trim();
+  const url = hoehe ? `/api/einlagerung/freie-plaetze?hoehe=${hoehe}` : '/api/einlagerung/freie-plaetze';
+  const plaetze = await api(url);
+  const box = document.getElementById('da-freie-liste');
+  const count = document.getElementById('da-freie-count');
+  count.textContent = `${plaetze.length} Plätze gefunden${hoehe ? ` (≥ ${hoehe} cm)` : ''}`;
+
+  if (plaetze.length === 0) {
+    box.innerHTML = '<p style="color:var(--text-muted);font-size:12px;margin:0">Keine passenden freien Plätze gefunden.</p>';
+    return;
+  }
+
+  box.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px">${plaetze.map(p => {
+    const hLabel = p.max_hoehe_cm ? ` (${p.max_hoehe_cm}cm)` : '';
+    const isGang = p.typ === 'Gang';
+    return `<span style="display:inline-block;padding:5px 9px;background:${isGang ? '#e67e22' : 'var(--success,#2ecc71)'};color:#fff;border-radius:5px;font-size:12px;font-weight:600;cursor:default" title="${p.bereich} ${p.ebene || ''}${hLabel}">${p.bezeichnung}${hLabel}</span>`;
+  }).join('')}</div>`;
 }
 
 async function erstelleDirektanlieferung() {

@@ -67,18 +67,19 @@ router.get('/naechste-nr', (req, res) => {
 
 // Freie Lagerplätze (nur echte, nicht-belegte, Echtzeit-Prüfung) + Gang-Plätze
 router.get('/freie-plaetze', (req, res) => {
-  const { bereich, regal } = req.query;
+  const { bereich, regal, hoehe } = req.query;
   let where = 'WHERE ((l.belegt = 0 AND l.bemerkung IS NULL) OR l.typ = ?)';
   const params = ['Gang'];
   if (bereich) { where += ' AND l.bereich = ?'; params.push(bereich); }
   if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
+  if (hoehe) { where += ' AND (l.max_hoehe_cm >= ? OR l.max_hoehe_cm IS NULL OR l.typ = ?)'; params.push(parseFloat(hoehe)); params.push('Gang'); }
   
   const plaetze = db.prepare(`
     SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.typ, l.ebene, l.max_hoehe_cm 
     FROM lagerplaetze l
     LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
     ${where} AND (p.id IS NULL OR l.typ = 'Gang')
-    ORDER BY CASE WHEN l.typ = 'Gang' THEN 1 ELSE 0 END, l.regal, l.position
+    ORDER BY CASE WHEN l.typ = 'Gang' THEN 1 ELSE 0 END, ${hoehe ? 'l.max_hoehe_cm ASC,' : ''} l.regal, l.position
   `).all(...params);
   // Deduplizieren (Gang-Plätze können mehrfach erscheinen durch JOIN)
   const seen = new Set();
