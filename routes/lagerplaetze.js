@@ -51,23 +51,62 @@ router.get('/plan/uebersicht', (req, res) => {
       SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
       SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
     FROM lagerplaetze
+    WHERE typ NOT IN ('Gang','Block')
     GROUP BY regal
     ORDER BY regal
   `).all();
-  res.json(regale);
+
+  // Gang-/Zwischenplätze
+  const gaenge = db.prepare(`
+    SELECT regal,
+      COUNT(*) as gesamt,
+      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
+      SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
+    FROM lagerplaetze
+    WHERE typ = 'Gang'
+    GROUP BY regal
+    ORDER BY regal
+  `).all();
+
+  // Block-Plätze (nur E und F relevant)
+  const bloecke = db.prepare(`
+    SELECT 'Block ' || regal as regal,
+      COUNT(*) as gesamt,
+      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
+      SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
+    FROM lagerplaetze
+    WHERE typ = 'Block' AND regal IN ('E','F')
+    GROUP BY regal
+    ORDER BY regal
+  `).all();
+
+  res.json([...regale, ...gaenge, ...bloecke]);
 });
 
 // Raster eines bestimmten Regals (für interaktive Ansicht)
 router.get('/plan/regal/:regal', (req, res) => {
   const regal = req.params.regal;
-  const plaetze = db.prepare(`
-    SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
-    FROM lagerplaetze l
-    LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-    LEFT JOIN kunden k ON p.kunde_id = k.id
-    WHERE l.regal = ?
-    ORDER BY l.position, l.unter_position
-  `).all(regal);
+  let plaetze;
+  if (regal.startsWith('Block ')) {
+    const blockRegal = regal.replace('Block ', '');
+    plaetze = db.prepare(`
+      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
+      FROM lagerplaetze l
+      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE l.regal = ? AND l.typ = 'Block'
+      ORDER BY l.position, l.unter_position
+    `).all(blockRegal);
+  } else {
+    plaetze = db.prepare(`
+      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
+      FROM lagerplaetze l
+      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE l.regal = ? AND l.typ != 'Block'
+      ORDER BY l.position, l.unter_position
+    `).all(regal);
+  }
   res.json(plaetze);
 });
 

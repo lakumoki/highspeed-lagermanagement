@@ -281,7 +281,7 @@ async function pgEinlagerung() {
         <div class="form-group">
           <label>Kunde *</label>
           <select id="sa-kunde">
-            ${kunden.map(k => `<option value="${k.id}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+            ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -315,7 +315,9 @@ function einlTab(tab) {
 }
 
 async function erstelleStaplerauftrag() {
-  const kundeId = document.getElementById('sa-kunde').value;
+  const sel = document.getElementById('sa-kunde');
+  const kundeId = sel.value;
+  const prefix = sel.options[sel.selectedIndex]?.dataset?.prefix;
   const text = document.getElementById('sa-nummern').value.trim();
   const bemerkung = document.getElementById('sa-bemerkung').value.trim();
 
@@ -323,6 +325,14 @@ async function erstelleStaplerauftrag() {
 
   const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  if (prefix === 'EB') {
+    const ungueltig = nummern.filter(n => !/^\d{6}$/.test(n));
+    if (ungueltig.length > 0) {
+      toast(`Panpharma: EB-Nummern müssen 6-stellig sein. Ungültig: ${ungueltig.slice(0, 5).join(', ')}${ungueltig.length > 5 ? '...' : ''}`, 'error');
+      return;
+    }
+  }
 
   try {
     const data = await api('/api/auftraege', { method: 'POST', body: {
@@ -441,8 +451,18 @@ async function einlKundeChange() {
   const opt = sel.options[sel.selectedIndex];
   const hint = document.getElementById('einl-format-hint');
   const format = opt.dataset.format;
-  hint.textContent = format ? `(${format})` : '';
-  document.getElementById('einl-nr').placeholder = opt.dataset.prefix === 'EB' ? '6-stellige EB-Nr. vom Kunden' : 'Paletten-Nr. eingeben';
+  const input = document.getElementById('einl-nr');
+  if (opt.dataset.prefix === 'EB') {
+    hint.textContent = '(6-stellig, nur Ziffern)';
+    input.placeholder = '6-stellige EB-Nr. vom Kunden';
+    input.maxLength = 6;
+    input.pattern = '\\d{6}';
+  } else {
+    hint.textContent = format ? `(${format})` : '';
+    input.placeholder = 'Paletten-Nr. eingeben';
+    input.maxLength = 50;
+    input.pattern = '';
+  }
 }
 
 async function showFreiePlaetze() {
@@ -456,10 +476,19 @@ async function showFreiePlaetze() {
 }
 
 async function doEinlagern() {
+  const nr = document.getElementById('einl-nr').value.trim();
+  const sel = document.getElementById('einl-kunde');
+  const opt = sel.options[sel.selectedIndex];
+
+  if (opt.dataset.prefix === 'EB' && !/^\d{6}$/.test(nr)) {
+    toast('Panpharma EB-Nummern müssen genau 6-stellig sein (nur Ziffern)', 'error');
+    return;
+  }
+
   try {
     const data = await api('/api/einlagerung', { method: 'POST', body: {
-      paletten_nr: document.getElementById('einl-nr').value.trim(),
-      kunde_id: document.getElementById('einl-kunde').value,
+      paletten_nr: nr,
+      kunde_id: sel.value,
       lagerplatz: document.getElementById('einl-platz').value.trim(),
       artikel_nr: document.getElementById('einl-artikel').value.trim() || null,
       chargen_nr: document.getElementById('einl-charge').value.trim() || null,
@@ -490,7 +519,7 @@ async function pgDirektanlieferung() {
           <div class="form-group">
             <label>Kunde *</label>
             <select id="da-kunde">
-              ${kunden.map(k => `<option value="${k.id}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+              ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -558,7 +587,9 @@ async function zeigeFreiePlaetzeDirekt() {
 }
 
 async function erstelleDirektanlieferung() {
-  const kundeId = document.getElementById('da-kunde').value;
+  const sel = document.getElementById('da-kunde');
+  const kundeId = sel.value;
+  const prefix = sel.options[sel.selectedIndex]?.dataset?.prefix;
   const lkwNr = document.getElementById('da-lkw').value.trim();
   const text = document.getElementById('da-nummern').value.trim();
   const bemerkung = document.getElementById('da-bemerkung').value.trim();
@@ -567,6 +598,14 @@ async function erstelleDirektanlieferung() {
 
   const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  if (prefix === 'EB') {
+    const ungueltig = nummern.filter(n => !/^\d{6}$/.test(n));
+    if (ungueltig.length > 0) {
+      toast(`Panpharma: EB-Nummern müssen 6-stellig sein. Ungültig: ${ungueltig.slice(0, 5).join(', ')}${ungueltig.length > 5 ? '...' : ''}`, 'error');
+      return;
+    }
+  }
 
   try {
     const data = await api('/api/auftraege', { method: 'POST', body: {
@@ -603,7 +642,9 @@ async function erstelleDirektanlieferung() {
 }
 
 async function direktWareneingang() {
-  const kundeId = document.getElementById('da-kunde').value;
+  const sel = document.getElementById('da-kunde');
+  const kundeId = sel.value;
+  const prefix = sel.options[sel.selectedIndex]?.dataset?.prefix;
   const lkwNr = document.getElementById('da-lkw').value.trim();
   const text = document.getElementById('da-nummern').value.trim();
   const bemerkung = document.getElementById('da-bemerkung').value.trim();
@@ -612,6 +653,14 @@ async function direktWareneingang() {
 
   const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  if (prefix === 'EB') {
+    const ungueltig = nummern.filter(n => !/^\d{6}$/.test(n));
+    if (ungueltig.length > 0) {
+      toast(`Panpharma: EB-Nummern müssen 6-stellig sein. Ungültig: ${ungueltig.slice(0, 5).join(', ')}${ungueltig.length > 5 ? '...' : ''}`, 'error');
+      return;
+    }
+  }
 
   if (!confirm(`${nummern.length} Paletten direkt in den Wareneingang buchen?\n\nPro Palette werden 3 Bewegungen erzeugt.`)) return;
 
@@ -684,11 +733,11 @@ function pgAuslagerung() {
   pc.innerHTML = `
     <div class="page-header"><h1>Auslagerung</h1></div>
     <div class="card">
-      <h3 style="margin-bottom:16px">Einzelauslagerung</h3>
+      <h3 style="margin-bottom:16px">Auslagerung</h3>
       <div class="form-row">
-        <div class="form-group">
-          <label>Paletten-Nr.</label>
-          <input type="text" id="ausl-nr" placeholder="EB- oder KW-Nummer">
+        <div class="form-group" style="flex:2">
+          <label>Paletten-Nr. (mehrere Nummern per Zeilenumbruch möglich)</label>
+          <textarea id="ausl-nr" rows="3" placeholder="EB- oder KW-Nummern einfügen (eine pro Zeile)" style="width:100%;padding:10px;font-size:14px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
         </div>
         <div class="form-group">
           <label>Bemerkung</label>
@@ -701,21 +750,56 @@ function pgAuslagerung() {
 }
 
 async function doAuslagern() {
-  const nr = document.getElementById('ausl-nr').value.trim();
-  if (!nr) { toast('Paletten-Nr. eingeben', 'error'); return; }
-  if (!confirm(`Palette "${nr}" wirklich auslagern?`)) return;
+  const raw = document.getElementById('ausl-nr').value.trim();
+  if (!raw) { toast('Paletten-Nr. eingeben', 'error'); return; }
   
-  try {
-    const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung: document.getElementById('ausl-bem').value.trim() } });
-    document.getElementById('ausl-result').innerHTML = `
-      <div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px">
-        <strong style="color:var(--success, #28a745)">✓ Auslagerung erfolgreich</strong>
-        <p style="margin:8px 0 0;font-size:13px">${data.message}</p>
-        <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="window.open('/api/berichte/auslagerungsbeleg/${nr}','_blank')">PDF-Beleg öffnen</button>
+  const nummern = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+  if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+  
+  const bemerkung = document.getElementById('ausl-bem').value.trim();
+  
+  if (nummern.length === 1) {
+    if (!confirm(`Palette "${nummern[0]}" wirklich auslagern?`)) return;
+    try {
+      const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nummern[0], bemerkung } });
+      document.getElementById('ausl-result').innerHTML = `
+        <div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px">
+          <strong style="color:var(--success, #28a745)">✓ Auslagerung erfolgreich</strong>
+          <p style="margin:8px 0 0;font-size:13px">${data.message}</p>
+          <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="window.open('/api/berichte/auslagerungsbeleg/${nummern[0]}','_blank')">PDF-Beleg öffnen</button>
+        </div>`;
+      document.getElementById('ausl-nr').value = '';
+      document.getElementById('ausl-bem').value = '';
+    } catch (e) { toast(e.message, 'error'); }
+  } else {
+    if (!confirm(`${nummern.length} Paletten auslagern?\n\n${nummern.join(', ')}`)) return;
+    let erfolg = [];
+    let fehler = [];
+    for (const nr of nummern) {
+      try {
+        await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung } });
+        erfolg.push(nr);
+      } catch (e) {
+        fehler.push({ nr, msg: e.message });
+      }
+    }
+    let html = '';
+    if (erfolg.length > 0) {
+      html += `<div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px;margin-bottom:10px">
+        <strong style="color:var(--success, #28a745)">✓ ${erfolg.length} Palette(n) erfolgreich ausgelagert</strong>
+        <p style="margin:6px 0 0;font-size:13px;font-family:monospace">${erfolg.join(', ')}</p>
       </div>`;
+    }
+    if (fehler.length > 0) {
+      html += `<div style="background:#fdecea;border:1px solid #e74c3c;padding:14px 18px;border-radius:8px">
+        <strong style="color:#e74c3c">✗ ${fehler.length} Fehler</strong>
+        ${fehler.map(f => `<p style="margin:4px 0 0;font-size:13px"><code>${f.nr}</code>: ${f.msg}</p>`).join('')}
+      </div>`;
+    }
+    document.getElementById('ausl-result').innerHTML = html;
     document.getElementById('ausl-nr').value = '';
     document.getElementById('ausl-bem').value = '';
-  } catch (e) { toast(e.message, 'error'); }
+  }
 }
 
 // ═══ PICKLISTE ═══════════════════════════════════════════════════════════════
@@ -980,17 +1064,24 @@ function weCheckChanged() {
   const hint = document.getElementById('we-block-hint');
   if (count > 0) {
     hint.style.display = 'block';
-    let html = '';
+    let html = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">';
     if (count > 3) {
-      html += `<div style="margin-bottom:6px"><span style="font-size:12px;font-weight:600;color:#e67e22">Empfohlen (${count} Pal.):</span> ` +
-        ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
-          `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:3px 10px;font-size:12px;margin:0 3px;cursor:pointer">${b}</button>`
-        ).join('') + `</div>`;
+      html += `<span style="font-size:12px;font-weight:600;color:#e67e22">Blöcke:</span>`;
+      html += ['BlockE','BlockF'].map(b =>
+        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`
+      ).join('');
+      html += `<span style="margin-left:10px;font-size:12px;font-weight:600;color:#aaa">Gänge:</span>`;
+    } else {
+      html += `<span style="font-size:12px;font-weight:600;color:#aaa">Schnellauswahl:</span>`;
+      html += ['BlockE','BlockF'].map(b =>
+        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`
+      ).join('');
+      html += `<span style="margin-left:10px;font-size:12px;color:#aaa">|</span>`;
     }
-    html += `<div><span style="font-size:11px;color:#999;margin-right:6px">Gänge:</span>` +
-      ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
-        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#555;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px;cursor:pointer">${g}</button>`
-      ).join('') + `</div>`;
+    html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+      `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:4px 10px;font-size:11px;border-radius:4px;cursor:pointer">${g}</button>`
+    ).join('');
+    html += '</div>';
     hint.innerHTML = html;
   } else {
     hint.style.display = 'none';
@@ -1083,7 +1174,7 @@ async function pgLagerplan() {
   pc.innerHTML = `
     <div class="page-header"><h1>Lagerplan</h1></div>
     <div class="lagerplan-tabs" id="lp-tabs">
-      ${uebersicht.map(r => `<button onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei} frei)</small></button>`).join('')}
+      ${uebersicht.map(r => `<button data-regal="${r.regal}" onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei} frei)</small></button>`).join('')}
     </div>
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;gap:16px;font-size:12px;align-items:center;flex-wrap:wrap">
@@ -1111,7 +1202,7 @@ async function pgLagerplan() {
 async function loadRegal(regal) {
   document.querySelectorAll('.lagerplan-tabs button').forEach(b => b.classList.remove('active'));
   const btns = document.querySelectorAll('.lagerplan-tabs button');
-  btns.forEach(b => { if (b.textContent.includes(regal)) b.classList.add('active'); });
+  btns.forEach(b => { if (b.dataset.regal === regal) b.classList.add('active'); });
 
   const plaetze = await api(`/api/lagerplaetze/plan/regal/${encodeURIComponent(regal)}`);
   const grid = document.getElementById('lp-grid');
@@ -1137,7 +1228,7 @@ function lpCellClick(event, platzId, palNr) {
   if (event.shiftKey && palNr) {
     if (lpSelectedPaletten.has(palNr)) lpSelectedPaletten.delete(palNr);
     else lpSelectedPaletten.add(palNr);
-    const activeRegal = document.querySelector('.lagerplan-tabs .active')?.textContent?.trim()?.split(' ')[0];
+    const activeRegal = document.querySelector('.lagerplan-tabs .active')?.dataset?.regal;
     if (activeRegal) loadRegal(activeRegal);
   } else {
     showPlatzDetail(platzId);
@@ -1151,17 +1242,20 @@ function lpUpdateToolbar() {
     toolbar.style.display = '';
     document.getElementById('lp-sel-count').textContent = `${count} ausgewählt`;
     const hint = document.getElementById('lp-block-hint');
-    let html = '';
+    let html = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">';
     if (count > 3) {
-      html += `<div style="margin-bottom:4px"><span style="font-size:11px;font-weight:600;color:#e67e22;margin-right:4px">Empfohlen:</span>` +
-        ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
-          `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px">${b}</button>`
-        ).join('') + `</div>`;
+      html += `<span style="font-size:11px;font-weight:600;color:#e67e22">Blöcke:</span>`;
+    } else {
+      html += `<span style="font-size:11px;font-weight:600;color:#aaa">Schnellauswahl:</span>`;
     }
-    html += `<div><span style="font-size:11px;color:#999;margin-right:4px">Gänge:</span>` +
-      ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
-        `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px">${g}</button>`
-      ).join('') + `</div>`;
+    html += ['BlockE','BlockF'].map(b =>
+      `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:2px 10px;font-size:11px;border-radius:4px">${b}</button>`
+    ).join('');
+    html += `<span style="font-size:11px;color:#aaa;margin-left:8px">Gänge:</span>`;
+    html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+      `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:2px 8px;font-size:11px;border-radius:4px">${g}</button>`
+    ).join('');
+    html += '</div>';
     hint.innerHTML = html;
   } else {
     toolbar.style.display = 'none';
