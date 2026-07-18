@@ -71,7 +71,7 @@ function renderApp() {
           
           <div class="nav-section">Lagerverwaltung</div>
           <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
-          <a href="#" data-page="direktanlieferung"><span class="icon">🚛</span><span>Direktanlieferung</span></a>
+          <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direktanlieferung</span></a>
           <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Auslagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
@@ -140,7 +140,7 @@ async function pgDashboard() {
       <div class="card-header"><h3>Schnellaktionen</h3></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         <button class="btn btn-primary btn-lg" onclick="navigate('einlagerung')" style="justify-content:center">↓ Einlagern</button>
-        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">🚛 Direktanlieferung</button>
+        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">⬇ Direktanlieferung</button>
         <button class="btn btn-danger btn-lg" onclick="navigate('auslagerung')" style="justify-content:center;background:var(--danger)">↑ Auslagern</button>
         <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf</button>
         <button class="btn btn-lg" onclick="navigate('musterung')" style="justify-content:center;background:#8e44ad;color:#fff">◈ Musterzug</button>
@@ -1535,19 +1535,28 @@ async function pgProtokoll() {
     <div class="page-header"><h1>Veränderungsprotokoll</h1></div>
     <div class="card" style="margin-bottom:12px">
       <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px 0">
-        Alle Buchungen systemweit mit Zeitstempel und Benutzer. 
-        Kunden-spezifische Übersichten finden Sie unter <a href="#" onclick="navigate('kunden');return false">Kunden → Details</a>.
+        Lückenlose Dokumentation aller Lagerbewegungen mit Zeitstempel, Benutzer und vollständigen Details.
       </p>
-      <div class="form-row" style="align-items:flex-end">
-        <div class="form-group" style="flex:1;margin-bottom:0">
-          <input type="text" id="protokoll-suche" placeholder="Suche nach Palette, Platz, Datum, Aktion, Benutzer..." onkeydown="if(event.key==='Enter')protokollSuchen()">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <input type="text" id="protokoll-suche" placeholder="Suche: Palette, Platz, Kunde, Datum, Aktion..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px" onkeydown="if(event.key==='Enter')protokollSuchen()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="protokollSuchen()" style="margin-bottom:0;height:38px">Suchen</button>
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('protokoll-suche').value='';protokollSuchen()" style="margin-bottom:0;height:38px">Reset</button>
+        <select id="protokoll-filter" onchange="protokollSuchen()" style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px">
+          <option value="">Alle Aktionen</option>
+          <option value="Einlagerung">Einlagerung</option>
+          <option value="Auslagerung">Auslagerung</option>
+          <option value="Umlagerung">Umlagerung</option>
+          <option value="Direktanlieferung">Direktanlieferung</option>
+          <option value="Musterzug">Musterzug</option>
+          <option value="Zwischengelagert">Zwischengelagert</option>
+          <option value="Rückgängig">Rückgängig</option>
+        </select>
+        <button class="btn btn-primary" onclick="protokollSuchen()">Suchen</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('protokoll-suche').value='';document.getElementById('protokoll-filter').value='';protokollSuchen()">Reset</button>
       </div>
     </div>
-    <div class="card" id="protokoll-tabelle">
-      <p style="color:var(--text-muted)">Lade...</p>
+    <div id="protokoll-tabelle">
+      <p style="color:var(--text-muted);padding:20px">Lade...</p>
     </div>`;
   
   protokollSuchen();
@@ -1555,14 +1564,46 @@ async function pgProtokoll() {
 
 async function protokollSuchen() {
   const q = document.getElementById('protokoll-suche')?.value?.trim() || '';
-  const url = q ? `/api/protokoll?limit=500&q=${encodeURIComponent(q)}` : '/api/protokoll?limit=200';
+  const filter = document.getElementById('protokoll-filter')?.value || '';
+  let url = '/api/protokoll?limit=500';
+  const searchTerms = [q, filter].filter(Boolean).join(' ');
+  if (searchTerms) url += `&q=${encodeURIComponent(searchTerms)}`;
+  
   const logs = await api(url);
   const box = document.getElementById('protokoll-tabelle');
+  
+  if (logs.length === 0) {
+    box.innerHTML = '<div class="card"><p style="color:var(--text-muted);text-align:center;padding:20px">Keine Einträge gefunden.</p></div>';
+    return;
+  }
+
   box.innerHTML = `
-    <div class="card-header"><h3>${q ? `Suche: "${q}" — ${logs.length} Treffer` : `Letzte ${logs.length} Einträge`}</h3></div>
-    <div class="table-wrap"><table><thead><tr><th>Zeitstempel</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
-      ${logs.map(l => `<tr><td style="white-space:nowrap;font-size:12px">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><span class="badge ${l.aktion === 'Einlagerung' || l.aktion === 'Einlagerung (Stapler)' ? 'badge-success' : l.aktion === 'Auslagerung' || l.aktion === 'Abruf ausgeführt' ? 'badge-danger' : l.aktion === 'Musterzug' ? 'badge-warning' : l.aktion === 'Direktanlieferung erstellt' || l.aktion === 'Direktanlieferung (Stapler)' ? 'badge-warning' : l.aktion === 'Zwischengelagert' ? 'badge-warning' : 'badge-info'}">${l.aktion}</span></td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;font-size:12px">${l.details || ''}</td><td style="font-size:12px">${l.benutzer || '—'}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    <div class="card">
+      <div class="card-header"><h3>${q || filter ? `Suche: ${logs.length} Treffer` : `Letzte ${logs.length} Einträge`}</h3></div>
+      <div class="table-wrap"><table><thead><tr>
+        <th style="width:140px">Zeitstempel</th>
+        <th style="width:130px">Aktion</th>
+        <th>Details</th>
+        <th style="width:100px">Benutzer</th>
+      </tr></thead><tbody>
+        ${logs.map(l => {
+          const aktionClass = l.aktion?.includes('Einlagerung') ? 'badge-success' : 
+            l.aktion?.includes('Auslagerung') ? 'badge-danger' : 
+            l.aktion?.includes('Musterzug') ? 'badge-warning' :
+            l.aktion?.includes('Direkt') || l.aktion?.includes('Zwischen') ? 'badge-eb' :
+            l.aktion?.includes('Umlagerung') ? 'badge-info' :
+            l.aktion?.includes('Rückgängig') ? 'badge-warning' : 'badge-info';
+          const ts = l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+          const details = (l.details || '').replace(/\|/g, '<span style="color:var(--text-muted);margin:0 4px">·</span>');
+          return `<tr>
+            <td style="white-space:nowrap;font-size:12px;font-family:monospace;color:var(--text-muted)">${ts}</td>
+            <td><span class="badge ${aktionClass}">${l.aktion || '?'}</span></td>
+            <td style="font-size:12px;line-height:1.4">${details}</td>
+            <td style="font-size:12px;font-weight:500">${l.benutzer || '—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div>
+    </div>`;
 }
 
 // ═══ PALETTE BEARBEITEN (Modal) ═══════════════════════════════════════════════

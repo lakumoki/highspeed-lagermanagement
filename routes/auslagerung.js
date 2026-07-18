@@ -31,7 +31,7 @@ router.post('/', (req, res) => {
   db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, benutzer, monat, bemerkung) VALUES (?, ?, ?, 1, ?, ?, ?, ?)').run(palette.kunde_id, heute, 'Auslagerung', paletten_nr, benutzer, heute.substring(0, 7), `Platz: ${palette.lagerplatz_bezeichnung || '?'}`);
   
   // Protokoll (mit Zeitstempel + Login)
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Auslagerung', `${paletten_nr} von ${palette.lagerplatz_bezeichnung}`, benutzer, jetzt);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Auslagerung', `Palette ${paletten_nr} | Von Platz: ${palette.lagerplatz_bezeichnung || '?'} | Kunde: ${palette.kunde_id ? (db.prepare('SELECT name FROM kunden WHERE id=?').get(palette.kunde_id)?.name || '?') : '—'}`, benutzer, jetzt);
   
   res.json({ ok: true, message: `${paletten_nr} ausgelagert`, palette });
 });
@@ -60,7 +60,7 @@ router.post('/abruf', (req, res) => {
   }
   
   // Protokoll
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Massen-Auslagerung', `Abruf ${abruf_id || 'manuell'}: ${results.ok.length} ausgelagert, ${results.fehler.length} Fehler`, benutzer, jetzt);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Massen-Auslagerung', `Abruf ${abruf_id || 'manuell'}: ${results.ok.length} ausgelagert (${results.ok.map(r => r.nr + ' von ' + (r.platz || '?')).join(', ')})${results.fehler.length ? ' | Fehler: ' + results.fehler.map(f => f.nr).join(', ') : ''}`, benutzer, jetzt);
   
   res.json({ ok: true, ausgelagert: results.ok.length, fehler: results.fehler.length, details: results });
 });

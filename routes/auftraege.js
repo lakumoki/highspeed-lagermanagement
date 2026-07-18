@@ -90,7 +90,7 @@ router.post('/', (req, res) => {
     const aktionLabel = auftragTyp === 'direktanlieferung' ? 'Direktanlieferung erstellt' : 'Staplerauftrag erstellt';
     db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
       aktionLabel,
-      `${positionen.length} Paletten${direktId ? ', ID: ' + direktId : ''}, Token: ${token.substring(0, 8)}...`,
+      `${positionen.length} Paletten | Kunde: ${db.prepare('SELECT name FROM kunden WHERE id=?').get(parseInt(kunde_id))?.name || '?'}${direktId ? ' | Direkt-ID: ' + direktId : ''}${lkw_nr ? ' | LKW: ' + lkw_nr : ''} | Nummern: ${positionen.slice(0, 5).map(p => p.paletten_nr).join(', ')}${positionen.length > 5 ? '... (+' + (positionen.length - 5) + ')' : ''}`,
       benutzer,
       new Date().toISOString()
     );
@@ -217,7 +217,7 @@ router.post('/:token/positionen/:id', (req, res) => {
     const aktionLabel = auftrag.typ === 'direktanlieferung' ? 'Direktanlieferung (Stapler)' : 'Einlagerung (Stapler)';
     db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
       aktionLabel,
-      `${nr} → ${platz.bezeichnung}${auftrag.typ === 'direktanlieferung' ? ' (3 Bew.)' : ''}`,
+      `Palette ${nr} → Platz ${platz.bezeichnung} | Kunde: ${db.prepare('SELECT name FROM kunden WHERE id=?').get(auftrag.kunde_id)?.name || '?'}${auftrag.typ === 'direktanlieferung' ? ' | 3 Bewegungen (Entladung + Handling + Einlagerung)' : ''}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}`,
       'Staplerfahrer',
       jetzt
     );
@@ -309,7 +309,7 @@ router.post('/:token/zwischenlagern', (req, res) => {
 
     db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(wareneingang.id);
     db.prepare('UPDATE einlagerungsauftraege SET status = ? WHERE id = ?').run('abgeschlossen', auftrag.id);
-    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Zwischengelagert', `${count} Paletten → Wareneingang`, 'Staplerfahrer', jetzt);
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Zwischengelagert', `${count} Paletten → Wareneingang | Kunde: ${db.prepare('SELECT name FROM kunden WHERE id=?').get(auftrag.kunde_id)?.name || '?'}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}`, 'Staplerfahrer', jetzt);
   });
 
   try {

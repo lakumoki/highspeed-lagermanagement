@@ -52,7 +52,7 @@ router.post('/', (req, res) => {
   const jetzt = new Date().toISOString();
   db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer, monat, bemerkung) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)").run(kundeId, heute, 'Einlagerung', nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System', heute.substring(0, 7), `Platz: ${platz.bezeichnung}`);
   
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Einlagerung', `${nr} → ${platz.bezeichnung}`, req.session?.user?.benutzername || 'System', jetzt);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Einlagerung', `Palette ${nr} → Platz ${platz.bezeichnung} | Kunde: ${kundeId ? (db.prepare('SELECT name FROM kunden WHERE id=?').get(kundeId)?.name || kundeId) : '—'} | Artikel: ${artikel_nr || '—'} | Charge: ${chargen_nr || '—'}`, req.session?.user?.benutzername || 'System', jetzt);
   
   res.json({ ok: true, id: result.lastInsertRowid, message: `${nr} auf ${platz.bezeichnung} eingelagert` });
 });

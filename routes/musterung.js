@@ -34,7 +34,7 @@ router.post('/', (req, res) => {
   db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, handling_art, benutzer, monat) VALUES (?, ?, 'Einlagerung', 1, ?, 'Musterzug - Rücklagerung', ?, ?)").run(kid, heute, paletten_nr, benutzer, heute.substring(0, 7));
   
   // Protokoll (mit Zeitstempel + User)
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Musterzug', `${menge || '1 Tray'} aus ${paletten_nr} (${palette.platz}) — 3 Bewegungen gebucht`, benutzer, jetzt);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Musterzug', `Palette ${paletten_nr} | Platz: ${palette.platz} | Menge: ${menge || '1 Tray'} | Kunde: ${palette.kunde_name || '?'} | 3 Bewegungen (Raus + Muster + Rein)`, benutzer, jetzt);
   
   res.json({ ok: true, lfd_nummer: lfd, message: `Musterzug aus ${paletten_nr}: 3 Bewegungen gebucht (raus → Muster → rein)`, bewegungen: 3 });
 });

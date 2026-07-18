@@ -32,7 +32,7 @@ router.post('/', (req, res) => {
   db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, datum, benutzer, bemerkung) VALUES (?,?,?,?,?,?,?)').run(palette.id, paletten_nr, palette.von_platz || '?', neuerPlatz.bezeichnung, jetzt, benutzer, bemerkung || 'Lagerverdichtung');
   
   // Protokoll (mit Zeitstempel + Login)
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Umlagerung', `${paletten_nr}: ${palette.von_platz || '?'} → ${neuerPlatz.bezeichnung} (keine Berechnung)`, benutzer, jetzt);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Umlagerung', `Palette ${paletten_nr} | Von: ${palette.von_platz || '?'} → Nach: ${neuerPlatz.bezeichnung} | Kunde: ${palette.kunde_id ? (db.prepare('SELECT name FROM kunden WHERE id=?').get(palette.kunde_id)?.name || '?') : '—'} | Keine Berechnung`, benutzer, jetzt);
   
   res.json({ ok: true, message: `${paletten_nr} umgelagert: ${palette.von_platz || '?'} → ${neuerPlatz.bezeichnung}` });
 });
@@ -68,7 +68,7 @@ router.post('/bulk', (req, res) => {
       db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, datum, benutzer, bemerkung) VALUES (?,?,?,?,?,?,?)').run(palette.id, nr, palette.von_platz || '?', neuerPlatz.bezeichnung, jetzt, benutzer, bemerkung || 'Bulk-Umlagerung');
       count++;
     }
-    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Bulk-Umlagerung', `${count} Paletten → ${neuerPlatz.bezeichnung}`, benutzer, jetzt);
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Bulk-Umlagerung', `${count} Paletten → ${neuerPlatz.bezeichnung} | Nummern: ${paletten_nummern.join(', ')} | Keine Berechnung`, benutzer, jetzt);
   });
 
   try {
