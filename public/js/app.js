@@ -71,6 +71,7 @@ function renderApp() {
           
           <div class="nav-section">Lagerverwaltung</div>
           <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
+          <a href="#" data-page="direktanlieferung"><span class="icon">🚛</span><span>Direktanlieferung</span></a>
           <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Auslagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
@@ -115,7 +116,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirektanlieferung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -139,6 +140,7 @@ async function pgDashboard() {
       <div class="card-header"><h3>Schnellaktionen</h3></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
         <button class="btn btn-primary btn-lg" onclick="navigate('einlagerung')" style="justify-content:center">↓ Einlagern</button>
+        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">🚛 Direktanlieferung</button>
         <button class="btn btn-danger btn-lg" onclick="navigate('auslagerung')" style="justify-content:center;background:var(--danger)">↑ Auslagern</button>
         <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf</button>
         <button class="btn btn-lg" onclick="navigate('musterung')" style="justify-content:center;background:#8e44ad;color:#fff">◈ Musterzug</button>
@@ -223,50 +225,215 @@ async function pgEinlagerung() {
   
   pc.innerHTML = `
     <div class="page-header"><h1>Einlagerung</h1></div>
-    <div class="card">
-      <h3 style="margin-bottom:16px">Neue Palette einlagern</h3>
-      <div class="form-row">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary btn-sm" id="tab-einzeln" onclick="einlTab('einzeln')">Einzeln einlagern</button>
+      <button class="btn btn-secondary btn-sm" id="tab-stapler" onclick="einlTab('stapler')">Staplerauftrag erstellen</button>
+      <button class="btn btn-secondary btn-sm" id="tab-auftraege" onclick="einlTab('auftraege')">Aufträge</button>
+    </div>
+    <div id="einl-tab-einzeln">
+      <div class="card">
+        <h3 style="margin-bottom:16px">Neue Palette einlagern</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kunde *</label>
+            <select id="einl-kunde" onchange="einlKundeChange()">
+              ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}" data-format="${k.nummern_format || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
+            <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lagerplatz * <span style="color:var(--success);font-size:11px">(${freie.length} frei)</span></label>
+            <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}">
+            <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Vorschlag: <strong>${vorschlag}</strong> ${freie.length > 0 && freie[0].max_hoehe_cm ? `(max. ${freie[0].max_hoehe_cm}cm)` : ''} · <a href="#" onclick="showFreiePlaetze();return false" style="color:var(--info)">Alle ${freie.length} freien anzeigen</a></div>
+          </div>
+          <div class="form-group">
+            <label>Menge</label>
+            <input type="number" id="einl-menge" value="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Artikel-Nr.</label>
+            <input type="text" id="einl-artikel" placeholder="Optional">
+          </div>
+          <div class="form-group">
+            <label>Chargen-Nr.</label>
+            <input type="text" id="einl-charge" placeholder="z.B. CETV12345">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bemerkung</label>
+          <textarea id="einl-bemerkung" rows="2" placeholder="Optional"></textarea>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="doEinlagern()">Einlagern</button>
+      </div>
+      <div id="freie-plaetze-box"></div>
+    </div>
+    <div id="einl-tab-stapler" style="display:none">
+      <div class="card">
+        <h3 style="margin-bottom:16px">Staplerauftrag erstellen</h3>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">EB-Nummern vom Kunden einfügen (eine pro Zeile). Ein QR-Code wird generiert, den der Staplerfahrer mit dem Handy scannen kann.</p>
         <div class="form-group">
           <label>Kunde *</label>
-          <select id="einl-kunde" onchange="einlKundeChange()">
-            ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}" data-format="${k.nummern_format || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+          <select id="sa-kunde">
+            ${kunden.map(k => `<option value="${k.id}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
-          <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Lagerplatz * <span style="color:var(--success);font-size:11px">(${freie.length} frei)</span></label>
-          <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}">
-          <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Vorschlag: <strong>${vorschlag}</strong> ${freie.length > 0 && freie[0].max_hoehe_cm ? `(max. ${freie[0].max_hoehe_cm}cm)` : ''} · <a href="#" onclick="showFreiePlaetze();return false" style="color:var(--info)">Alle ${freie.length} freien anzeigen</a></div>
+          <label>Paletten-Nummern * <span style="color:var(--text-muted);font-size:11px">(eine pro Zeile)</span></label>
+          <textarea id="sa-nummern" rows="8" placeholder="645524\n645525\n645526\n..." style="font-family:monospace"></textarea>
         </div>
         <div class="form-group">
-          <label>Menge</label>
-          <input type="number" id="einl-menge" value="1">
+          <label>Bemerkung</label>
+          <input type="text" id="sa-bemerkung" placeholder="Optional">
         </div>
+        <button class="btn btn-primary btn-lg" onclick="erstelleStaplerauftrag()">Auftrag erstellen & QR generieren</button>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Artikel-Nr.</label>
-          <input type="text" id="einl-artikel" placeholder="Optional">
-        </div>
-        <div class="form-group">
-          <label>Chargen-Nr.</label>
-          <input type="text" id="einl-charge" placeholder="z.B. CETV12345">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Bemerkung</label>
-        <textarea id="einl-bemerkung" rows="2" placeholder="Optional"></textarea>
-      </div>
-      <button class="btn btn-primary btn-lg" onclick="doEinlagern()">Einlagern</button>
+      <div id="sa-ergebnis"></div>
     </div>
-    <div id="freie-plaetze-box"></div>`;
+    <div id="einl-tab-auftraege" style="display:none">
+      <div class="card" id="auftraege-liste">
+        <h3 style="margin-bottom:16px">Stapleraufträge</h3>
+        <p style="color:var(--text-muted)">Lade...</p>
+      </div>
+    </div>`;
   
   einlKundeChange();
+  loadAuftraege();
+}
+
+function einlTab(tab) {
+  ['einzeln', 'stapler', 'auftraege'].forEach(t => {
+    document.getElementById(`einl-tab-${t}`).style.display = t === tab ? '' : 'none';
+    document.getElementById(`tab-${t}`).className = t === tab ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  });
+}
+
+async function erstelleStaplerauftrag() {
+  const kundeId = document.getElementById('sa-kunde').value;
+  const text = document.getElementById('sa-nummern').value.trim();
+  const bemerkung = document.getElementById('sa-bemerkung').value.trim();
+
+  if (!text) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
+
+  const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
+  if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  try {
+    const data = await api('/api/auftraege', { method: 'POST', body: {
+      kunde_id: kundeId,
+      positionen: nummern.map(nr => ({ paletten_nr: nr })),
+      bemerkung: bemerkung || null
+    }});
+
+    document.getElementById('sa-ergebnis').innerHTML = `
+      <div class="card" style="margin-top:16px;border:2px solid var(--success)">
+        <h3 style="color:var(--success);margin-bottom:12px">✓ Auftrag erstellt — ${data.positionen} Paletten</h3>
+        <p style="margin-bottom:14px;font-size:13px;color:var(--text-muted)">Der Staplerfahrer kann den QR-Code scannen oder den Link öffnen:</p>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div id="qr-code-box" style="background:#fff;padding:12px;border-radius:8px;display:inline-block"></div>
+          <div style="flex:1;min-width:200px">
+            <div class="form-group">
+              <label>Link für Staplerfahrer</label>
+              <input type="text" value="${data.url}" readonly onclick="this.select();document.execCommand('copy');toast('Link kopiert','success')" style="font-size:13px;cursor:pointer">
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Tipp: Klick auf den Link kopiert ihn automatisch.</p>
+            <button class="btn btn-sm btn-secondary" style="margin-top:10px" onclick="window.open('${data.url}','_blank')">Seite öffnen</button>
+            <button class="btn btn-sm btn-secondary" style="margin-top:10px;margin-left:6px" onclick="druckeQR()">QR drucken</button>
+          </div>
+        </div>
+      </div>`;
+
+    generateQR(data.url);
+    document.getElementById('sa-nummern').value = '';
+    loadAuftraege();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function generateQR(url) {
+  const box = document.getElementById('qr-code-box');
+  if (!box) return;
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(box, { text: url, width: 180, height: 180, colorDark: '#000000', colorLight: '#ffffff' });
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.onload = () => { new QRCode(box, { text: url, width: 180, height: 180, colorDark: '#000000', colorLight: '#ffffff' }); };
+    document.head.appendChild(script);
+  }
+}
+
+function druckeQR() {
+  const qr = document.getElementById('qr-code-box');
+  if (!qr) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>QR-Code Staplerauftrag</title><style>body{text-align:center;padding:40px;font-family:sans-serif}img{width:250px;height:250px}</style></head><body><h2>Einlagerungsauftrag</h2><p>QR-Code scannen zum Einlagern:</p>${qr.innerHTML}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  win.document.close();
+}
+
+async function loadAuftraege() {
+  const box = document.getElementById('auftraege-liste');
+  if (!box) return;
+  try {
+    const auftraege = await api('/api/auftraege');
+    if (auftraege.length === 0) {
+      box.innerHTML = `<h3 style="margin-bottom:16px">Stapleraufträge</h3><p style="color:var(--text-muted)">Noch keine Aufträge erstellt.</p>`;
+      return;
+    }
+    box.innerHTML = `
+      <h3 style="margin-bottom:16px">Stapleraufträge (${auftraege.length})</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Kunde</th><th>Erstellt</th><th>Fortschritt</th><th>Status</th><th>QR</th></tr></thead>
+        <tbody>${auftraege.map(a => `
+          <tr>
+            <td>${a.id}</td>
+            <td>${a.kunde_name || '—'}</td>
+            <td>${a.erstellt_am ? a.erstellt_am.substring(0, 16).replace('T', ' ') : '—'}</td>
+            <td><strong>${a.erledigt}/${a.gesamt}</strong></td>
+            <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : a.status === 'in_arbeit' ? 'badge-warning' : 'badge-info'}">${a.status}</span></td>
+            <td><button class="btn btn-sm btn-secondary" onclick="zeigeAuftragQR('${a.token}')">QR</button></td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>`;
+  } catch (e) { box.innerHTML = `<h3>Stapleraufträge</h3><p style="color:var(--danger)">${e.message}</p>`; }
+}
+
+async function zeigeAuftragQR(token) {
+  const host = window.location.origin;
+  const url = `${host}/stapler/${token}`;
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999';
+  modal.innerHTML = `
+    <div style="background:var(--card-bg,#2a2a2a);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center">
+      <h3 style="margin-bottom:14px">Staplerauftrag QR-Code</h3>
+      <div id="modal-qr" style="background:#fff;padding:12px;border-radius:8px;display:inline-block;margin-bottom:14px"></div>
+      <div class="form-group" style="margin-bottom:12px">
+        <input type="text" value="${url}" readonly onclick="this.select();document.execCommand('copy');toast('Kopiert','success')" style="text-align:center;font-size:12px;cursor:pointer">
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="this.closest('div[style]').remove()">Schließen</button>
+      <button class="btn btn-sm btn-primary" style="margin-left:8px" onclick="window.open('${url}','_blank')">Öffnen</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  setTimeout(() => generateQRInElement('modal-qr', url), 50);
+}
+
+function generateQRInElement(elementId, url) {
+  const box = document.getElementById(elementId);
+  if (!box) return;
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(box, { text: url, width: 180, height: 180, colorDark: '#000000', colorLight: '#ffffff' });
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.onload = () => { new QRCode(box, { text: url, width: 180, height: 180, colorDark: '#000000', colorLight: '#ffffff' }); };
+    document.head.appendChild(script);
+  }
 }
 
 async function einlKundeChange() {
@@ -302,6 +469,145 @@ async function doEinlagern() {
     toast(data.message, 'success');
     pgEinlagerung();
   } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ DIREKTANLIEFERUNG ════════════════════════════════════════════════════════
+async function pgDirektanlieferung() {
+  const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
+
+  pc.innerHTML = `
+    <div class="page-header"><h1>Direktanlieferung</h1><span style="color:var(--text-muted);font-size:13px">3 Bewegungen pro Palette (LKW-Entladung + Handling + Einlagerung)</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary btn-sm" id="dtab-neu" onclick="direktTab('neu')">Neue Direktanlieferung</button>
+      <button class="btn btn-secondary btn-sm" id="dtab-liste" onclick="direktTab('liste')">Übersicht</button>
+    </div>
+    <div id="direkt-tab-neu">
+      <div class="card">
+        <h3 style="margin-bottom:16px">Neue Direktanlieferung erstellen</h3>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Ware kommt per LKW an. EB-Nummern eingeben, QR-Code für Staplerfahrer generieren. Pro Palette werden automatisch 3 Bewegungen gebucht.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kunde *</label>
+            <select id="da-kunde">
+              ${kunden.map(k => `<option value="${k.id}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>LKW-Nr.</label>
+            <input type="text" id="da-lkw" placeholder="z.B. 1, 2, 3...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Paletten-Nummern * <span style="color:var(--text-muted);font-size:11px">(eine pro Zeile)</span></label>
+          <textarea id="da-nummern" rows="8" placeholder="645524\n645525\n645526\n..." style="font-family:monospace"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Bemerkung</label>
+          <input type="text" id="da-bemerkung" placeholder="Optional">
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="erstelleDirektanlieferung()">Auftrag erstellen & QR generieren</button>
+      </div>
+      <div id="da-ergebnis"></div>
+    </div>
+    <div id="direkt-tab-liste" style="display:none">
+      <div class="card" id="direkt-liste-box">
+        <h3 style="margin-bottom:16px">Direktanlieferungen</h3>
+        <p style="color:var(--text-muted)">Lade...</p>
+      </div>
+    </div>`;
+
+  loadDirektanlieferungen();
+}
+
+function direktTab(tab) {
+  ['neu', 'liste'].forEach(t => {
+    document.getElementById(`direkt-tab-${t}`).style.display = t === tab ? '' : 'none';
+    document.getElementById(`dtab-${t}`).className = t === tab ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  });
+}
+
+async function erstelleDirektanlieferung() {
+  const kundeId = document.getElementById('da-kunde').value;
+  const lkwNr = document.getElementById('da-lkw').value.trim();
+  const text = document.getElementById('da-nummern').value.trim();
+  const bemerkung = document.getElementById('da-bemerkung').value.trim();
+
+  if (!text) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
+
+  const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
+  if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+
+  try {
+    const data = await api('/api/auftraege', { method: 'POST', body: {
+      kunde_id: kundeId,
+      typ: 'direktanlieferung',
+      lkw_nr: lkwNr || null,
+      positionen: nummern.map(nr => ({ paletten_nr: nr })),
+      bemerkung: bemerkung || null
+    }});
+
+    document.getElementById('da-ergebnis').innerHTML = `
+      <div class="card" style="margin-top:16px;border:2px solid var(--success)">
+        <h3 style="color:var(--success);margin-bottom:12px">✓ Direktanlieferung erstellt — ${data.positionen} Paletten (${data.positionen * 3} Bewegungen)</h3>
+        ${data.direkt_id ? `<p style="margin-bottom:8px"><strong>ID:</strong> ${data.direkt_id}</p>` : ''}
+        <p style="margin-bottom:14px;font-size:13px;color:var(--text-muted)">Der Staplerfahrer scannt den QR-Code und trägt die Lagerplätze ein:</p>
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div id="da-qr-box" style="background:#fff;padding:12px;border-radius:8px;display:inline-block"></div>
+          <div style="flex:1;min-width:200px">
+            <div class="form-group">
+              <label>Link für Staplerfahrer</label>
+              <input type="text" value="${data.url}" readonly onclick="this.select();document.execCommand('copy');toast('Link kopiert','success')" style="font-size:13px;cursor:pointer">
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Klick auf den Link kopiert ihn. Pro Palette: LKW-Entladung + Handling + Einlagerung.</p>
+            <button class="btn btn-sm btn-secondary" style="margin-top:10px" onclick="window.open('${data.url}','_blank')">Seite öffnen</button>
+            <button class="btn btn-sm btn-secondary" style="margin-top:10px;margin-left:6px" onclick="druckeQRDirekt()">QR drucken</button>
+          </div>
+        </div>
+      </div>`;
+
+    generateQRInElement('da-qr-box', data.url);
+    document.getElementById('da-nummern').value = '';
+    loadDirektanlieferungen();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function druckeQRDirekt() {
+  const qr = document.getElementById('da-qr-box');
+  if (!qr) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>QR-Code Direktanlieferung</title><style>body{text-align:center;padding:40px;font-family:sans-serif}img{width:250px;height:250px}</style></head><body><h2>Direktanlieferung</h2><p>QR-Code scannen — 3 Bewegungen pro Palette:</p>${qr.innerHTML}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  win.document.close();
+}
+
+async function loadDirektanlieferungen() {
+  const box = document.getElementById('direkt-liste-box');
+  if (!box) return;
+  try {
+    const liste = await api('/api/direktanlieferung');
+    if (liste.length === 0) {
+      box.innerHTML = `<h3 style="margin-bottom:16px">Direktanlieferungen</h3><p style="color:var(--text-muted)">Noch keine Direktanlieferungen erstellt.</p>`;
+      return;
+    }
+    box.innerHTML = `
+      <h3 style="margin-bottom:16px">Direktanlieferungen (${liste.length})</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>ID</th><th>Kunde</th><th>LKW</th><th>Erstellt</th><th>Fortschritt</th><th>Bew.</th><th>Status</th><th>QR</th></tr></thead>
+        <tbody>${liste.map(a => `
+          <tr>
+            <td>${a.id}</td>
+            <td><strong>${a.direkt_id || '—'}</strong></td>
+            <td>${a.kunde_name || '—'}</td>
+            <td>${a.lkw_nr || '—'}</td>
+            <td>${a.erstellt_am ? a.erstellt_am.substring(0, 16).replace('T', ' ') : '—'}</td>
+            <td><strong>${a.erledigt}/${a.gesamt}</strong></td>
+            <td>${a.erledigt * 3}/${a.gesamt * 3}</td>
+            <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : a.status === 'in_arbeit' ? 'badge-warning' : 'badge-info'}">${a.status}</span></td>
+            <td><button class="btn btn-sm btn-secondary" onclick="zeigeAuftragQR('${a.token}')">QR</button></td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>`;
+  } catch (e) { box.innerHTML = `<h3>Direktanlieferungen</h3><p style="color:var(--danger)">${e.message}</p>`; }
 }
 
 // ═══ AUSLAGERUNG ═════════════════════════════════════════════════════════════

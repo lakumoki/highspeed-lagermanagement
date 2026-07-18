@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Einlagerung — Staplerfahrer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      min-height: 100vh;
+      padding: 12px;
+    }
+    .header {
+      background: #f5c518;
+      color: #1a1a1a;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header .badge {
+      background: #1a1a1a;
+      color: #f5c518;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .info-bar {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .info-bar .label { color: #999; }
+    .info-bar .value { color: #f5c518; font-weight: 600; }
+    .progress-bar {
+      background: #333;
+      border-radius: 6px;
+      height: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      background: #4caf50;
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+    .palette-card {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.3s;
+    }
+    .palette-card.done {
+      border-color: #4caf50;
+      opacity: 0.7;
+    }
+    .palette-card.done .status-icon { color: #4caf50; }
+    .palette-card .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .palette-card .pal-nr {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .palette-card .status-icon { font-size: 20px; }
+    .palette-card .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .palette-card input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid #555;
+      border-radius: 8px;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      font-size: 16px;
+      outline: none;
+    }
+    .palette-card input:focus { border-color: #f5c518; }
+    .palette-card input:disabled { opacity: 0.5; }
+    .btn-einlagern {
+      padding: 12px 18px;
+      background: #f5c518;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-einlagern:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-einlagern:active:not(:disabled) { transform: scale(0.96); }
+    .done-label {
+      color: #4caf50;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .error-msg {
+      color: #f44336;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .success-msg {
+      color: #4caf50;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .btn-freie {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #333;
+      border: 1px dashed #555;
+      border-radius: 8px;
+      color: #f5c518;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .btn-freie:active { background: #444; }
+    .freie-liste {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    .freie-liste.visible { display: block; }
+    .freie-liste .platz-chip {
+      display: inline-block;
+      padding: 8px 12px;
+      background: #1a1a1a;
+      border: 1px solid #4caf50;
+      border-radius: 6px;
+      margin: 3px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4caf50;
+      cursor: pointer;
+    }
+    .freie-liste .platz-chip:active { background: #4caf50; color: #1a1a1a; }
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+      font-size: 16px;
+    }
+    .error-page {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .error-page h2 { color: #f44336; margin-bottom: 10px; }
+    .all-done {
+      text-align: center;
+      padding: 40px 20px;
+      background: #1b3a1b;
+      border: 1px solid #4caf50;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .all-done h2 { color: #4caf50; font-size: 22px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading">Auftrag wird geladen...</div>
+  </div>
+
+  <script>
+    const token = window.location.pathname.split('/stapler/')[1];
+    let auftragData = null;
+    let freiePlaetze = [];
+    let freieSichtbar = false;
+    let aktiverInput = null;
+
+    async function loadAuftrag() {
+      try {
+        const res = await fetch(`/api/auftraege/${token}`);
+        if (!res.ok) throw new Error('Auftrag nicht gefunden');
+        auftragData = await res.json();
+        render();
+      } catch (e) {
+        document.getElementById('app').innerHTML = `
+          <div class="error-page">
+            <h2>Fehler</h2>
+            <p>${e.message}</p>
+            <p style="margin-top:12px;color:#999;font-size:13px">Bitte QR-Code erneut scannen oder Link prüfen.</p>
+          </div>`;
+      }
+    }
+
+    function render() {
+      const d = auftragData;
+      const gesamt = d.positionen.length;
+      const erledigt = d.positionen.filter(p => p.status === 'eingelagert').length;
+      const prozent = gesamt > 0 ? Math.round((erledigt / gesamt) * 100) : 0;
+      const isDirekt = d.typ === 'direktanlieferung';
+
+      let html = `
+        <div class="header">
+          <h1>${isDirekt ? 'Direktanlieferung' : 'Einlagerung'}</h1>
+          <span class="badge">${erledigt}/${gesamt}</span>
+        </div>
+        ${isDirekt ? `<div style="background:#e67e22;color:#fff;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;text-align:center">3 Bewegungen pro Palette (Entladung + Handling + Einlagerung)${d.direkt_id ? ' — ID: ' + d.direkt_id : ''}${d.lkw_nr ? ' — LKW ' + d.lkw_nr : ''}</div>` : ''}
+        <div class="info-bar">
+          <div><span class="label">Kunde:</span> <span class="value">${d.kunde_name || '—'}</span></div>
+          <div><span class="label">Auftrag:</span> <span class="value">#${d.id}</span></div>
+        </div>
+        <div class="progress-bar"><div class="fill" style="width:${prozent}%"></div></div>`;
+
+      if (erledigt === gesamt && gesamt > 0) {
+        html += `<div class="all-done"><h2>Alle Paletten eingelagert</h2><p style="color:#aaa">Auftrag abgeschlossen.</p></div>`;
+      } else {
+        html += `<button class="btn-freie" onclick="toggleFreie()">Freie Plätze anzeigen</button>`;
+        html += `<div id="freie-box" class="freie-liste"></div>`;
+      }
+
+      for (const pos of d.positionen) {
+        if (pos.status === 'eingelagert') {
+          html += `
+            <div class="palette-card done">
+              <div class="top-row">
+                <span class="pal-nr">${pos.paletten_nr}</span>
+                <span class="status-icon">✓</span>
+              </div>
+              <div class="done-label">✓ ${pos.lagerplatz}</div>
+            </div>`;
+        } else {
+          html += `
+            <div class="palette-card" id="card-${pos.id}">
+              <div class="top-row">
+                <span class="pal-nr">${pos.paletten_nr}</span>
+                <span class="status-icon" id="icon-${pos.id}">○</span>
+              </div>
+              <div class="input-row">
+                <input type="text" id="input-${pos.id}" placeholder="Platz eingeben" 
+                  onfocus="aktiverInput='input-${pos.id}'"
+                  onkeydown="if(event.key==='Enter')einlagern(${pos.id})">
+                <button class="btn-einlagern" id="btn-${pos.id}" onclick="einlagern(${pos.id})">OK</button>
+              </div>
+              <div id="msg-${pos.id}"></div>
+            </div>`;
+        }
+      }
+
+      document.getElementById('app').innerHTML = html;
+    }
+
+    async function toggleFreie() {
+      const box = document.getElementById('freie-box');
+      if (freieSichtbar) {
+        box.classList.remove('visible');
+        freieSichtbar = false;
+        return;
+      }
+      if (freiePlaetze.length === 0) {
+        const res = await fetch(`/api/auftraege/${token}/freie-plaetze`);
+        freiePlaetze = await res.json();
+      }
+      box.innerHTML = freiePlaetze.map(p =>
+        `<span class="platz-chip" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' (' + p.max_hoehe_cm + 'cm)' : ''}</span>`
+      ).join('');
+      box.classList.add('visible');
+      freieSichtbar = true;
+    }
+
+    function fillPlatz(bez) {
+      if (aktiverInput) {
+        document.getElementById(aktiverInput).value = bez;
+      } else {
+        const firstOpen = auftragData.positionen.find(p => p.status !== 'eingelagert');
+        if (firstOpen) document.getElementById(`input-${firstOpen.id}`).value = bez;
+      }
+    }
+
+    async function einlagern(posId) {
+      const input = document.getElementById(`input-${posId}`);
+      const btn = document.getElementById(`btn-${posId}`);
+      const msg = document.getElementById(`msg-${posId}`);
+      const platz = input.value.trim();
+
+      if (!platz) { msg.innerHTML = '<div class="error-msg">Bitte Platz eingeben</div>'; return; }
+
+      btn.disabled = true;
+      input.disabled = true;
+      msg.innerHTML = '';
+
+      try {
+        const res = await fetch(`/api/auftraege/${token}/positionen/${posId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lagerplatz: platz })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        // Update local state
+        const pos = auftragData.positionen.find(p => p.id === posId);
+        if (pos) { pos.status = 'eingelagert'; pos.lagerplatz = platz; }
+
+        // Remove from freie list
+        freiePlaetze = freiePlaetze.filter(p => p.bezeichnung !== platz);
+
+        render();
+      } catch (e) {
+        msg.innerHTML = `<div class="error-msg">${e.message}</div>`;
+        btn.disabled = false;
+        input.disabled = false;
+      }
+    }
+
+    loadAuftrag();
+  </script>
+</body>
+</html>

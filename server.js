@@ -44,6 +44,13 @@ app.use('/api/kontingent', require('./routes/kontingent'));
 app.use('/api/musterung', require('./routes/musterung'));
 app.use('/api/pickliste', require('./routes/pickliste'));
 app.use('/api/umlagerung', require('./routes/umlagerung'));
+app.use('/api/auftraege', require('./routes/auftraege'));
+app.use('/api/direktanlieferung', require('./routes/direktanlieferung'));
+
+// Staplerfahrer-Seite (public, kein Login)
+app.get('/stapler/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'stapler.html'));
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
