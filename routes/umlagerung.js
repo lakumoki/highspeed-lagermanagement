@@ -37,6 +37,48 @@ router.post('/', (req, res) => {
   res.json({ ok: true, message: `${paletten_nr} umgelagert: ${palette.von_platz || '?'} → ${neuerPlatz.bezeichnung}` });
 });
 
+// Bulk-Umlagerung: Mehrere Paletten gleichzeitig auf einen Platz
+router.post('/bulk', (req, res) => {
+  const { paletten_nummern, nach_platz, bemerkung } = req.body;
+  if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
+    return res.status(400).json({ error: 'Mindestens eine Palette erforderlich' });
+  }
+  if (!nach_platz) return res.status(400).json({ error: 'Ziel-Platz erforderlich' });
+
+  const benutzer = req.session?.user?.benutzername || 'System';
+  const jetzt = new Date().toISOString();
+
+  const neuerPlatz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(nach_platz, nach_platz.toUpperCase(), nach_platz.toLowerCase());
+  if (!neuerPlatz) return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" nicht gefunden` });
+  if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang') return res.status(400).json({ error: `Ziel-Platz "${nach_platz}" ist bereits belegt und kein Gang/Block-Platz` });
+
+  let count = 0;
+  const errors = [];
+
+  const transaction = db.transaction(() => {
+    for (const nr of paletten_nummern) {
+      const palette = db.prepare("SELECT p.*, l.id as alter_platz_id, l.bezeichnung as von_platz FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
+      if (!palette) { errors.push(`${nr}: nicht gefunden`); continue; }
+
+      if (palette.alter_platz_id) {
+        db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(palette.alter_platz_id);
+      }
+      db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
+      db.prepare('UPDATE paletten SET lagerplatz_id = ?, lagerplatz_bezeichnung = ? WHERE id = ?').run(neuerPlatz.id, neuerPlatz.bezeichnung, palette.id);
+      db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, datum, benutzer, bemerkung) VALUES (?,?,?,?,?,?,?)').run(palette.id, nr, palette.von_platz || '?', neuerPlatz.bezeichnung, jetzt, benutzer, bemerkung || 'Bulk-Umlagerung');
+      count++;
+    }
+    db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Bulk-Umlagerung', `${count} Paletten → ${neuerPlatz.bezeichnung}`, benutzer, jetzt);
+  });
+
+  try {
+    transaction();
+    res.json({ ok: true, message: `${count} Paletten nach ${neuerPlatz.bezeichnung} umgelagert`, count, errors });
+  } catch (e) {
+    res.status(500).json({ error: 'Fehler: ' + e.message });
+  }
+});
+
 // Alle Umlagerungen (für Nachvollziehbarkeit)
 router.get('/', (req, res) => {
   const { paletten_nr } = req.query;

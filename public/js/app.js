@@ -920,11 +920,26 @@ async function pgUmlagerung() {
     <div class="card" style="border-left:4px solid #e67e22;margin-bottom:16px">
       <div class="card-header">
         <h3>Wareneingang — ${wareneingang.length} Paletten warten auf Einlagerung</h3>
-        <button class="btn btn-sm btn-primary" onclick="warenEingangQR()">QR für Staplerfahrer</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-primary" onclick="warenEingangQR()">QR für Staplerfahrer</button>
+        </div>
       </div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Diese Paletten stehen im Wareneingang und müssen auf einen endgültigen Platz umgelagert werden.</p>
-      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Kunde</th><th>Neuer Platz</th><th></th></tr></thead><tbody>
-        ${wareneingang.map(p => `<tr>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Paletten auswählen und gemeinsam auf einen Platz verschieben, oder einzeln umlagern.</p>
+      <div style="margin-bottom:10px;padding:10px;background:var(--bg-secondary,#f8f9fa);border-radius:8px;border:1px solid var(--border,#e0e0e0)">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:13px;font-weight:600"><input type="checkbox" id="we-select-all" onchange="weSelectAll(this.checked)"> Alle</label>
+          <span id="we-selected-count" style="font-size:12px;color:var(--text-muted)">0 ausgewählt</span>
+          <input type="number" id="we-hoehe-filter" placeholder="Höhe (cm)" style="width:100px;padding:5px 8px;font-size:13px">
+          <button class="btn btn-sm btn-secondary" onclick="weZeigeFreie()">Freie Plätze</button>
+          <input type="text" id="we-bulk-platz" placeholder="Ziel-Platz..." style="width:130px;padding:5px 8px;font-size:13px">
+          <button class="btn btn-sm btn-primary" onclick="weBulkUmlagern()">Ausgewählte umlagern</button>
+        </div>
+        <div id="we-freie-box" style="margin-top:8px;max-height:150px;overflow-y:auto"></div>
+        <div id="we-block-hint" style="margin-top:6px;display:none;font-size:12px;color:#e67e22;font-weight:600"></div>
+      </div>
+      <div class="table-wrap" style="max-height:400px;overflow-y:auto"><table><thead><tr><th style="width:30px"></th><th>Pal.-Nr.</th><th>Kunde</th><th>Neuer Platz</th><th></th></tr></thead><tbody>
+        ${wareneingang.sort((a,b) => a.paletten_nr.localeCompare(b.paletten_nr)).map(p => `<tr>
+          <td><input type="checkbox" class="we-cb" data-nr="${p.paletten_nr}" data-id="${p.id}" onchange="weCheckChanged()"></td>
           <td><strong>${p.paletten_nr}</strong></td>
           <td>${p.kunde_name || '—'}</td>
           <td><input type="text" id="we-platz-${p.id}" placeholder="z.B. A42, XB..." style="width:100px;padding:4px 8px;font-size:13px"></td>
@@ -951,6 +966,62 @@ async function pgUmlagerung() {
         ${umlagerungen.map(u => `<tr><td><strong>${u.paletten_nr}</strong></td><td>${u.von_platz}</td><td><span style="color:var(--success)">${u.nach_platz}</span></td><td>${u.benutzer || '—'}</td><td>${u.datum ? new Date(u.datum).toLocaleString('de-DE') : '—'}</td><td>${u.bemerkung || ''}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
+}
+
+function weSelectAll(checked) {
+  document.querySelectorAll('.we-cb').forEach(cb => cb.checked = checked);
+  weCheckChanged();
+}
+
+function weCheckChanged() {
+  const checked = document.querySelectorAll('.we-cb:checked');
+  const count = checked.length;
+  document.getElementById('we-selected-count').textContent = `${count} ausgewählt`;
+  const hint = document.getElementById('we-block-hint');
+  if (count > 3) {
+    hint.style.display = 'block';
+    hint.innerHTML = `Bei ${count} Paletten empfohlen: Block/Gang-Platz (z.B. <a href="#" onclick="document.getElementById('we-bulk-platz').value='XA';return false" style="color:#e67e22">XA</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XB';return false" style="color:#e67e22">XB</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XC';return false" style="color:#e67e22">XC</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XD';return false" style="color:#e67e22">XD</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XE1';return false" style="color:#e67e22">XE1</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='XF1';return false" style="color:#e67e22">XF1</a>)`;
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+async function weZeigeFreie() {
+  const hoehe = document.getElementById('we-hoehe-filter')?.value?.trim();
+  const url = hoehe ? `/api/einlagerung/freie-plaetze?hoehe=${hoehe}` : '/api/einlagerung/freie-plaetze';
+  const plaetze = await api(url);
+  const box = document.getElementById('we-freie-box');
+  const checked = document.querySelectorAll('.we-cb:checked').length;
+
+  // Bei >3 ausgewählt: Gang-Plätze zuerst hervorheben
+  let sorted = plaetze;
+  if (checked > 3) {
+    sorted = [...plaetze.filter(p => p.typ === 'Gang'), ...plaetze.filter(p => p.typ !== 'Gang')];
+  }
+
+  box.innerHTML = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${sorted.length} Plätze${hoehe ? ` (≥ ${hoehe} cm)` : ''} — Klick übernimmt</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">${sorted.map(p => {
+    const hLabel = p.max_hoehe_cm ? ` ${p.max_hoehe_cm}cm` : '';
+    const isGang = p.typ === 'Gang';
+    return `<span onclick="document.getElementById('we-bulk-platz').value='${p.bezeichnung}'" style="display:inline-block;padding:4px 8px;background:${isGang ? '#e67e22' : 'var(--success,#2ecc71)'};color:#fff;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer" title="${p.bereich}${hLabel}">${p.bezeichnung}${hLabel}</span>`;
+  }).join('')}</div>`;
+}
+
+async function weBulkUmlagern() {
+  const checked = [...document.querySelectorAll('.we-cb:checked')];
+  if (checked.length === 0) { toast('Bitte Paletten auswählen', 'error'); return; }
+  const platz = document.getElementById('we-bulk-platz')?.value?.trim();
+  if (!platz) { toast('Bitte Ziel-Platz eingeben', 'error'); return; }
+
+  const nummern = checked.map(cb => cb.dataset.nr);
+  if (!confirm(`${nummern.length} Paletten nach "${platz}" umlagern?`)) return;
+
+  try {
+    const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { paletten_nummern: nummern, nach_platz: platz } });
+    toast(data.message, 'success');
+    if (data.errors && data.errors.length > 0) toast(`Fehler: ${data.errors.join(', ')}`, 'error');
+    pgUmlagerung();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function umlagerungAusWareneingang(paletteId, nr) {
