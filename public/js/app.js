@@ -1062,9 +1062,12 @@ async function doUmlagerung() {
 }
 
 // ═══ LAGERPLAN ═══════════════════════════════════════════════════════════════
+let lpSelectedPaletten = new Set();
+
 async function pgLagerplan() {
   const pc = document.getElementById('page-content');
   const uebersicht = await api('/api/lagerplaetze/plan/uebersicht');
+  lpSelectedPaletten = new Set();
   
   pc.innerHTML = `
     <div class="page-header"><h1>Lagerplan</h1></div>
@@ -1072,11 +1075,21 @@ async function pgLagerplan() {
       ${uebersicht.map(r => `<button onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei} frei)</small></button>`).join('')}
     </div>
     <div class="card" style="margin-bottom:12px">
-      <div style="display:flex;gap:16px;font-size:12px">
+      <div style="display:flex;gap:16px;font-size:12px;align-items:center;flex-wrap:wrap">
         <span><span style="display:inline-block;width:14px;height:14px;background:#e74c3c;border-radius:3px;vertical-align:middle"></span> Belegt (mit Nr.)</span>
         <span><span style="display:inline-block;width:14px;height:14px;background:#f39c12;border-radius:3px;vertical-align:middle"></span> Belegt (ohne Nr.)</span>
         <span><span style="display:inline-block;width:14px;height:14px;background:#95a5a6;border-radius:3px;vertical-align:middle"></span> Gesperrt/x</span>
         <span><span style="display:inline-block;width:14px;height:14px;background:#2ecc71;border-radius:3px;vertical-align:middle"></span> Frei</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#2980b9;border-radius:3px;vertical-align:middle"></span> Ausgewählt</span>
+      </div>
+    </div>
+    <div id="lp-toolbar" style="display:none;margin-bottom:12px" class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <strong id="lp-sel-count" style="font-size:13px">0 ausgewählt</strong>
+        <input type="text" id="lp-umlagern-platz" placeholder="Ziel-Platz (z.B. XA, XB...)" style="width:180px;padding:6px 10px;font-size:13px">
+        <button class="btn btn-sm btn-primary" onclick="lpBulkUmlagern()">Umlagern (ohne Buchung)</button>
+        <button class="btn btn-sm btn-secondary" onclick="lpSelectedPaletten.clear();loadRegal(document.querySelector('.lagerplan-tabs .active')?.textContent?.trim()?.split(' ')[0]||'A')">Auswahl aufheben</button>
+        <span id="lp-block-hint" style="font-size:12px;color:#e67e22;font-weight:600"></span>
       </div>
     </div>
     <div id="lp-grid" class="card"></div>`;
@@ -1088,21 +1101,70 @@ async function loadRegal(regal) {
   document.querySelectorAll('.lagerplan-tabs button').forEach(b => b.classList.remove('active'));
   const btns = document.querySelectorAll('.lagerplan-tabs button');
   btns.forEach(b => { if (b.textContent.includes(regal)) b.classList.add('active'); });
-  
+
   const plaetze = await api(`/api/lagerplaetze/plan/regal/${encodeURIComponent(regal)}`);
   const grid = document.getElementById('lp-grid');
-  
-  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${plaetze.length} Plätze</h3></div>
+
+  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${plaetze.length} Plätze</h3><span style="font-size:11px;color:var(--text-muted)">Klick = Details · Shift+Klick = Auswählen zum Umlagern</span></div>
     <div class="lagerplan-grid">
       ${plaetze.map(p => {
         let cls = 'frei';
         let label = p.position;
-        if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr.substring(0, 5); }
+        const isSelected = p.paletten_nr && lpSelectedPaletten.has(p.paletten_nr);
+        if (isSelected) { cls = 'belegt-selected'; label = '✓'; }
+        else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr.substring(0, 5); }
         else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
         else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
-        return `<div class="lagerplan-cell ${cls}" onclick="showPlatzDetail(${p.id})" title="${p.bezeichnung}">${label}</div>`;
+        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}">${label}</div>`;
       }).join('')}
     </div>`;
+
+  lpUpdateToolbar();
+}
+
+function lpCellClick(event, platzId, palNr) {
+  if (event.shiftKey && palNr) {
+    if (lpSelectedPaletten.has(palNr)) lpSelectedPaletten.delete(palNr);
+    else lpSelectedPaletten.add(palNr);
+    const activeRegal = document.querySelector('.lagerplan-tabs .active')?.textContent?.trim()?.split(' ')[0];
+    if (activeRegal) loadRegal(activeRegal);
+  } else {
+    showPlatzDetail(platzId);
+  }
+}
+
+function lpUpdateToolbar() {
+  const toolbar = document.getElementById('lp-toolbar');
+  const count = lpSelectedPaletten.size;
+  if (count > 0) {
+    toolbar.style.display = '';
+    document.getElementById('lp-sel-count').textContent = `${count} ausgewählt`;
+    const hint = document.getElementById('lp-block-hint');
+    if (count > 3) {
+      hint.textContent = `Empfohlen: Gang/Block (XA, XB, XC, XD, XE1, XF1)`;
+    } else {
+      hint.textContent = '';
+    }
+  } else {
+    toolbar.style.display = 'none';
+  }
+}
+
+async function lpBulkUmlagern() {
+  const platz = document.getElementById('lp-umlagern-platz')?.value?.trim();
+  if (!platz) { toast('Bitte Ziel-Platz eingeben', 'error'); return; }
+  if (lpSelectedPaletten.size === 0) { toast('Keine Paletten ausgewählt', 'error'); return; }
+
+  const nummern = [...lpSelectedPaletten];
+  if (!confirm(`${nummern.length} Paletten nach "${platz}" umlagern?\n\n(Keine abrechenbare Buchung — nur Lagerverdichtung)`)) return;
+
+  try {
+    const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { paletten_nummern: nummern, nach_platz: platz, bemerkung: 'Umlagerung aus Lagerplan' } });
+    toast(data.message, 'success');
+    if (data.errors && data.errors.length > 0) toast(`Fehler: ${data.errors.join(', ')}`, 'error');
+    lpSelectedPaletten.clear();
+    pgLagerplan();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function showPlatzDetail(id) {

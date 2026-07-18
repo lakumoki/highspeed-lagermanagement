@@ -300,6 +300,7 @@ tr:hover td { background: #fafbfc; }
 }
 .lagerplan-cell:hover { transform: scale(1.15); z-index: 2; border-color: #333; }
 .lagerplan-cell.belegt-nr { background: #e74c3c; color: #fff; }
+.lagerplan-cell.belegt-selected { background: #2980b9; color: #fff; font-size: 16px; font-weight: 700; border: 2px solid #1a5276; }
 .lagerplan-cell.belegt-x { background: #95a5a6; color: #fff; }
 .lagerplan-cell.belegt-sonstige { background: #f39c12; color: #fff; }
 .lagerplan-cell.frei { background: #2ecc71; color: #fff; }
