@@ -883,13 +883,30 @@ async function doMusterung() {
 async function pgUmlagerung() {
   const pc = document.getElementById('page-content');
   const umlagerungen = await api('/api/umlagerung');
-  
+  const wareneingang = await api('/api/paletten?platz=Wareneingang');
+
   pc.innerHTML = `
     <div class="page-header"><h1>Umlagerung</h1></div>
+    ${wareneingang.length > 0 ? `
+    <div class="card" style="border-left:4px solid #e67e22;margin-bottom:16px">
+      <div class="card-header">
+        <h3>Wareneingang — ${wareneingang.length} Paletten warten auf Einlagerung</h3>
+        <button class="btn btn-sm btn-primary" onclick="warenEingangQR()">QR für Staplerfahrer</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Diese Paletten stehen im Wareneingang und müssen auf einen endgültigen Platz umgelagert werden.</p>
+      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Kunde</th><th>Neuer Platz</th><th></th></tr></thead><tbody>
+        ${wareneingang.map(p => `<tr>
+          <td><strong>${p.paletten_nr}</strong></td>
+          <td>${p.kunde_name || '—'}</td>
+          <td><input type="text" id="we-platz-${p.id}" placeholder="z.B. A42, XB..." style="width:100px;padding:4px 8px;font-size:13px"></td>
+          <td><button class="btn btn-sm btn-secondary" onclick="umlagerungAusWareneingang(${p.id},'${p.paletten_nr}')">Umlagern</button></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>` : ''}
     <div class="card">
       <h3 style="margin-bottom:16px">Palette umlagern (Lagerverdichtung)</h3>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
-        Umlagerungen dienen der Lagerverdichtung. Sie werden dokumentiert (für Nachvollziehbarkeit), 
+        Umlagerungen dienen der Lagerverdichtung. Sie werden dokumentiert (für Nachvollziehbarkeit),
         aber <strong>nicht als abrechenbare Bewegung</strong> gezählt.
       </p>
       <div class="form-row-3">
@@ -905,6 +922,35 @@ async function pgUmlagerung() {
         ${umlagerungen.map(u => `<tr><td><strong>${u.paletten_nr}</strong></td><td>${u.von_platz}</td><td><span style="color:var(--success)">${u.nach_platz}</span></td><td>${u.benutzer || '—'}</td><td>${u.datum ? new Date(u.datum).toLocaleString('de-DE') : '—'}</td><td>${u.bemerkung || ''}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
+}
+
+async function umlagerungAusWareneingang(paletteId, nr) {
+  const platz = document.getElementById(`we-platz-${paletteId}`)?.value?.trim();
+  if (!platz) { toast('Bitte Ziel-Platz eingeben', 'error'); return; }
+  try {
+    const data = await api('/api/umlagerung', { method: 'POST', body: { paletten_nr: nr, nach_platz: platz, bemerkung: 'Aus Wareneingang' } });
+    toast(data.message, 'success');
+    pgUmlagerung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function warenEingangQR() {
+  const wareneingang = await api('/api/paletten?platz=Wareneingang');
+  if (wareneingang.length === 0) { toast('Keine Paletten im Wareneingang', 'error'); return; }
+
+  // Staplerauftrag erstellen mit den Wareneingang-Paletten
+  const kundeId = wareneingang[0].kunde_id || 1;
+  try {
+    const data = await api('/api/auftraege', { method: 'POST', body: {
+      kunde_id: kundeId,
+      positionen: wareneingang.map(p => ({ paletten_nr: p.paletten_nr })),
+      bemerkung: 'Umlagerung aus Wareneingang'
+    }});
+
+    // QR-Code anzeigen
+    zeigeAuftragQR(data.token);
+    toast(`QR-Code erstellt für ${wareneingang.length} Paletten`, 'success');
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function doUmlagerung() {

@@ -57,7 +57,7 @@ router.get('/suche', (req, res) => {
 
 // Alle aktiven Paletten (mit Pagination)
 router.get('/', (req, res) => {
-  const { page = 1, limit = 50, kunde_id, regal } = req.query;
+  const { page = 1, limit = 50, kunde_id, regal, platz } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
   
   let where = 'WHERE p.ausgelagert = 0 AND p.geloescht = 0';
@@ -65,7 +65,21 @@ router.get('/', (req, res) => {
   
   if (kunde_id) { where += ' AND p.kunde_id = ?'; params.push(kunde_id); }
   if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
+  if (platz) { where += ' AND p.lagerplatz_bezeichnung = ?'; params.push(platz); }
   
+  // Wenn platz-Filter: flache Liste ohne Pagination zurückgeben
+  if (platz) {
+    const paletten = db.prepare(`
+      SELECT p.*, l.bezeichnung as platz, l.regal, l.bereich, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      ${where}
+      ORDER BY p.paletten_nr
+    `).all(...params);
+    return res.json(paletten);
+  }
+
   const total = db.prepare(`SELECT COUNT(*) as c FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id ${where}`).get(...params);
   const paletten = db.prepare(`
     SELECT p.*, l.bezeichnung as platz, l.regal, l.bereich, k.name as kunde_name
