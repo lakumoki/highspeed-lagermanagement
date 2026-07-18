@@ -978,12 +978,20 @@ function weCheckChanged() {
   const count = checked.length;
   document.getElementById('we-selected-count').textContent = `${count} ausgewählt`;
   const hint = document.getElementById('we-block-hint');
-  if (count > 3) {
+  if (count > 0) {
     hint.style.display = 'block';
-    hint.innerHTML = `<span style="margin-right:6px">Bei ${count} Paletten empfohlen:</span>` +
-      ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
-        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:3px 10px;font-size:12px;margin:0 3px;cursor:pointer">${b}</button>`
-      ).join('');
+    let html = '';
+    if (count > 3) {
+      html += `<div style="margin-bottom:6px"><span style="font-size:12px;font-weight:600;color:#e67e22">Empfohlen (${count} Pal.):</span> ` +
+        ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
+          `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:3px 10px;font-size:12px;margin:0 3px;cursor:pointer">${b}</button>`
+        ).join('') + `</div>`;
+    }
+    html += `<div><span style="font-size:11px;color:#999;margin-right:6px">Gänge:</span>` +
+      ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#555;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px;cursor:pointer">${g}</button>`
+      ).join('') + `</div>`;
+    hint.innerHTML = html;
   } else {
     hint.style.display = 'none';
   }
@@ -1143,14 +1151,18 @@ function lpUpdateToolbar() {
     toolbar.style.display = '';
     document.getElementById('lp-sel-count').textContent = `${count} ausgewählt`;
     const hint = document.getElementById('lp-block-hint');
+    let html = '';
     if (count > 3) {
-      hint.innerHTML = `<span style="margin-right:6px">Empfohlen:</span>` +
+      html += `<div style="margin-bottom:4px"><span style="font-size:11px;font-weight:600;color:#e67e22;margin-right:4px">Empfohlen:</span>` +
         ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
           `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px">${b}</button>`
-        ).join('');
-    } else {
-      hint.innerHTML = '';
+        ).join('') + `</div>`;
     }
+    html += `<div><span style="font-size:11px;color:#999;margin-right:4px">Gänge:</span>` +
+      ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+        `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px">${g}</button>`
+      ).join('') + `</div>`;
+    hint.innerHTML = html;
   } else {
     toolbar.style.display = 'none';
   }
