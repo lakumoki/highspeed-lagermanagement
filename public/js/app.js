@@ -1214,7 +1214,7 @@ async function loadRegal(regal) {
         let label = p.position;
         const isSelected = p.paletten_nr && lpSelectedPaletten.has(p.paletten_nr);
         if (isSelected) { cls = 'belegt-selected'; label = '✓'; }
-        else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr.substring(0, 5); }
+        else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr; }
         else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
         else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
         return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}">${label}</div>`;
