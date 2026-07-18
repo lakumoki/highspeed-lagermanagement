@@ -359,25 +359,27 @@
         return;
       }
       const regale = plaetze.filter(p => p.typ !== 'Gang' && p.typ !== 'Block');
-      const bloecke = plaetze.filter(p => p.typ === 'Block' && (p.regal === 'E' || p.regal === 'F'));
-      const gaenge = plaetze.filter(p => p.typ === 'Gang');
       let html = '';
+
+      // Feste Schnellauswahl: Blöcke + Gänge (immer anzeigen, klickbar)
+      html += '<div style="margin-bottom:10px">';
+      html += '<div style="font-size:11px;color:#e67e22;margin-bottom:6px;font-weight:600">BLOCKLAGER</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
+      html += ['BlockE','BlockF'].map(b =>
+        `<span class="platz-chip" style="border-color:#e67e22;color:#e67e22;padding:10px 16px;font-size:14px" onclick="fillPlatz('${b}')">${b}</span>`
+      ).join('');
+      html += '</div>';
+      html += '<div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600">GÄNGE (Zwischenlager)</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
+      html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+        `<span class="platz-chip" style="border-color:#888;color:#888;padding:10px 14px;font-size:13px" onclick="fillPlatz('${g}')">${g}</span>`
+      ).join('');
+      html += '</div></div>';
+
       if (regale.length > 0) {
-        html += '<div style="font-size:11px;color:#999;margin-bottom:4px;font-weight:600">REGALPLÄTZE</div>';
+        html += '<div style="font-size:11px;color:#4caf50;margin-bottom:4px;font-weight:600">REGALPLÄTZE (frei)</div>';
         html += regale.map(p =>
           `<span class="platz-chip" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' <span style="opacity:0.7;font-size:11px">(' + p.max_hoehe_cm + 'cm)</span>' : ''}</span>`
-        ).join('');
-      }
-      if (bloecke.length > 0) {
-        html += '<div style="font-size:11px;color:#e67e22;margin:8px 0 4px;font-weight:600">BLOCK-PLÄTZE</div>';
-        html += bloecke.map(p =>
-          `<span class="platz-chip" style="border-color:#e67e22;color:#e67e22" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}</span>`
-        ).join('');
-      }
-      if (gaenge.length > 0) {
-        html += '<div style="font-size:11px;color:#888;margin:8px 0 4px;font-weight:600">GÄNGE (Zwischenlager)</div>';
-        html += gaenge.map(p =>
-          `<span class="platz-chip" style="border-color:#888;color:#888" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}</span>`
         ).join('');
       }
       box.innerHTML = html;
