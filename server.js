@@ -43,6 +43,7 @@ app.use('/api/bewegungen', require('./routes/bewegungen'));
 app.use('/api/kontingent', require('./routes/kontingent'));
 app.use('/api/musterung', require('./routes/musterung'));
 app.use('/api/pickliste', require('./routes/pickliste'));
+app.use('/api/umlagerung', require('./routes/umlagerung'));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

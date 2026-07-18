@@ -73,7 +73,8 @@ function renderApp() {
           <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
           <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Auslagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
-          <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterung</span></a>
+          <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
+          <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
           <a href="#" data-page="lagerplan"><span class="icon">▦</span><span>Lagerplan</span></a>
           
           <div class="nav-section">Abrechnung</div>
@@ -114,7 +115,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -133,6 +134,18 @@ async function pgDashboard() {
       <div class="stat-card"><div class="label">Bewegungen (30T)</div><div class="value">${d.bewegungen_30d}</div><div class="sub">Ein-/Auslagerungen</div></div>
       <div class="stat-card"><div class="label">Kunden aktiv</div><div class="value">${d.kunden_aktiv}</div></div>
     </div>
+    
+    <div class="card">
+      <div class="card-header"><h3>Schnellaktionen</h3></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+        <button class="btn btn-primary btn-lg" onclick="navigate('einlagerung')" style="justify-content:center">↓ Einlagern</button>
+        <button class="btn btn-danger btn-lg" onclick="navigate('auslagerung')" style="justify-content:center;background:var(--danger)">↑ Auslagern</button>
+        <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf</button>
+        <button class="btn btn-lg" onclick="navigate('musterung')" style="justify-content:center;background:#8e44ad;color:#fff">◈ Musterzug</button>
+        <button class="btn btn-secondary btn-lg" onclick="navigate('umlagerung')" style="justify-content:center">⇄ Umlagern</button>
+      </div>
+    </div>
+    
     ${d.kontingent ? `
     <div class="card">
       <div class="card-header"><h3>Kontingent Panpharma</h3><span class="badge badge-warning">${d.kontingent.monat}</span></div>
@@ -409,13 +422,13 @@ function renderAbrufErgebnis(data) {
     <div class="card">
       <div class="card-header"><h3>Detaillierte Aufschlüsselung</h3></div>
       <div class="table-wrap"><table><thead><tr>
-        <th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Bereich</th><th>LKW</th><th>Handling</th>
+        <th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Bereich</th><th>LKW</th>
       </tr></thead><tbody>`;
   
   let lastLkw = '';
   for (const item of data.items) {
     if (item.lkw !== lastLkw) {
-      html += `<tr style="background:#f8f9fa"><td colspan="6" style="font-weight:600;color:var(--info);padding:8px 12px">${item.lkw} (max. ${data.lkw_kapazitaet} Pal.)</td></tr>`;
+      html += `<tr style="background:#f8f9fa"><td colspan="5" style="font-weight:600;color:var(--info);padding:8px 12px">${item.lkw} (max. ${data.lkw_kapazitaet} Pal.)</td></tr>`;
       lastLkw = item.lkw;
     }
     html += `<tr${!item.gefunden ? ' style="background:#fdecea"' : ''}>
@@ -424,33 +437,26 @@ function renderAbrufErgebnis(data) {
       <td>${item.gefunden ? `<span style="color:var(--info);font-weight:500">${item.lagerplatz}</span>` : '<span style="color:var(--danger)">NICHT GEFUNDEN</span>'}</td>
       <td>${item.bereich !== '?' ? item.bereich : ''}</td>
       <td>${item.lkw}</td>
-      <td><input type="checkbox" class="handling-check" data-nr="${item.paletten_nr}" title="Handling-Gebühr (Tray/Muster)"></td>
     </tr>`;
   }
   
   html += `</tbody></table></div>
     </div>
     <div class="card">
-      <div class="card-header"><h3>Zusammenfassung / Abrechnung</h3></div>
+      <div class="card-header"><h3>Zusammenfassung</h3></div>
       <table style="width:100%;font-size:13px">
         <tr><td>Paletten gesamt</td><td><strong>${data.gesamt}</strong></td></tr>
         <tr><td>Gefunden / zuordenbar</td><td>${gefunden.length}</td></tr>
         <tr><td>Nicht gefunden</td><td style="color:var(--danger)">${nichtGefunden.length}</td></tr>
         <tr><td>LKW benötigt</td><td>${data.lkw_anzahl} (à ${data.lkw_kapazitaet} Pal.)</td></tr>
         <tr><td>Auslagerungen (Abrechnung)</td><td><strong>${gefunden.length}</strong></td></tr>
-        <tr><td>Handling-Gebühren</td><td id="handling-count"><strong>0</strong> <span style="color:var(--text-muted)">(Checkboxen oben setzen)</span></td></tr>
       </table>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:12px">
+        Musterzüge separat über den eigenen Workflow buchen (Dashboard → Musterzug).
+      </p>
     </div>`;
   
   pc.innerHTML = html;
-  
-  // Handling-Checkboxen live zählen
-  pc.querySelectorAll('.handling-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const count = pc.querySelectorAll('.handling-check:checked').length;
-      document.getElementById('handling-count').innerHTML = `<strong>${count}</strong>`;
-    });
-  });
 }
 
 async function abrufPDF() {
@@ -469,17 +475,14 @@ async function abrufDurchfuehren() {
   const items = window._lastPickliste.items.filter(i => i.gefunden);
   if (items.length === 0) { toast('Keine Paletten zum Auslagern', 'error'); return; }
   
-  const handlingNummern = [...document.querySelectorAll('.handling-check:checked')].map(cb => cb.dataset.nr);
-  
-  if (!confirm(`${items.length} Paletten auslagern + ${handlingNummern.length} Handling-Gebühren buchen?`)) return;
+  if (!confirm(`${items.length} Paletten auslagern?`)) return;
   
   try {
     const data = await api('/api/pickliste/ausfuehren', { method: 'POST', body: {
       paletten_nummern: items.map(i => i.paletten_nr),
-      abruf_id: window._lastPickliste.abruf_id,
-      handling_nummern: handlingNummern
+      abruf_id: window._lastPickliste.abruf_id
     }});
-    toast(`Abruf abgeschlossen: ${data.ausgelagert} ausgelagert, ${data.handling} Handling`, 'success');
+    toast(`Abruf abgeschlossen: ${data.ausgelagert} Paletten ausgelagert`, 'success');
     pgPickliste();
   } catch (e) { toast(e.message, 'error'); }
 }
@@ -490,21 +493,24 @@ async function pgMusterung() {
   const muster = await api('/api/musterung');
   
   pc.innerHTML = `
-    <div class="page-header"><h1>Musterung</h1></div>
+    <div class="page-header"><h1>Musterzug</h1></div>
     <div class="card">
-      <h3 style="margin-bottom:16px">Neuen Musterzug anlegen</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Ein Tray/Muster wird aus der Palette entnommen. Es wird eine Handling-Gebühr erhoben.</p>
+      <h3 style="margin-bottom:16px">Neuen Musterzug durchführen</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
+        Ein Tray/Muster wird aus der Palette entnommen. Es werden <strong>3 Bewegungen</strong> gebucht:<br>
+        1. Auslagerung (Palette raus) → 2. Musterzug (Tray entnehmen) → 3. Rücklagerung (Palette zurück)
+      </p>
       <div class="form-row-3">
-        <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="must-nr" placeholder="EB/KW-Nr."></div>
+        <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="must-nr" placeholder="EB/KW-Nr."></div>
         <div class="form-group"><label>Menge</label><input type="text" id="must-menge" value="1 Tray"></div>
         <div class="form-group"><label>Bemerkung</label><input type="text" id="must-bem" placeholder="Optional"></div>
       </div>
-      <button class="btn btn-primary" onclick="doMusterung()">Musterzug + Handling-Gebühr</button>
+      <button class="btn btn-primary" onclick="doMusterung()" style="background:#8e44ad">Musterzug buchen (3 Bewegungen)</button>
     </div>
     <div class="card">
       <div class="card-header"><h3>Bisherige Musterzüge (${muster.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Menge</th><th>Kunde</th><th>Datum</th></tr></thead><tbody>
-        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td>${m.paletten_nr}</td><td>${m.menge}</td><td>${m.kunde_name || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleDateString('de-DE') : '—'}</td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Menge</th><th>Kunde</th><th>Benutzer</th><th>Datum</th></tr></thead><tbody>
+        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td><strong>${m.paletten_nr}</strong></td><td>${m.lagerplatz || '—'}</td><td>${m.menge}</td><td>${m.kunde_name || '—'}</td><td>${m.benutzer || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleString('de-DE') : '—'}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }
@@ -514,6 +520,42 @@ async function doMusterung() {
     const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: document.getElementById('must-menge').value.trim(), bemerkung: document.getElementById('must-bem').value.trim() } });
     toast(data.message, 'success');
     pgMusterung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ UMLAGERUNG ══════════════════════════════════════════════════════════════
+async function pgUmlagerung() {
+  const pc = document.getElementById('page-content');
+  const umlagerungen = await api('/api/umlagerung');
+  
+  pc.innerHTML = `
+    <div class="page-header"><h1>Umlagerung</h1></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Palette umlagern (Lagerverdichtung)</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
+        Umlagerungen dienen der Lagerverdichtung. Sie werden dokumentiert (für Nachvollziehbarkeit), 
+        aber <strong>nicht als abrechenbare Bewegung</strong> gezählt.
+      </p>
+      <div class="form-row-3">
+        <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="uml-nr" placeholder="EB/KW-Nr."></div>
+        <div class="form-group"><label>Neuer Platz *</label><input type="text" id="uml-platz" placeholder="z.B. A42"></div>
+        <div class="form-group"><label>Bemerkung</label><input type="text" id="uml-bem" placeholder="Optional"></div>
+      </div>
+      <button class="btn btn-secondary btn-lg" onclick="doUmlagerung()">⇄ Umlagern</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Letzte Umlagerungen (${umlagerungen.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Von</th><th>Nach</th><th>Benutzer</th><th>Datum</th><th>Bemerkung</th></tr></thead><tbody>
+        ${umlagerungen.map(u => `<tr><td><strong>${u.paletten_nr}</strong></td><td>${u.von_platz}</td><td><span style="color:var(--success)">${u.nach_platz}</span></td><td>${u.benutzer || '—'}</td><td>${u.datum ? new Date(u.datum).toLocaleString('de-DE') : '—'}</td><td>${u.bemerkung || ''}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+async function doUmlagerung() {
+  try {
+    const data = await api('/api/umlagerung', { method: 'POST', body: { paletten_nr: document.getElementById('uml-nr').value.trim(), nach_platz: document.getElementById('uml-platz').value.trim(), bemerkung: document.getElementById('uml-bem').value.trim() } });
+    toast(data.message, 'success');
+    pgUmlagerung();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -714,8 +756,60 @@ async function pgKunden() {
   pc.innerHTML = `
     <div class="page-header"><h1>Kunden</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuerKunde()">+ Neuer Kunde</button></div></div>
     <div class="card">
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Kürzel</th><th>Nr.-Prefix</th><th>Format</th><th>Kontingent</th><th>Ansprechpartner</th></tr></thead><tbody>
-        ${kunden.map(k => `<tr><td><strong>${k.name}</strong></td><td>${k.kuerzel || '—'}</td><td>${k.nummern_prefix || '—'}</td><td>${k.nummern_format || '—'}</td><td>${k.kontingent_plaetze || '—'}</td><td>${k.ansprechpartner || '—'}</td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Kürzel</th><th>Nr.-Prefix</th><th>Format</th><th>Kontingent</th><th>Paletten aktiv</th><th></th></tr></thead><tbody>
+        ${kunden.map(k => `<tr><td><strong>${k.name}</strong></td><td>${k.kuerzel || '—'}</td><td>${k.nummern_prefix || '—'}</td><td>${k.nummern_format || '—'}</td><td>${k.kontingent_plaetze || '—'}</td><td>${k.aktive_paletten || '—'}</td><td><button class="btn btn-sm" onclick="showKundeDetail(${k.id})">Details</button></td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+}
+
+async function showKundeDetail(id) {
+  const data = await api(`/api/kunden/${id}`);
+  const { kunde, bewegungen, muster, kontingent, monatsStats } = data;
+  const pc = document.getElementById('page-content');
+  
+  pc.innerHTML = `
+    <div class="page-header">
+      <h1>${kunde.name}</h1>
+      <div class="actions"><button class="btn btn-secondary" onclick="pgKunden()">← Zurück</button></div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Aktive Paletten</div><div class="value">${kunde.aktive_paletten}</div></div>
+      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${kunde.kontingent_plaetze || '—'}</div></div>
+      <div class="stat-card ${kunde.ueberbelegung > 0 ? 'warning' : ''}"><div class="label">Überbelegung</div><div class="value">${kunde.ueberbelegung}</div></div>
+    </div>
+    
+    ${monatsStats.length > 0 ? `
+    <div class="card">
+      <div class="card-header"><h3>Bewegungen aktueller Monat</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Typ</th><th>Anzahl</th></tr></thead><tbody>
+        ${monatsStats.map(s => `<tr><td>${s.typ}</td><td><strong>${s.summe}</strong></td></tr>`).join('')}
+      </tbody></table></div>
+    </div>` : ''}
+    
+    ${kontingent ? `
+    <div class="card">
+      <div class="card-header"><h3>Kontingent</h3></div>
+      <table style="width:100%;font-size:13px">
+        <tr><td>Monat</td><td>${kontingent.monat || '—'}</td></tr>
+        <tr><td>Stellplätze</td><td>${kontingent.kontingent_plaetze}</td></tr>
+        <tr><td>Lagerbestand</td><td>${kontingent.lagerbestand}</td></tr>
+        <tr><td>Saldo Überkapazität</td><td style="color:${(kontingent.saldo_ueberkapazitaet || 0) > 0 ? 'var(--danger)' : 'var(--success)'}">${kontingent.saldo_ueberkapazitaet || 0}</td></tr>
+      </table>
+    </div>` : ''}
+    
+    ${muster.length > 0 ? `
+    <div class="card">
+      <div class="card-header"><h3>Musterzüge (${muster.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Menge</th><th>Benutzer</th><th>Datum</th></tr></thead><tbody>
+        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td>${m.paletten_nr}</td><td>${m.lagerplatz || '—'}</td><td>${m.menge}</td><td>${m.benutzer || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleString('de-DE') : '—'}</td></tr>`).join('')}
+      </tbody></table></div>
+    </div>` : ''}
+    
+    <div class="card">
+      <div class="card-header"><h3>Letzte Bewegungen (${bewegungen.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Pal.-Nr.</th><th>Benutzer</th></tr></thead><tbody>
+        ${bewegungen.map(b => `<tr><td>${b.datum || '—'}</td><td><span class="badge ${b.typ === 'Einlagerung' ? 'badge-success' : b.typ === 'Auslagerung' ? 'badge-danger' : 'badge-warning'}">${b.typ}</span></td><td>${b.anzahl}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.paletten_nummern || '—'}</td><td>${b.benutzer || '—'}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }
@@ -750,13 +844,20 @@ async function saveNeuerKunde() {
 // ═══ PROTOKOLL ═══════════════════════════════════════════════════════════════
 async function pgProtokoll() {
   const pc = document.getElementById('page-content');
-  const logs = await api('/api/protokoll');
+  const logs = await api('/api/protokoll?limit=200');
   
   pc.innerHTML = `
-    <div class="page-header"><h1>Protokoll</h1></div>
+    <div class="page-header"><h1>Veränderungsprotokoll</h1></div>
+    <div class="card" style="margin-bottom:12px">
+      <p style="font-size:12px;color:var(--text-muted);margin:0">
+        Alle Buchungen systemweit mit Zeitstempel und Benutzer. 
+        Kunden-spezifische Übersichten finden Sie unter <a href="#" onclick="navigate('kunden');return false">Kunden → Details</a>.
+      </p>
+    </div>
     <div class="card">
+      <div class="card-header"><h3>Letzte ${logs.length} Einträge</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Zeitstempel</th><th>Aktion</th><th>Details</th><th>Benutzer</th></tr></thead><tbody>
-        ${logs.map(l => `<tr><td style="white-space:nowrap">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><strong>${l.aktion}</strong></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${l.details || ''}</td><td>${l.benutzer || '—'}</td></tr>`).join('')}
+        ${logs.map(l => `<tr><td style="white-space:nowrap;font-size:12px">${l.zeitstempel ? new Date(l.zeitstempel).toLocaleString('de-DE') : '—'}</td><td><span class="badge ${l.aktion === 'Einlagerung' ? 'badge-success' : l.aktion === 'Auslagerung' || l.aktion === 'Abruf ausgeführt' ? 'badge-danger' : l.aktion === 'Musterzug' ? 'badge-warning' : l.aktion === 'Umlagerung' ? '' : 'badge-info'}">${l.aktion}</span></td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;font-size:12px">${l.details || ''}</td><td style="font-size:12px">${l.benutzer || '—'}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }

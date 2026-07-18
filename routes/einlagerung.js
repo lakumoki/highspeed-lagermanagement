@@ -48,9 +48,10 @@ router.post('/', (req, res) => {
   
   // Bewegung dokumentieren
   const heute = new Date().toISOString().split('T')[0];
-  db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer) VALUES (?, ?, ?, 1, ?, ?, ?)").run(kundeId, heute, 'Einlagerung', nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System');
+  const jetzt = new Date().toISOString();
+  db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, benutzer, monat) VALUES (?, ?, ?, 1, ?, ?, ?, ?)").run(kundeId, heute, 'Einlagerung', nr, direktanlieferung_id || null, req.session?.user?.benutzername || 'System', heute.substring(0, 7));
   
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Einlagerung', `${nr} → ${platz.bezeichnung}`, req.session?.user?.benutzername || 'System');
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Einlagerung', `${nr} → ${platz.bezeichnung}`, req.session?.user?.benutzername || 'System', jetzt);
   
   res.json({ ok: true, id: result.lastInsertRowid, message: `${nr} auf ${platz.bezeichnung} eingelagert` });
 });

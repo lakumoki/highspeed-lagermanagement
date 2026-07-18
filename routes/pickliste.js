@@ -138,40 +138,35 @@ router.post('/abhaken', (req, res) => {
   res.json({ ok: true });
 });
 
-// Abruf komplett ausführen: Auslagern + Handling buchen + Kontingent anpassen
+// Abruf komplett ausführen: Auslagern (kein Handling hier — das ist ein eigener Prozess via Musterzug)
 router.post('/ausfuehren', (req, res) => {
-  const { paletten_nummern, abruf_id, handling_nummern = [] } = req.body;
+  const { paletten_nummern, abruf_id } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern)) return res.status(400).json({ error: 'Palettennummern erforderlich' });
   
   const heute = new Date().toISOString().split('T')[0];
+  const jetzt = new Date().toISOString();
   const benutzer = req.session?.user?.benutzername || 'System';
-  let ausgelagert = 0, handling = 0, fehler = [];
+  let ausgelagert = 0;
+  const fehler = [];
   
   for (const nr of paletten_nummern) {
     const pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
     if (!pal) { fehler.push(nr); continue; }
     
-    // Auslagern
-    db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(new Date().toISOString(), benutzer, pal.id);
+    db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, pal.id);
     if (pal.platz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
     ausgelagert++;
   }
   
   // Auslagerung als Bewegung buchen
   if (ausgelagert > 0) {
-    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?)").run(1, heute, ausgelagert, paletten_nummern.join(', '), abruf_id || null, benutzer);
+    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?)").run(1, heute, ausgelagert, paletten_nummern.join(', '), abruf_id || null, benutzer, heute.substring(0, 7));
   }
   
-  // Handling-Gebühren buchen
-  if (handling_nummern.length > 0) {
-    handling = handling_nummern.length;
-    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, handling_art, benutzer) VALUES (?, ?, 'Extra Handling', ?, ?, ?, 'Abruf-Handling', ?)").run(1, heute, handling, handling_nummern.join(', '), abruf_id || null, benutzer);
-  }
+  // Protokoll (mit Zeitstempel + Benutzer)
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Abruf ausgeführt', `${abruf_id || 'manuell'}: ${ausgelagert} Paletten ausgelagert`, benutzer, jetzt);
   
-  // Protokoll
-  db.prepare('INSERT INTO protokoll (aktion, details, benutzer) VALUES (?,?,?)').run('Abruf ausgeführt', `${abruf_id || 'manuell'}: ${ausgelagert} ausgelagert, ${handling} Handling`, benutzer);
-  
-  res.json({ ok: true, ausgelagert, handling, fehler: fehler.length, fehler_nummern: fehler });
+  res.json({ ok: true, ausgelagert, fehler: fehler.length, fehler_nummern: fehler });
 });
 
 // Aktuelle Abrufliste mit Status
