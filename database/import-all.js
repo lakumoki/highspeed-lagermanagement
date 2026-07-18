@@ -481,6 +481,17 @@ for (const g of gangPlaetze) {
 }
 console.log(`  Gang-/Zwischenlagerplätze: ${gangPlaetze.length} (XA-XF2 + Wareneingang)`);
 
+// Block-Sammelplätze anlegen (BlockE, BlockF — Mehrfachbelegung)
+const blockSammel = [
+  { bez: 'BlockE', regal: 'E' },
+  { bez: 'BlockF', regal: 'F' }
+];
+const insertBlock = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, stapelbar, belegt, bemerkung) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+for (const b of blockSammel) {
+  insertBlock.run(b.bez, b.regal, 0, null, 'EG', 0, 'Block', 'Block', 1, 0, 'Sammel-Block, Mehrfachbelegung erlaubt');
+}
+console.log(`  Block-Sammelplätze: BlockE, BlockF`);
+
 // ════════════════════════════════════════════════════════════════════════════════
 // 2. PANPHARMA BEWEGUNGSHISTORIE + KONTINGENT
 // ════════════════════════════════════════════════════════════════════════════════
