@@ -980,7 +980,10 @@ function weCheckChanged() {
   const hint = document.getElementById('we-block-hint');
   if (count > 3) {
     hint.style.display = 'block';
-    hint.innerHTML = `Bei ${count} Paletten empfohlen: Block-Platz (z.B. <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockF902';return false" style="color:#e67e22">BlockF</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockA901';return false" style="color:#e67e22">BlockA</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockB901';return false" style="color:#e67e22">BlockB</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockC901';return false" style="color:#e67e22">BlockC</a>, <a href="#" onclick="document.getElementById('we-bulk-platz').value='BlockE901';return false" style="color:#e67e22">BlockE</a>)`;
+    hint.innerHTML = `<span style="margin-right:6px">Bei ${count} Paletten empfohlen:</span>` +
+      ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
+        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:3px 10px;font-size:12px;margin:0 3px;cursor:pointer">${b}</button>`
+      ).join('');
   } else {
     hint.style.display = 'none';
   }
@@ -1141,9 +1144,12 @@ function lpUpdateToolbar() {
     document.getElementById('lp-sel-count').textContent = `${count} ausgewählt`;
     const hint = document.getElementById('lp-block-hint');
     if (count > 3) {
-      hint.textContent = `Empfohlen: Block-Platz (BlockF, BlockA, BlockB, BlockC)`;
+      hint.innerHTML = `<span style="margin-right:6px">Empfohlen:</span>` +
+        ['BlockF','BlockA','BlockB','BlockC','BlockE'].map(b =>
+          `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:2px 8px;font-size:11px;margin:0 2px">${b}</button>`
+        ).join('');
     } else {
-      hint.textContent = '';
+      hint.innerHTML = '';
     }
   } else {
     toolbar.style.display = 'none';
