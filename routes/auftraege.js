@@ -160,9 +160,7 @@ router.post('/:token/positionen/:id', (req, res) => {
   }
 
   const platzBez = lagerplatz.trim();
-  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(
-    platzBez, platzBez.toUpperCase(), platzBez.toLowerCase()
-  );
+  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(platzBez);
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
   // Gang-/Zwischenplätze und Block-Plätze erlauben Mehrfachbelegung
   if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });

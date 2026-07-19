@@ -1052,27 +1052,35 @@ async function pgMusterung() {
     <div class="card">
       <h3 style="margin-bottom:16px">Neuen Musterzug durchführen</h3>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
-        Ein Tray/Muster wird aus der Palette entnommen. Es werden <strong>3 Bewegungen</strong> gebucht:<br>
-        1. Auslagerung (Palette raus) → 2. Musterzug (Tray entnehmen) → 3. Rücklagerung (Palette zurück)
+        Trays werden aus der Palette entnommen. Bewegungen: <strong>Anzahl Trays + 2</strong><br>
+        1× Auslagerung (raus) → N× Tray-Entnahme → 1× Rücklagerung (rein)<br>
+        <em>1 Tray = 3, 2 Trays = 4, 3 Trays = 5 Bewegungen usw.</em>
       </p>
       <div class="form-row-3">
         <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="must-nr" placeholder="EB/KW-Nr."></div>
-        <div class="form-group"><label>Menge</label><input type="text" id="must-menge" value="1 Tray"></div>
+        <div class="form-group"><label>Anzahl Trays *</label><input type="number" id="must-menge" value="1" min="1" max="20" onchange="updateMustBew()" oninput="updateMustBew()"></div>
         <div class="form-group"><label>Bemerkung</label><input type="text" id="must-bem" placeholder="Optional"></div>
       </div>
-      <button class="btn btn-primary" onclick="doMusterung()" style="background:#8e44ad">Musterzug buchen (3 Bewegungen)</button>
+      <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="must-info">→ 3 Bewegungen werden gebucht</div>
+      <button class="btn btn-primary" onclick="doMusterung()" style="background:#8e44ad">Musterzug buchen</button>
     </div>
     <div class="card">
       <div class="card-header"><h3>Bisherige Musterzüge (${muster.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Menge</th><th>Kunde</th><th>Benutzer</th><th>Datum</th></tr></thead><tbody>
-        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td><strong>${m.paletten_nr}</strong></td><td>${m.lagerplatz || '—'}</td><td>${m.menge}</td><td>${m.kunde_name || '—'}</td><td>${m.benutzer || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleString('de-DE') : '—'}</td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Trays</th><th>Bew.</th><th>Kunde</th><th>Benutzer</th><th>Datum</th></tr></thead><tbody>
+        ${muster.map(m => `<tr><td>${m.lfd_nummer}</td><td><strong>${m.paletten_nr}</strong></td><td>${m.lagerplatz || '—'}</td><td>${m.menge}</td><td>${m.handling_gebuehr || 3}</td><td>${m.kunde_name || '—'}</td><td>${m.benutzer || '—'}</td><td>${m.datum ? new Date(m.datum).toLocaleString('de-DE') : '—'}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }
 
+function updateMustBew() {
+  const trays = parseInt(document.getElementById('must-menge').value) || 1;
+  document.getElementById('must-info').textContent = `→ ${trays + 2} Bewegungen werden gebucht (1× raus + ${trays}× Tray + 1× rein)`;
+}
+
 async function doMusterung() {
   try {
-    const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: document.getElementById('must-menge').value.trim(), bemerkung: document.getElementById('must-bem').value.trim() } });
+    const trays = parseInt(document.getElementById('must-menge').value) || 1;
+    const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: trays, bemerkung: document.getElementById('must-bem').value.trim() } });
     toast(data.message, 'success');
     pgMusterung();
   } catch (e) { toast(e.message, 'error'); }
@@ -1390,7 +1398,8 @@ async function showPlatzDetail(id) {
         ${p.bemerkung ? `<tr><td style="color:var(--text-muted)">Bemerkung</td><td>${p.bemerkung}</td></tr>` : ''}
       </table>
       <div class="modal-actions">
-        ${p.paletten_nr ? `<a class="btn btn-primary" href="/api/berichte/auslagerungsbeleg/${p.paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
+        ${p.paletten_nr ? `<button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();editPalette(${p.palette_id})">Bearbeiten</button>` : ''}
+        ${p.paletten_nr ? `<a class="btn btn-secondary" href="/api/berichte/auslagerungsbeleg/${p.paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
       </div>
     </div>`;
@@ -1434,21 +1443,17 @@ async function loadBewegungen() {
       <div class="card-header"><h3>${data.total} Bewegungen</h3>
         <div style="font-size:12px">${data.zusammenfassung.map(z => `${z.typ}: ${z.summe}`).join(' · ')}</div>
       </div>
-      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Paletten</th><th>Abgerechnet</th><th></th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Paletten</th><th>Benutzer</th><th></th></tr></thead><tbody>
         ${data.bewegungen.map(b => `<tr>
           <td>${b.datum ? new Date(b.datum).toLocaleDateString('de-DE') : '—'}</td>
-          <td><span class="badge badge-${b.typ === 'Einlagerung' ? 'success' : b.typ === 'Auslagerung' ? 'danger' : 'warning'}">${b.typ}</span></td>
+          <td><span class="badge badge-${b.typ === 'Einlagerung' ? 'success' : b.typ === 'Auslagerung' ? 'danger' : b.typ === 'Entladung' ? 'eb' : 'warning'}">${b.typ}</span></td>
           <td>${b.anzahl}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.paletten_nummern || '—'}</td>
-          <td><input type="checkbox" ${b.abgerechnet ? 'checked' : ''} onchange="toggleAbrechnung(${b.id}, this.checked)"></td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.paletten_nummern || '—'}</td>
+          <td style="font-size:12px">${b.benutzer || '—'}</td>
           <td>${b.korrektur ? '<span class="badge badge-warning">Korrektur</span>' : ''}</td>
         </tr>`).join('')}
       </tbody></table></div>
     </div>`;
-}
-
-async function toggleAbrechnung(id, val) {
-  await api(`/api/bewegungen/${id}/abrechnung`, { method: 'PATCH', body: { abgerechnet: val } });
 }
 
 // ═══ KONTINGENT ══════════════════════════════════════════════════════════════
@@ -1732,6 +1737,7 @@ async function savePalette(id) {
     document.querySelector('.modal-overlay')?.remove();
     toast('Palette gespeichert', 'success');
     if (currentPage === 'suche') doSearch();
+    else if (currentPage === 'lagerplan') pgLagerplan();
   } catch (e) { toast(e.message, 'error'); }
 }
 

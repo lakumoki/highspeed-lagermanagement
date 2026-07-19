@@ -134,7 +134,7 @@ router.put('/:id', (req, res) => {
   if (menge !== undefined) { updates.push('menge = ?'); params.push(menge); }
   
   if (lagerplatz_bezeichnung !== undefined && lagerplatz_bezeichnung !== existing.lagerplatz_bezeichnung) {
-    const neuerPlatz = db.prepare('SELECT id FROM lagerplaetze WHERE bezeichnung = ?').get(lagerplatz_bezeichnung);
+    const neuerPlatz = db.prepare('SELECT id FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(lagerplatz_bezeichnung);
     if (neuerPlatz) {
       // Alten Platz freigeben
       if (existing.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);

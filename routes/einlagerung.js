@@ -24,7 +24,7 @@ router.post('/', (req, res) => {
   else if (nr.match(/^KW|^Kw/i)) { nummernTyp = 'KW'; if (!kundeId) kundeId = 2; }
   
   // Lagerplatz prüfen (case-insensitive)
-  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(platzBez, platzBez.toUpperCase(), platzBez.toLowerCase());
+  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(platzBez);
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
   // Gang-/Zwischenplätze, Block-Plätze und stapelbare a/b-Positionen erlauben Mehrfachbelegung
   if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block' && !platz.unter_position) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
