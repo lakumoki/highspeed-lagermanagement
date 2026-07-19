@@ -181,73 +181,151 @@ router.get('/aktuell', (req, res) => {
   res.json(items);
 });
 
-// Pickliste abschließen: gepickte auslagern + Lieferscheine generieren
+// Pickliste abschließen: gepickte auslagern + Lieferscheine generieren + archivieren
 router.post('/abschliessen', (req, res) => {
   const { lkw_kapazitaet = 17 } = req.body;
   const heute = new Date().toISOString().split('T')[0];
   const jetzt = new Date().toISOString();
   const benutzer = req.session?.user?.benutzername || 'System';
-  
-  const gepickt = db.prepare("SELECT a.*, p.id as pal_id, p.lagerplatz_id, p.lagerplatz_bezeichnung FROM abrufliste a LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0 WHERE a.abgehakt = 1").all();
-  
+
+  const gepickt = db.prepare("SELECT a.*, p.id as pal_id, p.kunde_id, p.lagerplatz_id, p.lagerplatz_bezeichnung, p.artikel_nr, p.chargen_nr, k.name as kunde_name FROM abrufliste a LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0 LEFT JOIN kunden k ON p.kunde_id = k.id WHERE a.abgehakt = 1").all();
+
   if (gepickt.length === 0) return res.status(400).json({ error: 'Keine gepickten Paletten vorhanden' });
-  
+
   let ausgelagert = 0;
   for (const item of gepickt) {
     if (!item.pal_id) continue;
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, item.pal_id);
-    if (item.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(item.lagerplatz_id);
+    if (item.lagerplatz_id) {
+      const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(item.lagerplatz_id, item.pal_id);
+      if (!andere || andere.c === 0) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(item.lagerplatz_id);
+    }
     ausgelagert++;
   }
-  
+
   // Bewegung buchen
   if (ausgelagert > 0) {
-    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?)").run(
-      gepickt[0].kunde_id || 1, heute, ausgelagert, gepickt.map(i => i.paletten_nr).join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7)
+    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat, bemerkung) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?, ?)").run(
+      gepickt[0].kunde_id || 1, heute, ausgelagert, gepickt.map(i => i.paletten_nr).join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7), `Pickliste: ${ausgelagert} Pal. ausgelagert`
     );
   }
-  
+
+  // Lieferscheine archivieren (je LKW)
+  const lkwAnzahl = Math.ceil(gepickt.length / lkw_kapazitaet);
+  const belegBase = `LS-${heute.replace(/-/g, '')}-${gepickt[0].abruf_id || 'M'}`;
+  const lieferscheinIds = [];
+
+  for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
+    const chunk = gepickt.slice(lkw * lkw_kapazitaet, (lkw + 1) * lkw_kapazitaet);
+    const belegNr = lkwAnzahl > 1 ? `${belegBase}-LKW${lkw + 1}` : belegBase;
+    const details = JSON.stringify(chunk.map(i => ({
+      nr: i.paletten_nr, platz: i.lagerplatz_bezeichnung || '?', artikel: i.artikel_nr || '', charge: i.chargen_nr || '', kunde: i.kunde_name || ''
+    })));
+
+    const ins = db.prepare("INSERT INTO lieferscheine (beleg_nr, kunde_id, kunde_name, lkw_nr, lkw_gesamt, paletten_nummern, paletten_details, anzahl, abruf_id, benutzer, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
+      belegNr, gepickt[0].kunde_id || 1, gepickt[0].kunde_name || '—', lkw + 1, lkwAnzahl,
+      chunk.map(i => i.paletten_nr).join(', '), details, chunk.length, gepickt[0].abruf_id || null, benutzer, jetzt
+    );
+    lieferscheinIds.push(ins.lastInsertRowid);
+  }
+
   // Protokoll
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
     'Pickliste abgeschlossen',
-    `${ausgelagert} Paletten ausgelagert | ${Math.ceil(gepickt.length / lkw_kapazitaet)} Lieferschein(e) | Nummern: ${gepickt.slice(0, 5).map(i => i.paletten_nr + ' von ' + (i.lagerplatz_bezeichnung || '?')).join(', ')}${gepickt.length > 5 ? '...' : ''}`,
+    `${ausgelagert} Paletten ausgelagert | ${lkwAnzahl} Lieferschein(e) (${belegBase}) | Nummern: ${gepickt.map(i => i.paletten_nr).join(', ')}`,
     benutzer, jetzt
   );
-  
-  // Abrufliste bereinigen
+
+  // Abrufliste bereinigen (nur gepickte)
   db.prepare("DELETE FROM abrufliste WHERE abgehakt = 1").run();
-  
-  // LKW-Trennung: PDFs generieren (URLs zurückgeben)
-  const lkwAnzahl = Math.ceil(gepickt.length / lkw_kapazitaet);
-  const pdfUrls = [];
-  for (let i = 1; i <= lkwAnzahl; i++) {
-    pdfUrls.push(`/api/pickliste/lieferschein/${gepickt[0].abruf_id || 'manual'}/lkw${i}`);
-  }
-  
+
+  // PDF-URLs zurückgeben (aus Archiv)
+  const pdfUrls = lieferscheinIds.map(id => `/api/pickliste/lieferschein/${id}`);
+
   res.json({ ok: true, ausgelagert, lieferscheine: lkwAnzahl, pdf_urls: pdfUrls });
 });
 
-// Lieferschein PDF (je LKW)
-router.get('/lieferschein/:abruf_id/lkw:nr', (req, res) => {
+// Lieferschein PDF aus Archiv
+router.get('/lieferschein/:id', (req, res) => {
+  const ls = db.prepare('SELECT * FROM lieferscheine WHERE id = ?').get(req.params.id);
+  if (!ls) return res.status(404).json({ error: 'Lieferschein nicht gefunden' });
+
+  const paletten = JSON.parse(ls.paletten_details || '[]');
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="Lieferschein_${req.params.abruf_id}_LKW${req.params.nr}.pdf"`);
+  res.setHeader('Content-Disposition', `inline; filename="${ls.beleg_nr}.pdf"`);
   doc.pipe(res);
-  
-  doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 40);
-  doc.fontSize(10).font('Helvetica').text('Lieferschein', 40, 58);
-  doc.fontSize(12).font('Helvetica-Bold').text(`LKW ${req.params.nr}`, 400, 40, { align: 'right' });
-  doc.fontSize(9).font('Helvetica').text(`Abruf: ${req.params.abruf_id}`, 400, 56, { align: 'right' });
-  doc.text(`Datum: ${new Date().toLocaleDateString('de-DE')}`, 400, 68, { align: 'right' });
-  doc.moveTo(40, 85).lineTo(555, 85).stroke();
-  
-  doc.fontSize(9).text('Lieferschein wird generiert. Paletten wurden erfolgreich ausgelagert.', 40, 100);
-  
-  doc.fontSize(8).text(`Unterschrift Fahrer: _______________________`, 40, 700);
-  doc.text(`Unterschrift Lager: _______________________`, 300, 700);
-  doc.text(`Datum/Uhrzeit: ${new Date().toLocaleString('de-DE')}`, 40, 730);
-  
+
+  // Absender
+  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED', 40, 30);
+  doc.fontSize(8).font('Helvetica');
+  doc.text('Inh. Martin Klüber', 40, 44);
+  doc.text('Otto-Hahn-Str. 3 a · DE-22946 Trittau', 40, 55);
+  doc.text('Tel: +49 (0) 4154 - 709 671 · Fax: +49 (0) 4154 - 709 672', 40, 66);
+  doc.text('USt.-Nr.: 30 141 02003 · USt.-ID.-Nr.: DE 182818761', 40, 77);
+
+  // Empfänger
+  doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 30);
+  doc.font('Helvetica').text(ls.kunde_name || '—', 320, 43);
+
+  let y = 100;
+  doc.fontSize(13).font('Helvetica-Bold').text('LIEFERSCHEIN / AUSLAGERUNGSBELEG', 40, y);
+  if (ls.lkw_gesamt > 1) doc.fontSize(10).font('Helvetica').text(`LKW ${ls.lkw_nr} von ${ls.lkw_gesamt}`, 430, y);
+  y += 20;
+
+  doc.fontSize(9).font('Helvetica');
+  doc.text(`Beleg-Nr.: ${ls.beleg_nr}`, 40, y);
+  doc.text(`Datum: ${new Date(ls.erstellt_am).toLocaleDateString('de-DE')}`, 300, y);
+  y += 13;
+  doc.text(`Paletten: ${ls.anzahl} | Abruf: ${ls.abruf_id || '—'}`, 40, y);
+  y += 15;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+
+  // Tabellenkopf
+  doc.fontSize(8).font('Helvetica-Bold');
+  doc.text('Nr.', 40, y, { width: 25 });
+  doc.text('Pal.-Nr.', 68, y, { width: 80 });
+  doc.text('Lagerplatz', 152, y, { width: 75 });
+  doc.text('Artikel-Nr.', 230, y, { width: 100 });
+  doc.text('Chargen-Nr.', 335, y, { width: 120 });
+  doc.text('Kunde', 460, y, { width: 95 });
+  y += 13;
+  doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+
+  doc.font('Helvetica').fontSize(8);
+  for (let i = 0; i < paletten.length; i++) {
+    const p = paletten[i];
+    doc.text(String(i + 1), 40, y, { width: 25 });
+    doc.text(p.nr || '—', 68, y, { width: 80 });
+    doc.text(p.platz || '—', 152, y, { width: 75 });
+    doc.text(p.artikel || '—', 230, y, { width: 100 });
+    doc.text(p.charge || '—', 335, y, { width: 120 });
+    doc.text(p.kunde || '—', 460, y, { width: 95 });
+    y += 13;
+    if (y > 720) { doc.addPage(); y = 40; }
+  }
+
+  y += 10;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+  doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
+  y += 30;
+
+  doc.font('Helvetica').fontSize(9);
+  doc.text('Unterschrift Absender/Lager:', 40, y);
+  doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+  doc.text('Unterschrift Empfänger:', 300, y);
+  doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+
+  doc.fontSize(7).text('HIGHSPEED · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
   doc.end();
+});
+
+// Alle archivierten Lieferscheine (für Dokumentenarchiv)
+router.get('/archiv', (req, res) => {
+  const docs = db.prepare('SELECT id, beleg_nr, kunde_name, anzahl, lkw_nr, lkw_gesamt, abruf_id, benutzer, erstellt_am FROM lieferscheine ORDER BY id DESC').all();
+  res.json(docs);
 });
 
 // Staplerfahrer-Link für aktive Pickliste

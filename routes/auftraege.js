@@ -245,11 +245,11 @@ router.get('/:token/freie-plaetze', (req, res) => {
   if (!auftrag) return res.status(404).json({ error: 'Auftrag nicht gefunden' });
 
   const { hoehe } = req.query;
-  let where = "((l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL) OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))";
+  let where = "((l.belegt = 0 AND l.bemerkung IS NULL AND p.id IS NULL) OR l.typ = 'Gang' OR l.bezeichnung IN ('BlockE','BlockF'))";
   const params = [];
 
   if (hoehe && parseInt(hoehe) > 0) {
-    where += " AND (l.max_hoehe_cm >= ? OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))";
+    where += " AND (l.max_hoehe_cm >= ? OR l.typ = 'Gang' OR l.bezeichnung IN ('BlockE','BlockF'))";
     params.push(parseInt(hoehe));
   }
 

@@ -4,6 +4,24 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const db = require('./database/init');
 
+// Auto-Migrations
+db.exec(`
+  CREATE TABLE IF NOT EXISTS lieferscheine (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    beleg_nr TEXT NOT NULL,
+    kunde_id INTEGER,
+    kunde_name TEXT,
+    lkw_nr INTEGER DEFAULT 1,
+    lkw_gesamt INTEGER DEFAULT 1,
+    paletten_nummern TEXT,
+    paletten_details TEXT,
+    anzahl INTEGER DEFAULT 0,
+    abruf_id TEXT,
+    benutzer TEXT,
+    erstellt_am TEXT DEFAULT (datetime('now'))
+  )
+`);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

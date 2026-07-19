@@ -68,11 +68,11 @@ router.get('/naechste-nr', (req, res) => {
 // Freie Lagerplätze (nur echte, nicht-belegte, Echtzeit-Prüfung) + Gang-Plätze
 router.get('/freie-plaetze', (req, res) => {
   const { bereich, regal, hoehe } = req.query;
-  let where = "WHERE ((l.belegt = 0 AND l.bemerkung IS NULL) OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))";
+  let where = "WHERE ((l.belegt = 0 AND l.bemerkung IS NULL) OR l.typ = 'Gang' OR l.bezeichnung IN ('BlockE','BlockF'))";
   const params = [];
   if (bereich) { where += ' AND l.bereich = ?'; params.push(bereich); }
   if (regal) { where += ' AND l.regal = ?'; params.push(regal); }
-  if (hoehe) { where += " AND (l.max_hoehe_cm >= ? OR l.max_hoehe_cm IS NULL OR l.typ = 'Gang' OR (l.typ = 'Block' AND l.regal IN ('E','F')))"; params.push(parseFloat(hoehe)); }
+  if (hoehe) { where += " AND (l.max_hoehe_cm >= ? OR l.max_hoehe_cm IS NULL OR l.typ = 'Gang' OR l.bezeichnung IN ('BlockE','BlockF'))"; params.push(parseFloat(hoehe)); }
   
   const plaetze = db.prepare(`
     SELECT l.bezeichnung, l.regal, l.position, l.bereich, l.typ, l.ebene, l.max_hoehe_cm 

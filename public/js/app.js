@@ -72,7 +72,7 @@ function renderApp() {
           <div class="nav-section">Lagerverwaltung</div>
           <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
           <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direktanlieferung</span></a>
-          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Auslagerung</span></a>
+          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Direktauslagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
           <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
@@ -86,6 +86,7 @@ function renderApp() {
           <div class="nav-section">System</div>
           <a href="#" data-page="kunden"><span class="icon">⊕</span><span>Kunden</span></a>
           <a href="#" data-page="protokoll"><span class="icon">⊙</span><span>Protokoll</span></a>
+          <a href="#" data-page="dokumente"><span class="icon">▤</span><span>Dokumente</span></a>
         </nav>
         <div class="sidebar-footer">
           <div class="user-name">${currentUser.vollname}</div>
@@ -116,7 +117,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirektanlieferung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirektanlieferung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -256,10 +257,6 @@ async function pgEinlagerung() {
             <label>Lagerplatz * <span style="color:var(--success);font-size:11px">(${freie.length} frei)</span></label>
             <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}" onkeydown="if(event.key==='Enter')doEinlagern()">
             <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Vorschlag: <strong>${vorschlag}</strong> ${freie.length > 0 && freie[0].max_hoehe_cm ? `(max. ${freie[0].max_hoehe_cm}cm)` : ''} · <a href="#" onclick="showFreiePlaetze();return false" style="color:var(--info)">Alle ${freie.length} freien anzeigen</a></div>
-          </div>
-          <div class="form-group">
-            <label>Menge</label>
-            <input type="number" id="einl-menge" value="1">
           </div>
         </div>
         <div class="form-row">
@@ -505,7 +502,6 @@ async function doEinlagern() {
       lagerplatz: document.getElementById('einl-platz').value.trim(),
       artikel_nr: document.getElementById('einl-artikel').value.trim() || null,
       chargen_nr: document.getElementById('einl-charge').value.trim() || null,
-      menge: parseInt(document.getElementById('einl-menge').value) || 1,
       bemerkung: document.getElementById('einl-bemerkung').value.trim() || null
     }});
     toast(data.message, 'success');
@@ -749,7 +745,7 @@ async function loadDirektanlieferungen() {
 function pgAuslagerung() {
   const pc = document.getElementById('page-content');
   pc.innerHTML = `
-    <div class="page-header"><h1>Auslagerung</h1></div>
+    <div class="page-header"><h1>Direktauslagerung</h1><p style="font-size:12px;color:var(--text-muted)">Verladung auf Fremd-LKW</p></div>
     <div class="card">
       <h3 style="margin-bottom:16px">Auslagerung</h3>
       <div class="form-row">
@@ -849,7 +845,7 @@ async function pgPickliste() {
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <span style="font-size:13px"><strong>${gepickt.length}</strong> / ${aktuell.length} gepickt</span>
         <div class="progress-bar" style="flex:1;min-width:120px"><div class="fill ${gepickt.length === aktuell.length ? 'green' : 'yellow'}" style="width:${Math.round(gepickt.length/aktuell.length*100)}%"></div></div>
-        ${gepickt.length > 0 ? `<button class="btn btn-sm btn-success" onclick="picklisteAbschliessen()">Abschließen + Lieferschein</button>` : ''}
+        ${gepickt.length > 0 ? `<button class="btn btn-sm btn-success" onclick="picklisteAbschliessen()">Gepickte auslagern + Lieferschein (${gepickt.length} Pal.)</button>` : ''}
         <button class="btn btn-sm btn-secondary" onclick="picklisteQR()">QR für Staplerfahrer</button>
       </div>
     </div>` : ''}
@@ -1760,6 +1756,29 @@ async function savePalette(id) {
     if (currentPage === 'suche') doSearch();
     else if (currentPage === 'lagerplan') pgLagerplan();
   } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ DOKUMENTENARCHIV ═════════════════════════════════════════════════════════
+async function pgDokumente() {
+  const pc = document.getElementById('page-content');
+  const docs = await api('/api/pickliste/archiv');
+
+  pc.innerHTML = `
+    <div class="page-header"><h1>Dokumentenarchiv</h1><p style="font-size:12px;color:var(--text-muted)">Alle generierten Lieferscheine & Belege</p></div>
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
+        ${docs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Noch keine Dokumente vorhanden</td></tr>' :
+        docs.map(d => `<tr>
+          <td><strong>${d.beleg_nr}</strong></td>
+          <td>${d.kunde_name || '—'}</td>
+          <td>${d.anzahl}</td>
+          <td>${d.lkw_gesamt > 1 ? `${d.lkw_nr}/${d.lkw_gesamt}` : '1'}</td>
+          <td>${d.benutzer || '—'}</td>
+          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+          <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────

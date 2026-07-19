@@ -118,6 +118,18 @@ router.post('/sammelbeleg', (req, res) => {
   const kundeAdresse = paletten[0]?.kunde_adresse || '';
   const datum = new Date().toLocaleDateString('de-DE');
   const belegNr = `LS-${new Date().toISOString().split('T')[0].replace(/-/g,'')}-${paletten.length}P`;
+  const jetzt = new Date().toISOString();
+  const benutzer = req.session?.user?.benutzername || 'System';
+
+  // Archivieren
+  for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
+    const chunk = paletten.slice(lkw * LKW_KAPAZITAET, (lkw + 1) * LKW_KAPAZITAET);
+    const nr = lkwAnzahl > 1 ? `${belegNr}-LKW${lkw+1}` : belegNr;
+    const details = JSON.stringify(chunk.map(p => ({ nr: p.paletten_nr, platz: p.platz || p.lagerplatz_bezeichnung || '?', artikel: p.artikel_nr || '', charge: p.chargen_nr || '', kunde: p.kunde_name || '' })));
+    db.prepare("INSERT OR IGNORE INTO lieferscheine (beleg_nr, kunde_id, kunde_name, lkw_nr, lkw_gesamt, paletten_nummern, paletten_details, anzahl, benutzer, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,?)").run(
+      nr, paletten[0]?.kunde_id || null, kunde, lkw + 1, lkwAnzahl, chunk.map(p => p.paletten_nr).join(', '), details, chunk.length, benutzer, jetzt
+    );
+  }
 
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
@@ -177,7 +189,7 @@ router.post('/sammelbeleg', (req, res) => {
       doc.text(p.platz || p.lagerplatz_bezeichnung || '—', 186, y, { width: 70 });
       doc.text(p.artikel_nr || '—', 260, y, { width: 80 });
       doc.text(p.chargen_nr || '—', 345, y, { width: 100 });
-      doc.text((p.bemerkung || '').substring(0, 20), 450, y, { width: 105 });
+      doc.text(p.bemerkung || '', 450, y, { width: 105 });
       y += 14;
       if (y > 700) { doc.addPage(); y = 40; }
     }

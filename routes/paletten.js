@@ -136,8 +136,13 @@ router.put('/:id', (req, res) => {
   if (lagerplatz_bezeichnung !== undefined && lagerplatz_bezeichnung !== existing.lagerplatz_bezeichnung) {
     const neuerPlatz = db.prepare('SELECT id FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(lagerplatz_bezeichnung);
     if (neuerPlatz) {
-      // Alten Platz freigeben
-      if (existing.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);
+      // Alten Platz freigeben — nur wenn keine andere aktive Palette dort steht
+      if (existing.lagerplatz_id) {
+        const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(existing.lagerplatz_id, existing.id);
+        if (!andere || andere.c === 0) {
+          db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);
+        }
+      }
       // Neuen belegen
       db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
       updates.push('lagerplatz_id = ?', 'lagerplatz_bezeichnung = ?');
