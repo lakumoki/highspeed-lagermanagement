@@ -309,6 +309,12 @@ async function pgEinlagerung() {
       </div>
     </div>`;
   
+  // Letzten Kunden aus localStorage vorbelegen
+  const lastKunde = localStorage.getItem('einl_last_kunde');
+  if (lastKunde) {
+    const sel = document.getElementById('einl-kunde');
+    if (sel && [...sel.options].find(o => o.value === lastKunde)) sel.value = lastKunde;
+  }
   einlKundeChange();
   loadAuftraege();
 }
@@ -454,6 +460,7 @@ function generateQRInElement(elementId, url) {
 
 async function einlKundeChange() {
   const sel = document.getElementById('einl-kunde');
+  localStorage.setItem('einl_last_kunde', sel.value);
   const opt = sel.options[sel.selectedIndex];
   const hint = document.getElementById('einl-format-hint');
   const format = opt.dataset.format;
