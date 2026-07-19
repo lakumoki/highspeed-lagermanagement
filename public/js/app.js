@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// HIGHSPEED KURIER — LAGERMANAGEMENT FRONTEND v3
+// HIGHSPEED LOGISTIK — LAGERMANAGEMENT FRONTEND v3
 // ═══════════════════════════════════════════════════════════════════════════════
 const app = document.getElementById('app');
 let currentUser = null;
@@ -35,7 +35,7 @@ function renderLogin() {
   app.innerHTML = `
     <div class="login-page">
       <div class="login-box">
-        <h1>Highspeed Kurier</h1>
+        <h1>HIGHSPEED Logistik</h1>
         <p class="subtitle">Lagermanagement · Anmeldung</p>
         <input type="text" id="login-user" placeholder="Benutzername" autofocus>
         <input type="password" id="login-pass" placeholder="Passwort">
@@ -61,7 +61,7 @@ function renderApp() {
     <div class="layout">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h2>HIGHSPEED KURIER</h2>
+          <h2>HIGHSPEED Logistik</h2>
           <small>Lagermanagement</small>
         </div>
         <nav>

@@ -3,10 +3,34 @@ const router = express.Router();
 const db = require('../database/init');
 const PDFDocument = require('pdfkit');
 
+const ABSENDER = {
+  firma: 'HIGHSPEED',
+  inhaber: 'Inh. Martin Klüber',
+  strasse: 'Otto-Hahn-Str. 3 a',
+  plz_ort: 'DE-22946 Trittau',
+  tel: 'Tel: +49 (0) 4154 - 709 671',
+  fax: 'Fax: +49 (0) 4154 - 709 672',
+  ust: 'USt.-Nr.: 30 141 02003 · USt.-ID.-Nr.: DE 182818761',
+  email: 'mk@highspeedlogistik.de'
+};
+
+function pdfAbsenderBlock(doc, x, y) {
+  doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, x, y);
+  doc.fontSize(8).font('Helvetica');
+  doc.text(ABSENDER.inhaber, x, y + 14);
+  doc.text(ABSENDER.strasse, x, y + 25);
+  doc.text(ABSENDER.plz_ort, x, y + 36);
+  doc.text(ABSENDER.tel, x, y + 47);
+  doc.text(ABSENDER.fax, x, y + 58);
+  doc.text(ABSENDER.ust, x, y + 69);
+  doc.text(ABSENDER.email, x, y + 80);
+  return y + 95;
+}
+
 // Auslagerungsbeleg PDF (Einzel)
 router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   const pal = db.prepare(`
-    SELECT p.*, k.name as kunde_name, l.bezeichnung as platz
+    SELECT p.*, k.name as kunde_name, k.adresse as kunde_adresse, l.bezeichnung as platz
     FROM paletten p
     LEFT JOIN kunden k ON p.kunde_id = k.id
     LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
@@ -21,19 +45,28 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename="Beleg_${pal.paletten_nr}.pdf"`);
   doc.pipe(res);
   
-  doc.fontSize(18).font('Helvetica-Bold').text('HIGHSPEED KURIER', 50, 50);
-  doc.fontSize(10).font('Helvetica').text('Lagermanagement · Trittau', 50, 72);
-  doc.fontSize(14).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG', 50, 110);
+  // Absender (links oben)
+  let y = pdfAbsenderBlock(doc, 50, 40);
   
-  doc.moveTo(50, 130).lineTo(545, 130).stroke();
+  // Empfänger (rechts oben)
+  doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 40);
+  doc.font('Helvetica').fontSize(9).text(pal.kunde_name || '—', 320, 53);
+  if (pal.kunde_adresse) doc.text(pal.kunde_adresse, 320, 65, { width: 200 });
+
+  y += 10;
+  doc.fontSize(14).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 50, y);
+  y += 22;
+  doc.moveTo(50, y).lineTo(545, y).stroke();
+  y += 15;
   
-  let y = 145;
   const label = (l, v) => {
     doc.fontSize(9).font('Helvetica-Bold').text(l, 50, y, { width: 150 });
     doc.font('Helvetica').text(v || '—', 200, y);
-    y += 20;
+    y += 18;
   };
   
+  label('Beleg-Nr.:', `LS-${new Date().toISOString().split('T')[0].replace(/-/g,'')}-${pal.paletten_nr}`);
+  label('Datum:', new Date().toLocaleDateString('de-DE'));
   label('Paletten-Nr.:', pal.paletten_nr);
   label('Typ:', pal.nummern_typ);
   label('Kunde:', pal.kunde_name || '—');
@@ -48,13 +81,13 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.moveTo(50, y).lineTo(545, y).stroke();
   y += 20;
   
-  doc.fontSize(9).text('Unterschrift Lager:', 50, y);
+  doc.fontSize(9).text('Unterschrift Absender/Lager:', 50, y);
   doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke();
   
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 40).lineTo(500, y + 40).stroke();
   
-  doc.fontSize(7).text(`Generiert: ${new Date().toLocaleString('de-DE')} · Highspeed Kurier Lagermanagement`, 50, 780, { align: 'center', width: 495 });
+  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 50, 780, { align: 'center', width: 495 });
   
   doc.end();
 });
@@ -68,7 +101,7 @@ router.post('/sammelbeleg', (req, res) => {
 
   const paletten = paletten_nummern.map(nr => {
     return db.prepare(`
-      SELECT p.*, k.name as kunde_name, l.bezeichnung as platz
+      SELECT p.*, k.name as kunde_name, k.adresse as kunde_adresse, l.bezeichnung as platz
       FROM paletten p
       LEFT JOIN kunden k ON p.kunde_id = k.id
       LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
@@ -82,11 +115,13 @@ router.post('/sammelbeleg', (req, res) => {
   const LKW_KAPAZITAET = 17;
   const lkwAnzahl = Math.ceil(paletten.length / LKW_KAPAZITAET);
   const kunde = paletten[0]?.kunde_name || '—';
+  const kundeAdresse = paletten[0]?.kunde_adresse || '';
   const datum = new Date().toLocaleDateString('de-DE');
+  const belegNr = `LS-${new Date().toISOString().split('T')[0].replace(/-/g,'')}-${paletten.length}P`;
 
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="Sammelbeleg_${datum.replace(/\./g, '-')}_${paletten.length}Pal.pdf"`);
+  res.setHeader('Content-Disposition', `inline; filename="Lieferschein_${datum.replace(/\./g, '-')}_${paletten.length}Pal.pdf"`);
   doc.pipe(res);
 
   for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
@@ -95,22 +130,33 @@ router.post('/sammelbeleg', (req, res) => {
     const start = lkw * LKW_KAPAZITAET;
     const chunk = paletten.slice(start, start + LKW_KAPAZITAET);
 
-    doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED KURIER', 40, 35);
-    doc.fontSize(9).font('Helvetica').text('Lagermanagement · Trittau', 40, 54);
-    doc.fontSize(13).font('Helvetica-Bold').text(`AUSLAGERUNGSBELEG / LIEFERSCHEIN`, 40, 80);
+    // Absender (links)
+    pdfAbsenderBlock(doc, 40, 30);
+
+    // Empfänger (rechts)
+    doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 30);
+    doc.font('Helvetica').fontSize(9).text(kunde, 320, 43);
+    if (kundeAdresse) doc.text(kundeAdresse, 320, 55, { width: 200 });
+
+    // Dokumenttitel
+    let y = 130;
+    doc.fontSize(13).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 40, y);
     if (lkwAnzahl > 1) {
-      doc.fontSize(10).font('Helvetica').text(`LKW ${lkw + 1} von ${lkwAnzahl}`, 400, 80);
+      doc.fontSize(10).font('Helvetica').text(`LKW ${lkw + 1} von ${lkwAnzahl}`, 430, y);
     }
+    y += 20;
 
     doc.fontSize(9).font('Helvetica');
-    doc.text(`Kunde: ${kunde}`, 40, 100);
-    doc.text(`Datum: ${datum}`, 40, 112);
-    doc.text(`Paletten gesamt: ${paletten.length} | Auf diesem Beleg: ${chunk.length}`, 40, 124);
+    doc.text(`Beleg-Nr.: ${belegNr}${lkwAnzahl > 1 ? `-LKW${lkw+1}` : ''}`, 40, y);
+    doc.text(`Datum: ${datum}`, 300, y);
+    y += 13;
+    doc.text(`Paletten gesamt: ${paletten.length} | Auf diesem Beleg: ${chunk.length}`, 40, y);
+    y += 15;
 
-    doc.moveTo(40, 140).lineTo(555, 140).stroke();
+    doc.moveTo(40, y).lineTo(555, y).stroke();
+    y += 8;
 
     // Tabellenkopf
-    let y = 150;
     doc.fontSize(8).font('Helvetica-Bold');
     doc.text('Nr.', 40, y, { width: 25 });
     doc.text('Pal.-Nr.', 68, y, { width: 75 });
@@ -133,7 +179,7 @@ router.post('/sammelbeleg', (req, res) => {
       doc.text(p.chargen_nr || '—', 345, y, { width: 100 });
       doc.text((p.bemerkung || '').substring(0, 20), 450, y, { width: 105 });
       y += 14;
-      if (y > 740) { doc.addPage(); y = 40; }
+      if (y > 700) { doc.addPage(); y = 40; }
     }
 
     // Summe + Unterschrift
@@ -144,13 +190,13 @@ router.post('/sammelbeleg', (req, res) => {
     y += 30;
 
     doc.font('Helvetica').fontSize(9);
-    doc.text('Unterschrift Lager:', 40, y);
+    doc.text('Unterschrift Absender/Lager:', 40, y);
     doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
 
     doc.text('Unterschrift Empfänger:', 300, y);
     doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-    doc.fontSize(7).text(`Generiert: ${new Date().toLocaleString('de-DE')} · Highspeed Kurier Lagermanagement`, 40, 790, { align: 'center', width: 515 });
+    doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
   }
 
   doc.end();
@@ -179,7 +225,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.pipe(res);
 
   // Header
-  doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED KURIER · Lagerbericht', 40, 30);
+  doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Lagerbericht', 40, 30);
   doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
   doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
 

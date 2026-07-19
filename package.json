@@ -1,7 +1,7 @@
 {
   "name": "highspeed-lagermanagement",
   "version": "2.2.0",
-  "description": "Highspeed Kurier - Lagermanagement System",
+  "description": "HIGHSPEED Logistik - Lagermanagement System",
   "main": "server.js",
   "scripts": {
     "start": "node database/import-all.js && node server.js",

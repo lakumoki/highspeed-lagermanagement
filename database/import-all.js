@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// HIGHSPEED KURIER — LAGERMANAGEMENT VOLLIMPORT v3
+// HIGHSPEED LOGISTIK — LAGERMANAGEMENT VOLLIMPORT v3
 // Versteht: EB-Nummern, KW-Nummern, Artikel, Chargen (CETV+), Gänge (xA-xF),
 // P-Gänge (6 tief), Block F (ungeordnet), .a/.b (stapelbar), x (nicht stapelbar)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -16,7 +16,7 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-console.log('═══ HIGHSPEED KURIER — LAGERMANAGEMENT VOLLIMPORT v3 ═══\n');
+console.log('═══ HIGHSPEED LOGISTIK — LAGERMANAGEMENT VOLLIMPORT v3 ═══\n');
 
 // ─── SCHEMA ──────────────────────────────────────────────────────────────────
 db.exec(`

@@ -85,7 +85,7 @@ router.post('/pdf', (req, res) => {
     firstPage = false;
     
     // Header
-    doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED KURIER', 40, 40);
+    doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 40);
     doc.fontSize(10).font('Helvetica').text('Lagermanagement · Pickliste', 40, 58);
     doc.fontSize(12).font('Helvetica-Bold').text(lkw, 400, 40, { align: 'right' });
     if (abruf_id) doc.fontSize(9).font('Helvetica').text(`Abruf: ${abruf_id}`, 400, 56, { align: 'right' });
@@ -234,7 +234,7 @@ router.get('/lieferschein/:abruf_id/lkw:nr', (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename="Lieferschein_${req.params.abruf_id}_LKW${req.params.nr}.pdf"`);
   doc.pipe(res);
   
-  doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED KURIER', 40, 40);
+  doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 40);
   doc.fontSize(10).font('Helvetica').text('Lieferschein', 40, 58);
   doc.fontSize(12).font('Helvetica-Bold').text(`LKW ${req.params.nr}`, 400, 40, { align: 'right' });
   doc.fontSize(9).font('Helvetica').text(`Abruf: ${req.params.abruf_id}`, 400, 56, { align: 'right' });
