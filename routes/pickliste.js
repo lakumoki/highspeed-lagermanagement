@@ -181,4 +181,78 @@ router.get('/aktuell', (req, res) => {
   res.json(items);
 });
 
+// Pickliste abschließen: gepickte auslagern + Lieferscheine generieren
+router.post('/abschliessen', (req, res) => {
+  const { lkw_kapazitaet = 17 } = req.body;
+  const heute = new Date().toISOString().split('T')[0];
+  const jetzt = new Date().toISOString();
+  const benutzer = req.session?.user?.benutzername || 'System';
+  
+  const gepickt = db.prepare("SELECT a.*, p.id as pal_id, p.lagerplatz_id, p.lagerplatz_bezeichnung FROM abrufliste a LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0 WHERE a.abgehakt = 1").all();
+  
+  if (gepickt.length === 0) return res.status(400).json({ error: 'Keine gepickten Paletten vorhanden' });
+  
+  let ausgelagert = 0;
+  for (const item of gepickt) {
+    if (!item.pal_id) continue;
+    db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, item.pal_id);
+    if (item.lagerplatz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(item.lagerplatz_id);
+    ausgelagert++;
+  }
+  
+  // Bewegung buchen
+  if (ausgelagert > 0) {
+    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?)").run(
+      gepickt[0].kunde_id || 1, heute, ausgelagert, gepickt.map(i => i.paletten_nr).join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7)
+    );
+  }
+  
+  // Protokoll
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
+    'Pickliste abgeschlossen',
+    `${ausgelagert} Paletten ausgelagert | ${Math.ceil(gepickt.length / lkw_kapazitaet)} Lieferschein(e) | Nummern: ${gepickt.slice(0, 5).map(i => i.paletten_nr + ' von ' + (i.lagerplatz_bezeichnung || '?')).join(', ')}${gepickt.length > 5 ? '...' : ''}`,
+    benutzer, jetzt
+  );
+  
+  // Abrufliste bereinigen
+  db.prepare("DELETE FROM abrufliste WHERE abgehakt = 1").run();
+  
+  // LKW-Trennung: PDFs generieren (URLs zurückgeben)
+  const lkwAnzahl = Math.ceil(gepickt.length / lkw_kapazitaet);
+  const pdfUrls = [];
+  for (let i = 1; i <= lkwAnzahl; i++) {
+    pdfUrls.push(`/api/pickliste/lieferschein/${gepickt[0].abruf_id || 'manual'}/lkw${i}`);
+  }
+  
+  res.json({ ok: true, ausgelagert, lieferscheine: lkwAnzahl, pdf_urls: pdfUrls });
+});
+
+// Lieferschein PDF (je LKW)
+router.get('/lieferschein/:abruf_id/lkw:nr', (req, res) => {
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="Lieferschein_${req.params.abruf_id}_LKW${req.params.nr}.pdf"`);
+  doc.pipe(res);
+  
+  doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED KURIER', 40, 40);
+  doc.fontSize(10).font('Helvetica').text('Lieferschein', 40, 58);
+  doc.fontSize(12).font('Helvetica-Bold').text(`LKW ${req.params.nr}`, 400, 40, { align: 'right' });
+  doc.fontSize(9).font('Helvetica').text(`Abruf: ${req.params.abruf_id}`, 400, 56, { align: 'right' });
+  doc.text(`Datum: ${new Date().toLocaleDateString('de-DE')}`, 400, 68, { align: 'right' });
+  doc.moveTo(40, 85).lineTo(555, 85).stroke();
+  
+  doc.fontSize(9).text('Lieferschein wird generiert. Paletten wurden erfolgreich ausgelagert.', 40, 100);
+  
+  doc.fontSize(8).text(`Unterschrift Fahrer: _______________________`, 40, 700);
+  doc.text(`Unterschrift Lager: _______________________`, 300, 700);
+  doc.text(`Datum/Uhrzeit: ${new Date().toLocaleString('de-DE')}`, 40, 730);
+  
+  doc.end();
+});
+
+// Staplerfahrer-Link für aktive Pickliste
+router.get('/stapler-link', (req, res) => {
+  res.redirect('/api/pickliste/aktuell');
+});
+
 module.exports = router;

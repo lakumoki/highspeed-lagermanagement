@@ -26,17 +26,17 @@ router.post('/', (req, res) => {
   // Lagerplatz prüfen (case-insensitive)
   const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? OR bezeichnung = ? OR bezeichnung = ?').get(platzBez, platzBez.toUpperCase(), platzBez.toLowerCase());
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
-  // Gang-/Zwischenplätze und Block-Plätze erlauben Mehrfachbelegung
-  if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block') return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
+  // Gang-/Zwischenplätze, Block-Plätze und stapelbare a/b-Positionen erlauben Mehrfachbelegung
+  if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block' && !platz.unter_position) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
   
   // Höhenprüfung
   if (paletten_hoehe_cm && platz.max_hoehe_cm && parseFloat(paletten_hoehe_cm) > platz.max_hoehe_cm) {
     return res.status(400).json({ error: `Palette (${paletten_hoehe_cm}cm) zu hoch für ${platzBez} (max. ${platz.max_hoehe_cm}cm)` });
   }
   
-  // Duplikat prüfen
-  const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
-  if (duplikat) return res.status(400).json({ error: `Palette "${nr}" ist bereits eingelagert` });
+  // Duplikat prüfen (gleiche Nr. + gleicher Kunde = Duplikat; verschiedene Kunden erlaubt)
+  const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(nr, kundeId);
+  if (duplikat) return res.status(400).json({ error: `Palette "${nr}" ist bereits für diesen Kunden eingelagert` });
   
   // Einlagern
   const result = db.prepare(`
@@ -79,7 +79,7 @@ router.get('/freie-plaetze', (req, res) => {
     FROM lagerplaetze l
     LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
     ${where} AND (p.id IS NULL OR l.typ IN ('Gang','Block'))
-    ORDER BY CASE WHEN l.typ IN ('Gang','Block') THEN 1 ELSE 0 END, ${hoehe ? 'l.max_hoehe_cm ASC,' : ''} l.regal, l.position
+    ORDER BY CASE WHEN l.typ IN ('Gang','Block') THEN 1 ELSE 0 END, l.max_hoehe_cm ASC, l.regal, l.position
   `).all(...params);
   const seen = new Set();
   const unique = plaetze.filter(p => { if (seen.has(p.bezeichnung)) return false; seen.add(p.bezeichnung); return true; });

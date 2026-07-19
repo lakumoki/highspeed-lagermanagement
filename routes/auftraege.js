@@ -194,7 +194,7 @@ router.post('/:token/positionen/:id', (req, res) => {
     // Bewegungen dokumentieren — 3 bei Direktanlieferung, 1 bei Standard
     if (auftrag.typ === 'direktanlieferung') {
       db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)").run(
-        auftrag.kunde_id, heute, 'Einlagerung', nr, auftrag.direkt_id, 'Direktanlieferung - LKW-Entladung', 'Staplerfahrer', heute.substring(0, 7), `Platz: ${platz.bezeichnung}`
+        auftrag.kunde_id, heute, 'Entladung', nr, auftrag.direkt_id, 'Direktanlieferung - LKW-Entladung', 'Staplerfahrer', heute.substring(0, 7), `Platz: ${platz.bezeichnung}`
       );
       db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)").run(
         auftrag.kunde_id, heute, 'Extra Handling', nr, auftrag.direkt_id, 'Direktanlieferung - Handling', 'Staplerfahrer', heute.substring(0, 7), `Platz: ${platz.bezeichnung}`
@@ -296,7 +296,7 @@ router.post('/:token/zwischenlagern', (req, res) => {
         VALUES (?,?,?,?,?,?,?,?,?,?)`).run(nr, nummernTyp, auftrag.kunde_id, wareneingang.id, 'Wareneingang', pos.artikel_nr || null, pos.chargen_nr || null, 1, 'Staplerfahrer', 'Zwischengelagert');
 
       if (auftrag.typ === 'direktanlieferung') {
-        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Einlagerung', nr, auftrag.direkt_id, 'Direktanlieferung - LKW-Entladung', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
+        db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Entladung', nr, auftrag.direkt_id, 'Direktanlieferung - LKW-Entladung', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
         db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Extra Handling', nr, auftrag.direkt_id, 'Direktanlieferung - Handling', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
         db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, direktanlieferung_id, handling_art, benutzer, monat, bemerkung) VALUES (?,?,?,1,?,?,?,?,?,?)").run(auftrag.kunde_id, heute, 'Einlagerung', nr, auftrag.direkt_id, 'Direktanlieferung - Einlagerung', 'Staplerfahrer', heute.substring(0, 7), 'Wareneingang');
       } else {

@@ -39,6 +39,16 @@ router.get('/suche', (req, res) => {
       WHERE l.bezeichnung LIKE ?
       ORDER BY l.bezeichnung
     `).all(term);
+  } else if (typ === 'kunde') {
+    results = db.prepare(`
+      SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE p.ausgelagert = 0 AND p.geloescht = 0
+        AND k.name LIKE ?
+      ORDER BY p.lagerplatz_bezeichnung, p.paletten_nr
+    `).all(term);
   } else {
     // Standard: Suche nach Palettennummer (EB, KW, Sonstige)
     results = db.prepare(`

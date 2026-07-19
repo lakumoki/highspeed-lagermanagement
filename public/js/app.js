@@ -170,6 +170,7 @@ async function pgDashboard() {
 // ═══ SUCHE ═══════════════════════════════════════════════════════════════════
 async function pgSuche() {
   const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
   pc.innerHTML = `
     <div class="page-header"><h1>Suche</h1></div>
     <div class="search-bar">
@@ -179,8 +180,13 @@ async function pgSuche() {
         <option value="artikel">Artikel-Nr.</option>
         <option value="charge">Chargen-Nr.</option>
         <option value="lagerplatz">Lagerplatz</option>
+        <option value="kunde">Kunde</option>
       </select>
       <button class="btn btn-primary" onclick="doSearch()">Suchen</button>
+    </div>
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-muted);align-self:center">Schnellfilter Kunde:</span>
+      ${kunden.map(k => `<button class="btn btn-sm btn-secondary" onclick="document.getElementById('search-input').value='${k.name}';document.getElementById('search-typ').value='kunde';doSearch()">${k.name}</button>`).join('')}
     </div>
     <div id="search-results"></div>`;
   document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
@@ -242,13 +248,13 @@ async function pgEinlagerung() {
           </div>
           <div class="form-group">
             <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
-            <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben">
+            <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben" onkeydown="if(event.key==='Enter')doEinlagern()">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Lagerplatz * <span style="color:var(--success);font-size:11px">(${freie.length} frei)</span></label>
-            <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}">
+            <input type="text" id="einl-platz" placeholder="${vorschlag || 'Kein freier Platz'}" value="${vorschlag}" onkeydown="if(event.key==='Enter')doEinlagern()">
             <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">Vorschlag: <strong>${vorschlag}</strong> ${freie.length > 0 && freie[0].max_hoehe_cm ? `(max. ${freie[0].max_hoehe_cm}cm)` : ''} · <a href="#" onclick="showFreiePlaetze();return false" style="color:var(--info)">Alle ${freie.length} freien anzeigen</a></div>
           </div>
           <div class="form-group">
@@ -557,6 +563,9 @@ async function pgDirektanlieferung() {
     </div>`;
 
   loadDirektanlieferungen();
+  // Letzten Kunden vorbelegen
+  const lastKunde = localStorage.getItem('direkt_kunde_id');
+  if (lastKunde) { const sel = document.getElementById('da-kunde'); if (sel) sel.value = lastKunde; }
 }
 
 function direktTab(tab) {
@@ -589,6 +598,7 @@ async function zeigeFreiePlaetzeDirekt() {
 async function erstelleDirektanlieferung() {
   const sel = document.getElementById('da-kunde');
   const kundeId = sel.value;
+  localStorage.setItem('direkt_kunde_id', kundeId);
   const prefix = sel.options[sel.selectedIndex]?.dataset?.prefix;
   const lkwNr = document.getElementById('da-lkw').value.trim();
   const text = document.getElementById('da-nummern').value.trim();
@@ -644,6 +654,7 @@ async function erstelleDirektanlieferung() {
 async function direktWareneingang() {
   const sel = document.getElementById('da-kunde');
   const kundeId = sel.value;
+  localStorage.setItem('direkt_kunde_id', kundeId);
   const prefix = sel.options[sel.selectedIndex]?.dataset?.prefix;
   const lkwNr = document.getElementById('da-lkw').value.trim();
   const text = document.getElementById('da-nummern').value.trim();
@@ -807,8 +818,20 @@ async function pgPickliste() {
   const pc = document.getElementById('page-content');
   const aktuell = await api('/api/pickliste/aktuell');
   
+  const gepickt = aktuell.filter(i => i.abgehakt);
+  const offen = aktuell.filter(i => !i.abgehakt);
+  
   pc.innerHTML = `
     <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button></div></div>
+    ${aktuell.length > 0 ? `
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:13px"><strong>${gepickt.length}</strong> / ${aktuell.length} gepickt</span>
+        <div class="progress-bar" style="flex:1;min-width:120px"><div class="fill ${gepickt.length === aktuell.length ? 'green' : 'yellow'}" style="width:${Math.round(gepickt.length/aktuell.length*100)}%"></div></div>
+        ${gepickt.length > 0 ? `<button class="btn btn-sm btn-success" onclick="picklisteAbschliessen()">Abschließen + Lieferschein</button>` : ''}
+        <button class="btn btn-sm btn-secondary" onclick="picklisteQR()">QR für Staplerfahrer</button>
+      </div>
+    </div>` : ''}
     <div class="tabs">
       <button class="active" onclick="showPickTab('tablet')">Tablet-Ansicht</button>
       <button onclick="showPickTab('liste')">Listenansicht</button>
@@ -820,10 +843,31 @@ async function pgPickliste() {
           <div class="check" onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')">${item.abgehakt ? '✓' : ''}</div>
           <div class="nr">${item.paletten_nr}</div>
           <div class="platz">${item.aktueller_platz || item.lagerplatz || '?'}</div>
-          <div class="info">${item.lkw || ''} · Pos. ${item.lfd_nummer}</div>
+          <div class="info">Pos. ${item.lfd_nummer}</div>
         </div>
       `).join('')}
+    </div>
+    <div id="pick-liste-content" style="display:none">
+      ${aktuell.length === 0 ? '' : `
+      <div class="card">
+        <div class="table-wrap"><table><thead><tr><th>Pos.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Status</th></tr></thead><tbody>
+          ${aktuell.map(item => `<tr style="${item.abgehakt ? 'background:#e8f8f0' : ''}">
+            <td>${item.lfd_nummer}</td>
+            <td><strong>${item.paletten_nr}</strong></td>
+            <td>${item.aktueller_platz || item.lagerplatz || '?'}</td>
+            <td>${item.abgehakt ? '<span class="badge badge-success">Gepickt</span>' : '<span class="badge badge-warning">Offen</span>'}</td>
+          </tr>`).join('')}
+        </tbody></table></div>
+      </div>`}
     </div>`;
+}
+
+function showPickTab(tab) {
+  document.getElementById('pick-content').style.display = tab === 'tablet' ? '' : 'none';
+  document.getElementById('pick-liste-content').style.display = tab === 'liste' ? '' : 'none';
+  document.querySelectorAll('.tabs button').forEach((b, i) => {
+    b.className = (i === 0 && tab === 'tablet') || (i === 1 && tab === 'liste') ? 'active' : '';
+  });
 }
 
 async function togglePickItem(el, abrufId, nr) {
@@ -832,6 +876,48 @@ async function togglePickItem(el, abrufId, nr) {
   item.classList.toggle('done');
   el.textContent = done ? '✓' : '';
   await api('/api/pickliste/abhaken', { method: 'POST', body: { abruf_id: abrufId, paletten_nr: nr, abgehakt: done } });
+}
+
+async function picklisteQR() {
+  const aktuell = await api('/api/pickliste/aktuell');
+  const offen = aktuell.filter(i => !i.abgehakt);
+  if (offen.length === 0) { toast('Alle Paletten bereits gepickt', 'error'); return; }
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const url = `${window.location.origin}/api/pickliste/stapler-link`;
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>QR-Code für Staplerfahrer</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">${offen.length} Paletten zum Picken. Staplerfahrer scannt und arbeitet die Liste ab.</p>
+      <div id="pick-qr-code" style="text-align:center;margin:20px 0"></div>
+      <p style="text-align:center;font-size:11px;word-break:break-all;color:var(--text-muted)"><a href="${url}" target="_blank">${url}</a></p>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof QRCode !== 'undefined') new QRCode(document.getElementById('pick-qr-code'), { text: url, width: 200, height: 200 });
+}
+
+async function picklisteAbschliessen() {
+  const aktuell = await api('/api/pickliste/aktuell');
+  const gepickt = aktuell.filter(i => i.abgehakt);
+  if (gepickt.length === 0) { toast('Keine Paletten gepickt', 'error'); return; }
+  
+  const lkwKap = 17;
+  const lkwAnzahl = Math.ceil(gepickt.length / lkwKap);
+  
+  if (!confirm(`${gepickt.length} Paletten auslagern und ${lkwAnzahl} Lieferschein${lkwAnzahl > 1 ? 'e' : ''} generieren?`)) return;
+  
+  try {
+    const data = await api('/api/pickliste/abschliessen', { method: 'POST', body: { lkw_kapazitaet: lkwKap } });
+    toast(`${data.ausgelagert} Paletten ausgelagert, ${data.lieferscheine} Lieferschein(e) erstellt`, 'success');
+    if (data.pdf_urls && data.pdf_urls.length > 0) {
+      data.pdf_urls.forEach((url, i) => {
+        setTimeout(() => window.open(url, '_blank'), i * 500);
+      });
+    }
+    pgPickliste();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 function showNeuePickliste() {
