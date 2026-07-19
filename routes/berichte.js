@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../database/init');
 const PDFDocument = require('pdfkit');
 
-// Auslagerungsbeleg PDF
+// Auslagerungsbeleg PDF (Einzel)
 router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   const pal = db.prepare(`
     SELECT p.*, k.name as kunde_name, l.bezeichnung as platz
@@ -56,6 +56,103 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   
   doc.fontSize(7).text(`Generiert: ${new Date().toLocaleString('de-DE')} · Highspeed Kurier Lagermanagement`, 50, 780, { align: 'center', width: 495 });
   
+  doc.end();
+});
+
+// Sammel-Auslagerungsbeleg PDF (mehrere Paletten, ab 18 Stk. → 2. LKW-Seite)
+router.post('/sammelbeleg', (req, res) => {
+  const { paletten_nummern } = req.body;
+  if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
+    return res.status(400).json({ error: 'paletten_nummern Array erforderlich' });
+  }
+
+  const paletten = paletten_nummern.map(nr => {
+    return db.prepare(`
+      SELECT p.*, k.name as kunde_name, l.bezeichnung as platz
+      FROM paletten p
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      WHERE p.paletten_nr = ?
+      ORDER BY p.id DESC LIMIT 1
+    `).get(nr);
+  }).filter(Boolean);
+
+  if (paletten.length === 0) return res.status(404).json({ error: 'Keine Paletten gefunden' });
+
+  const LKW_KAPAZITAET = 17;
+  const lkwAnzahl = Math.ceil(paletten.length / LKW_KAPAZITAET);
+  const kunde = paletten[0]?.kunde_name || '—';
+  const datum = new Date().toLocaleDateString('de-DE');
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="Sammelbeleg_${datum.replace(/\./g, '-')}_${paletten.length}Pal.pdf"`);
+  doc.pipe(res);
+
+  for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
+    if (lkw > 0) doc.addPage();
+
+    const start = lkw * LKW_KAPAZITAET;
+    const chunk = paletten.slice(start, start + LKW_KAPAZITAET);
+
+    doc.fontSize(16).font('Helvetica-Bold').text('HIGHSPEED KURIER', 40, 35);
+    doc.fontSize(9).font('Helvetica').text('Lagermanagement · Trittau', 40, 54);
+    doc.fontSize(13).font('Helvetica-Bold').text(`AUSLAGERUNGSBELEG / LIEFERSCHEIN`, 40, 80);
+    if (lkwAnzahl > 1) {
+      doc.fontSize(10).font('Helvetica').text(`LKW ${lkw + 1} von ${lkwAnzahl}`, 400, 80);
+    }
+
+    doc.fontSize(9).font('Helvetica');
+    doc.text(`Kunde: ${kunde}`, 40, 100);
+    doc.text(`Datum: ${datum}`, 40, 112);
+    doc.text(`Paletten gesamt: ${paletten.length} | Auf diesem Beleg: ${chunk.length}`, 40, 124);
+
+    doc.moveTo(40, 140).lineTo(555, 140).stroke();
+
+    // Tabellenkopf
+    let y = 150;
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('Nr.', 40, y, { width: 25 });
+    doc.text('Pal.-Nr.', 68, y, { width: 75 });
+    doc.text('Typ', 148, y, { width: 35 });
+    doc.text('Lagerplatz', 186, y, { width: 70 });
+    doc.text('Artikel-Nr.', 260, y, { width: 80 });
+    doc.text('Chargen-Nr.', 345, y, { width: 100 });
+    doc.text('Bemerkung', 450, y, { width: 105 });
+    y += 14;
+    doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+
+    doc.font('Helvetica').fontSize(8);
+    for (let i = 0; i < chunk.length; i++) {
+      const p = chunk[i];
+      doc.text(String(start + i + 1), 40, y, { width: 25 });
+      doc.text(p.paletten_nr || '—', 68, y, { width: 75 });
+      doc.text(p.nummern_typ || '—', 148, y, { width: 35 });
+      doc.text(p.platz || p.lagerplatz_bezeichnung || '—', 186, y, { width: 70 });
+      doc.text(p.artikel_nr || '—', 260, y, { width: 80 });
+      doc.text(p.chargen_nr || '—', 345, y, { width: 100 });
+      doc.text((p.bemerkung || '').substring(0, 20), 450, y, { width: 105 });
+      y += 14;
+      if (y > 740) { doc.addPage(); y = 40; }
+    }
+
+    // Summe + Unterschrift
+    y += 10;
+    doc.moveTo(40, y).lineTo(555, y).stroke();
+    y += 8;
+    doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${chunk.length} Palette(n)`, 40, y);
+    y += 30;
+
+    doc.font('Helvetica').fontSize(9);
+    doc.text('Unterschrift Lager:', 40, y);
+    doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+
+    doc.text('Unterschrift Empfänger:', 300, y);
+    doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+
+    doc.fontSize(7).text(`Generiert: ${new Date().toLocaleString('de-DE')} · Highspeed Kurier Lagermanagement`, 40, 790, { align: 'center', width: 515 });
+  }
+
   doc.end();
 });
 

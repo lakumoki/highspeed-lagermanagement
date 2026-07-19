@@ -799,6 +799,7 @@ async function doAuslagern() {
       html += `<div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px;margin-bottom:10px">
         <strong style="color:var(--success, #28a745)">✓ ${erfolg.length} Palette(n) erfolgreich ausgelagert</strong>
         <p style="margin:6px 0 0;font-size:13px;font-family:monospace">${erfolg.join(', ')}</p>
+        <button class="btn btn-sm btn-primary" style="margin-top:12px" onclick="openSammelbeleg(${JSON.stringify(erfolg).replace(/"/g,'&quot;')})">PDF-Sammelbeleg öffnen (${erfolg.length} Pal.)</button>
       </div>`;
     }
     if (fehler.length > 0) {
@@ -809,8 +810,21 @@ async function doAuslagern() {
     }
     document.getElementById('ausl-result').innerHTML = html;
     document.getElementById('ausl-nr').value = '';
+    // Automatisch PDF öffnen
+    if (erfolg.length > 0) openSammelbeleg(erfolg);
     document.getElementById('ausl-bem').value = '';
   }
+}
+
+function openSammelbeleg(nummern) {
+  fetch('/api/berichte/sammelbeleg', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paletten_nummern: nummern })
+  }).then(r => r.blob()).then(blob => {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }).catch(e => toast('PDF-Fehler: ' + e.message, 'error'));
 }
 
 // ═══ PICKLISTE ═══════════════════════════════════════════════════════════════
