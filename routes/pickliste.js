@@ -3,18 +3,23 @@ const router = express.Router();
 const db = require('../database/init');
 const PDFDocument = require('pdfkit');
 
-// Pickliste erstellen (aus Palettennummern)
+// Pickliste erstellen (aus Palettennummern) → speichert in abrufliste
 router.post('/erstellen', (req, res) => {
   let { paletten_nummern, abruf_id, kunde_id, lkw_split } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
     return res.status(400).json({ error: 'Mindestens eine Palettennummer erforderlich' });
   }
-  
-  // LKW-Kapazität aus Einstellungen
+
   const kapSetting = db.prepare("SELECT wert FROM einstellungen WHERE schluessel = 'lkw_kapazitaet'").get();
   const lkwKap = lkw_split || parseInt(kapSetting?.wert || '17');
-  
+  const jetzt = new Date().toISOString();
+
+  // Alte nicht-abgehakte Einträge mit gleicher abruf_id löschen (falls neu erstellt)
+  if (abruf_id) db.prepare("DELETE FROM abrufliste WHERE abruf_id = ? AND abgehakt = 0").run(abruf_id);
+
   const items = [];
+  const insert = db.prepare("INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, artikel_nr, chargen_nr, status, abgehakt, datum, kunde_id, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?)");
+
   for (let i = 0; i < paletten_nummern.length; i++) {
     const nr = paletten_nummern[i];
     const pal = db.prepare(`
@@ -23,8 +28,24 @@ router.post('/erstellen', (req, res) => {
       LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
       WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
     `).get(nr);
-    
+
     const lkwNr = Math.ceil((i + 1) / lkwKap);
+    const lkwLabel = `LKW ${lkwNr}`;
+    const gefunden = !!pal;
+
+    // In abrufliste speichern
+    insert.run(
+      abruf_id || `ABRUF-${jetzt.split('T')[0]}`,
+      i + 1, nr,
+      pal?.platz || '?',
+      lkwLabel, lkwNr,
+      pal?.artikel_nr || null, pal?.chargen_nr || null,
+      gefunden ? 'gefunden' : 'nicht_gefunden',
+      jetzt.split('T')[0],
+      pal?.kunde_id || kunde_id || null,
+      jetzt
+    );
+
     items.push({
       lfd: i + 1,
       paletten_nr: nr,
@@ -34,14 +55,14 @@ router.post('/erstellen', (req, res) => {
       bereich: pal?.bereich || '?',
       artikel_nr: pal?.artikel_nr || '',
       chargen_nr: pal?.chargen_nr || '',
-      lkw: `LKW ${lkwNr}`,
+      lkw: lkwLabel,
       lkw_nr: lkwNr,
-      gefunden: !!pal
+      gefunden
     });
   }
-  
+
   const lkwAnzahl = Math.ceil(paletten_nummern.length / lkwKap);
-  
+
   res.json({
     ok: true,
     abruf_id: abruf_id || null,

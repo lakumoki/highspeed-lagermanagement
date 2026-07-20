@@ -201,6 +201,7 @@
     let freiePlaetze = [];
     let freieSichtbar = false;
     let aktiverInput = null;
+    let gespeicherteHoehe = '';
 
     async function loadAuftrag() {
       try {
@@ -245,30 +246,32 @@
               <h2 style="color:#e67e22;font-size:16px;margin-bottom:6px">${wareneingang.length} Palette(n) im Wareneingang</h2>
               <p style="color:#aaa;font-size:13px">Plätze zuweisen, um endgültig einzulagern</p>
             </div>`;
-          html += `
-            <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:12px">
+          html += `<div id="sticky-tools" style="position:sticky;top:0;z-index:10;background:#111;padding-bottom:8px">
+            <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:8px">
               <div style="font-size:13px;font-weight:600;color:#f5c518;margin-bottom:8px">Platz-Suche nach Höhe</div>
               <div style="display:flex;gap:8px;align-items:center">
                 <input type="number" id="hoehe-input" placeholder="Höhe in cm" style="flex:1;padding:10px 12px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:#f0f0f0;font-size:15px;outline:none">
                 <button onclick="sucheNachHoehe()" style="padding:10px 16px;background:#f5c518;color:#1a1a1a;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Suchen</button>
               </div>
-            </div>`;
-          html += `<button class="btn-freie" onclick="toggleFreie()">Freie Plätze anzeigen</button>`;
-          html += `<div id="freie-box" class="freie-liste"></div>`;
+            </div>
+            <button class="btn-freie" onclick="toggleFreie()" style="margin-bottom:4px">Freie Plätze anzeigen</button>
+            <div id="freie-box" class="freie-liste"></div>
+          </div>`;
         } else {
           html += `<div class="all-done"><h2>Alle Paletten eingelagert</h2><p style="color:#aaa">Auftrag abgeschlossen.</p></div>`;
         }
       } else {
-        html += `
-          <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:12px">
+        html += `<div id="sticky-tools" style="position:sticky;top:0;z-index:10;background:#111;padding-bottom:8px">
+          <div style="background:#2a2a2a;border:1px solid #3a3a3a;border-radius:10px;padding:12px;margin-bottom:8px">
             <div style="font-size:13px;font-weight:600;color:#f5c518;margin-bottom:8px">Platz-Suche nach Höhe</div>
             <div style="display:flex;gap:8px;align-items:center">
               <input type="number" id="hoehe-input" placeholder="Höhe in cm" style="flex:1;padding:10px 12px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:#f0f0f0;font-size:15px;outline:none">
               <button onclick="sucheNachHoehe()" style="padding:10px 16px;background:#f5c518;color:#1a1a1a;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Suchen</button>
             </div>
-          </div>`;
-        html += `<button class="btn-freie" onclick="toggleFreie()">Alle freien Plätze anzeigen</button>`;
-        html += `<div id="freie-box" class="freie-liste"></div>`;
+          </div>
+          <button class="btn-freie" onclick="toggleFreie()" style="margin-bottom:4px">Alle freien Plätze anzeigen</button>
+          <div id="freie-box" class="freie-liste"></div>
+        </div>`;
         const offeneAnzahl = d.positionen.filter(p => p.status !== 'eingelagert').length;
         if (offeneAnzahl > 1) {
           html += `<button class="btn-freie" style="border-color:#e67e22;color:#e67e22" onclick="alleZwischenlagern()">Alle ${offeneAnzahl} in Wareneingang zwischenlagern</button>`;
@@ -276,31 +279,7 @@
       }
 
       for (const pos of d.positionen) {
-        if (pos.status === 'eingelagert' && pos.lagerplatz !== 'Wareneingang') {
-          html += `
-            <div class="palette-card done">
-              <div class="top-row">
-                <span class="pal-nr">${pos.paletten_nr}</span>
-                <span class="status-icon">✓</span>
-              </div>
-              <div class="done-label">✓ ${pos.lagerplatz}</div>
-            </div>`;
-        } else if (pos.status === 'eingelagert' && pos.lagerplatz === 'Wareneingang') {
-          html += `
-            <div class="palette-card" id="card-${pos.id}" style="border-color:#e67e22">
-              <div class="top-row">
-                <span class="pal-nr">${pos.paletten_nr}</span>
-                <span style="font-size:11px;color:#e67e22;font-weight:600">Wareneingang</span>
-              </div>
-              <div class="input-row">
-                <input type="text" id="input-${pos.id}" placeholder="Endgültigen Platz eingeben" 
-                  onfocus="aktiverInput='input-${pos.id}'"
-                  onkeydown="if(event.key==='Enter')umlagernWE(${pos.id}, '${pos.paletten_nr}')">
-                <button class="btn-einlagern" onclick="umlagernWE(${pos.id}, '${pos.paletten_nr}')">→</button>
-              </div>
-              <div id="msg-${pos.id}"></div>
-            </div>`;
-        } else {
+        if (pos.status !== 'eingelagert') {
           html += `
             <div class="palette-card" id="card-${pos.id}">
               <div class="top-row">
@@ -317,8 +296,48 @@
             </div>`;
         }
       }
+      for (const pos of d.positionen) {
+        if (pos.status === 'eingelagert' && pos.lagerplatz === 'Wareneingang') {
+          html += `
+            <div class="palette-card" id="card-${pos.id}" style="border-color:#e67e22">
+              <div class="top-row">
+                <span class="pal-nr">${pos.paletten_nr}</span>
+                <span style="font-size:11px;color:#e67e22;font-weight:600">Wareneingang</span>
+              </div>
+              <div class="input-row">
+                <input type="text" id="input-${pos.id}" placeholder="Endgültigen Platz eingeben" 
+                  onfocus="aktiverInput='input-${pos.id}'"
+                  onkeydown="if(event.key==='Enter')umlagernWE(${pos.id}, '${pos.paletten_nr}')">
+                <button class="btn-einlagern" onclick="umlagernWE(${pos.id}, '${pos.paletten_nr}')">→</button>
+              </div>
+              <div id="msg-${pos.id}"></div>
+            </div>`;
+        }
+      }
+      if (d.positionen.some(p => p.status === 'eingelagert' && p.lagerplatz !== 'Wareneingang')) {
+        html += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid #333"><div style="font-size:11px;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:8px;letter-spacing:0.5px">Bereits eingelagert</div>`;
+        for (const pos of d.positionen) {
+          if (pos.status === 'eingelagert' && pos.lagerplatz !== 'Wareneingang') {
+            html += `
+              <div class="palette-card done">
+                <div class="top-row">
+                  <span class="pal-nr">${pos.paletten_nr}</span>
+                  <span class="status-icon">✓</span>
+                </div>
+                <div class="done-label">✓ ${pos.lagerplatz}</div>
+              </div>`;
+          }
+        }
+        html += `</div>`;
+      }
 
       document.getElementById('app').innerHTML = html;
+
+      // Höhe wiederherstellen
+      if (gespeicherteHoehe) {
+        const hInput = document.getElementById('hoehe-input');
+        if (hInput) hInput.value = gespeicherteHoehe;
+      }
     }
 
     async function toggleFreie() {
@@ -339,6 +358,7 @@
 
     async function sucheNachHoehe() {
       const hoehe = document.getElementById('hoehe-input').value.trim();
+      gespeicherteHoehe = hoehe;
       if (!hoehe || parseInt(hoehe) <= 0) {
         const res = await fetch(`/api/auftraege/${token}/freie-plaetze`);
         freiePlaetze = await res.json();
@@ -423,6 +443,16 @@
         freiePlaetze = freiePlaetze.filter(p => p.bezeichnung !== platz);
 
         render();
+
+        // Höhe wiederherstellen und freie Plätze offen lassen
+        if (gespeicherteHoehe) {
+          const hInput = document.getElementById('hoehe-input');
+          if (hInput) hInput.value = gespeicherteHoehe;
+          sucheNachHoehe();
+        } else if (freieSichtbar) {
+          const box = document.getElementById('freie-box');
+          if (box) { renderFreiePlaetze(freiePlaetze); box.classList.add('visible'); }
+        }
       } catch (e) {
         msg.innerHTML = `<div class="error-msg">${e.message}</div>`;
         btn.disabled = false;

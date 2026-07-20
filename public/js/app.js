@@ -964,14 +964,14 @@ async function erstellePickliste() {
   const nummern = document.getElementById('pick-nummern').value.split('\n').map(l => l.trim()).filter(Boolean);
   const abruf = document.getElementById('pick-abruf').value.trim();
   const kap = parseInt(document.getElementById('pick-kap').value) || 17;
-  
+
   if (nummern.length === 0) { toast('Keine Nummern eingegeben', 'error'); return; }
-  
+
   try {
     const data = await api('/api/pickliste/erstellen', { method: 'POST', body: { paletten_nummern: nummern, abruf_id: abruf, lkw_split: kap } });
     document.querySelector('.modal-overlay')?.remove();
-    window._lastPickliste = data;
-    renderAbrufErgebnis(data);
+    toast(`Pickliste erstellt: ${data.gesamt} Paletten auf ${data.lkw_anzahl} LKW`, 'success');
+    pgPickliste();
   } catch (e) { toast(e.message, 'error'); }
 }
 
