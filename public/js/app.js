@@ -714,6 +714,9 @@ async function direktWareneingang() {
         <h3 style="color:var(--success);margin-bottom:8px">✓ ${zw.count} Paletten im Wareneingang</h3>
         <p style="font-size:13px;color:var(--text-muted)">${zw.count * 3} Bewegungen gebucht (3 pro Palette).${data.direkt_id ? ' ID: ' + data.direkt_id : ''}</p>
         <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Die Paletten können über <strong>Umlagerung</strong> auf ihre endgültigen Plätze verschoben werden.</p>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-primary" href="/api/berichte/einlagerungsbeleg/${data.id}" target="_blank">Wareneingangsbeleg PDF</a>
+        </div>
       </div>`;
 
     document.getElementById('da-nummern').value = '';
@@ -1557,13 +1560,14 @@ async function pgKontingent() {
 async function loadKontingent(kundeId) {
   const data = await api(`/api/kontingent/${kundeId}`);
   const box = document.getElementById('kont-content');
-  const aktBestand = data.monate[0]?.lagerbestand || '—';
-  const ueber = data.monate[0]?.saldo_ueberkapazitaet || 0;
+  const aktBestand = data.kunde?.live_bestand ?? (data.monate[0]?.lagerbestand || 0);
+  const kontPlaetze = data.kunde?.kontingent_plaetze || 0;
+  const ueber = Math.max(0, aktBestand - kontPlaetze);
 
   box.innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${data.kunde?.kontingent_plaetze || 0}</div><div class="sub">Stellplätze</div></div>
-      <div class="stat-card"><div class="label">Akt. Bestand</div><div class="value">${aktBestand}</div></div>
+      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${kontPlaetze}</div><div class="sub">Stellplätze</div></div>
+      <div class="stat-card"><div class="label">Akt. Bestand (live)</div><div class="value">${aktBestand}</div></div>
       <div class="stat-card ${ueber > 0 ? 'warning' : ''}"><div class="label">Überkapazität</div><div class="value">${ueber}</div><div class="sub">zu berechnen</div></div>
     </div>
     <div class="card">

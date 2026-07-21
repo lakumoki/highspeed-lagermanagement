@@ -7,6 +7,11 @@ router.get('/:kunde_id', (req, res) => {
   const kid = parseInt(req.params.kunde_id);
   const monate = db.prepare('SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC').all(kid);
   const kunde = db.prepare('SELECT * FROM kunden WHERE id = ?').get(kid);
+  
+  // Live-Bestand immer berechnen
+  const liveBestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
+  if (kunde) kunde.live_bestand = liveBestand?.c || 0;
+  
   res.json({ kunde, monate });
 });
 
