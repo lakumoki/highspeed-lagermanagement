@@ -669,6 +669,12 @@ async function erstelleDirekteinlagerung() {
     }
   }
 
+  const dupsInList = nummern.filter((n, i) => nummern.indexOf(n) !== i);
+  if (dupsInList.length > 0) {
+    toast(`Duplikate in der Liste: ${[...new Set(dupsInList)].slice(0, 5).join(', ')}. Bitte korrigieren.`, 'error');
+    return;
+  }
+
   try {
     const data = await api('/api/auftraege', { method: 'POST', body: {
       kunde_id: kundeId,
@@ -724,6 +730,13 @@ async function direktWareneingang() {
       toast(`Panpharma: EB-Nummern müssen 6-stellig sein. Ungültig: ${ungueltig.slice(0, 5).join(', ')}${ungueltig.length > 5 ? '...' : ''}`, 'error');
       return;
     }
+  }
+
+  // Duplikat-Prüfung innerhalb der Liste
+  const dupsInList = nummern.filter((n, i) => nummern.indexOf(n) !== i);
+  if (dupsInList.length > 0) {
+    toast(`Duplikate in der Liste: ${[...new Set(dupsInList)].slice(0, 5).join(', ')}. Bitte korrigieren.`, 'error');
+    return;
   }
 
   if (!confirm(`${nummern.length} Paletten direkt in den Wareneingang buchen?\n\nPro Palette werden 3 Bewegungen erzeugt.`)) return;

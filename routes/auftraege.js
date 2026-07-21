@@ -45,6 +45,13 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Mindestens eine Palette erforderlich' });
   }
 
+  // Duplikat-Prüfung innerhalb der Liste
+  const nummern = positionen.map(p => (p.paletten_nr || '').trim()).filter(n => n);
+  const dupsInList = nummern.filter((n, i) => nummern.indexOf(n) !== i);
+  if (dupsInList.length > 0) {
+    return res.status(400).json({ error: `Duplikate in der Liste: ${[...new Set(dupsInList)].slice(0, 5).join(', ')}` });
+  }
+
   const token = crypto.randomUUID();
   const benutzer = req.session?.user?.benutzername || 'System';
   const auftragTyp = typ || 'standard';
@@ -279,12 +286,13 @@ router.post('/:token/zwischenlagern', (req, res) => {
   const heute = new Date().toISOString().split('T')[0];
   const jetzt = new Date().toISOString();
   let count = 0;
+  let skipped = [];
 
   const transaction = db.transaction(() => {
     for (const pos of offene) {
       const nr = pos.paletten_nr;
       const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
-      if (duplikat) continue;
+      if (duplikat) { skipped.push(nr); continue; }
 
       let nummernTyp = 'Sonstige';
       if (nr.match(/^\d{6}$/)) nummernTyp = 'EB';
@@ -312,7 +320,8 @@ router.post('/:token/zwischenlagern', (req, res) => {
 
   try {
     transaction();
-    res.json({ ok: true, message: `${count} Paletten im Wareneingang zwischengelagert`, count });
+    const msg = `${count} Paletten im Wareneingang zwischengelagert${skipped.length > 0 ? `. ${skipped.length} übersprungen (bereits im Lager): ${skipped.slice(0, 5).join(', ')}${skipped.length > 5 ? '...' : ''}` : ''}`;
+    res.json({ ok: true, message: msg, count, skipped });
   } catch (e) {
     res.status(500).json({ error: 'Fehler: ' + e.message });
   }
