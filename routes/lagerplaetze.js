@@ -110,4 +110,27 @@ router.get('/plan/regal/:regal', (req, res) => {
   res.json(plaetze);
 });
 
+// Platz sperren/entsperren
+router.post('/:id/sperre', (req, res) => {
+  const { gesperrt } = req.body;
+  const platz = db.prepare('SELECT * FROM lagerplaetze WHERE id = ?').get(req.params.id);
+  if (!platz) return res.status(404).json({ error: 'Platz nicht gefunden' });
+  
+  if (gesperrt) {
+    db.prepare("UPDATE lagerplaetze SET belegt = 1, bemerkung = 'Nicht nutzbar (gesperrt)' WHERE id = ?").run(req.params.id);
+  } else {
+    db.prepare("UPDATE lagerplaetze SET belegt = 0, bemerkung = NULL WHERE id = ?").run(req.params.id);
+  }
+  
+  const benutzer = req.session?.user?.benutzername || 'System';
+  const jetzt = new Date().toISOString();
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
+    gesperrt ? 'Platz gesperrt' : 'Platz entsperrt',
+    `${platz.bezeichnung} ${gesperrt ? 'gesperrt' : 'entsperrt'}`,
+    benutzer, jetzt
+  );
+  
+  res.json({ ok: true });
+});
+
 module.exports = router;

@@ -70,12 +70,12 @@ function renderApp() {
           <a href="#" data-page="suche"><span class="icon">⌕</span><span>Suche</span></a>
           
           <div class="nav-section">Lagerverwaltung</div>
-          <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
           <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direktanlieferung</span></a>
-          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Direktauslagerung</span></a>
-          <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Pickliste</span></a>
+          <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Abruf / Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
           <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
+          <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
+          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Direktauslagerung</span></a>
           <a href="#" data-page="lagerplan"><span class="icon">▦</span><span>Lagerplan</span></a>
           
           <div class="nav-section">Abrechnung</div>
@@ -203,24 +203,29 @@ async function doSearch() {
   
   if (!results.length) { box.innerHTML = '<p style="color:var(--text-muted);padding:20px">Keine Ergebnisse gefunden.</p>'; return; }
   
+  const aktiv = results.filter(r => !r.ausgelagert);
+  const ausgelagert = results.filter(r => r.ausgelagert);
+  
   box.innerHTML = `
     <div class="card">
-      <div class="card-header"><h3>${results.length} Ergebnis${results.length !== 1 ? 'se' : ''}</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Typ</th><th>Lagerplatz</th><th>Artikel</th><th>Charge</th><th>Kunde</th><th>Aktion</th></tr></thead><tbody>
-        ${results.map(r => `<tr>
+      <div class="card-header"><h3>${results.length} Ergebnis${results.length !== 1 ? 'se' : ''}${ausgelagert.length > 0 ? ` <span style="font-size:12px;color:var(--text-muted)">(davon ${ausgelagert.length} ausgelagert)</span>` : ''}</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Typ</th><th>Lagerplatz</th><th>Artikel</th><th>Charge</th><th>Kunde</th><th>Status</th><th>Aktion</th></tr></thead><tbody>
+        ${results.map(r => `<tr style="${r.ausgelagert ? 'opacity:0.6;background:#f5f5f5' : ''}">
           <td><strong>${r.paletten_nr || r.bezeichnung || '—'}</strong></td>
           <td><span class="badge badge-${(r.nummern_typ || '').toLowerCase() === 'eb' ? 'eb' : 'kw'}">${r.nummern_typ || '—'}</span></td>
-          <td>${r.platz || r.bezeichnung || '—'}</td>
+          <td>${r.ausgelagert ? '<span style="color:var(--text-muted)">—</span>' : (r.platz || r.bezeichnung || '—')}</td>
           <td>${r.artikel_nr || '—'}</td>
           <td>${r.chargen_nr || '—'}</td>
           <td>${r.kunde_name || '—'}</td>
+          <td>${r.ausgelagert ? `<span class="badge badge-danger" style="font-size:10px">Ausgelagert${r.ausgelagert_am ? ' ' + r.ausgelagert_am.split('T')[0] : ''}</span>` : '<span class="badge badge-success" style="font-size:10px">Im Lager</span>'}</td>
           <td>
-            ${r.paletten_nr ? `<button class="btn btn-sm btn-secondary" onclick="editPalette(${r.id})">✎</button>` : ''}
-            ${r.paletten_nr ? `<a class="btn btn-sm btn-primary" href="/api/berichte/auslagerungsbeleg/${r.paletten_nr}" target="_blank">PDF</a>` : ''}
+            ${!r.ausgelagert && r.paletten_nr ? `<button class="btn btn-sm btn-secondary" onclick="editPalette(${r.id})">✎</button>` : ''}
+            ${!r.ausgelagert && r.paletten_nr ? `<a class="btn btn-sm btn-primary" href="/api/berichte/auslagerungsbeleg/${r.paletten_nr}" target="_blank">PDF</a>` : ''}
           </td>
         </tr>`).join('')}
       </tbody></table></div>
-    </div>`;
+    </div>
+    ${ausgelagert.length > 0 ? '<p style="font-size:12px;color:var(--text-muted);margin-top:8px">Ausgelagerte Paletten finden Sie mit allen Details im <a href="#" onclick="navigate(\'protokoll\');return false" style="color:var(--primary)">Änderungsprotokoll</a>.</p>' : ''}`;
 }
 
 // ═══ EINLAGERUNG ═════════════════════════════════════════════════════════════
@@ -249,7 +254,7 @@ async function pgEinlagerung() {
           </div>
           <div class="form-group">
             <label>Paletten-Nr. * <span id="einl-format-hint" style="color:var(--text-muted)"></span></label>
-            <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben" onkeydown="if(event.key==='Enter')doEinlagern()">
+            <input type="text" id="einl-nr" placeholder="Nummer vom Kunden eingeben" autofocus onkeydown="if(event.key==='Enter')doEinlagern()">
           </div>
         </div>
         <div class="form-row">
@@ -492,8 +497,11 @@ async function doEinlagern() {
 
   if (opt.dataset.prefix === 'EB' && !/^\d{6}$/.test(nr)) {
     toast('Panpharma EB-Nummern müssen genau 6-stellig sein (nur Ziffern)', 'error');
+    document.getElementById('einl-nr').focus();
     return;
   }
+
+  if (!nr) { toast('Paletten-Nr. eingeben', 'error'); document.getElementById('einl-nr').focus(); return; }
 
   try {
     const data = await api('/api/einlagerung', { method: 'POST', body: {
@@ -505,8 +513,16 @@ async function doEinlagern() {
       bemerkung: document.getElementById('einl-bemerkung').value.trim() || null
     }});
     toast(data.message, 'success');
-    pgEinlagerung();
-  } catch (e) { toast(e.message, 'error'); }
+    document.getElementById('einl-nr').value = '';
+    // Freien Platz aktualisieren
+    const freie = await api('/api/einlagerung/freie-plaetze');
+    const platzInput = document.getElementById('einl-platz');
+    if (freie.length > 0) {
+      platzInput.value = freie[0].bezeichnung;
+      platzInput.placeholder = freie[0].bezeichnung;
+    }
+    document.getElementById('einl-nr').focus();
+  } catch (e) { toast(e.message, 'error'); document.getElementById('einl-nr').focus(); }
 }
 
 // ═══ DIREKTANLIEFERUNG ════════════════════════════════════════════════════════
@@ -856,10 +872,10 @@ async function pgPickliste() {
     <div id="pick-content">
       ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine aktive Pickliste vorhanden. Klicke "Neuer Abruf" um eine Liste zu importieren.</p>' :
       aktuell.map(item => `
-        <div class="picklist-item ${item.abgehakt ? 'done' : ''}" data-nr="${item.paletten_nr}">
-          <div class="check" onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')">${item.abgehakt ? '✓' : ''}</div>
+        <div class="picklist-item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'already-out' : ''}" data-nr="${item.paletten_nr}">
+          <div class="check" ${item.bereits_ausgelagert ? 'style="background:#fee;color:#c00;pointer-events:none"' : `onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')"`}>${item.bereits_ausgelagert ? '✗' : (item.abgehakt ? '✓' : '')}</div>
           <div class="nr">${item.paletten_nr}</div>
-          <div class="platz">${item.aktueller_platz || item.lagerplatz || '?'}</div>
+          <div class="platz">${item.bereits_ausgelagert ? '<span style="color:var(--danger);font-size:11px">Bereits ausgelagert</span>' : (item.aktueller_platz || item.lagerplatz || '?')}</div>
           <div class="info">Pos. ${item.lfd_nummer}</div>
         </div>
       `).join('')}
@@ -868,11 +884,11 @@ async function pgPickliste() {
       ${aktuell.length === 0 ? '' : `
       <div class="card">
         <div class="table-wrap"><table><thead><tr><th>Pos.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Status</th></tr></thead><tbody>
-          ${aktuell.map(item => `<tr style="${item.abgehakt ? 'background:#e8f8f0' : ''}">
+          ${aktuell.map(item => `<tr style="${item.abgehakt ? 'background:#e8f8f0' : ''} ${item.bereits_ausgelagert ? 'opacity:0.5;background:#fee' : ''}">
             <td>${item.lfd_nummer}</td>
             <td><strong>${item.paletten_nr}</strong></td>
-            <td>${item.aktueller_platz || item.lagerplatz || '?'}</td>
-            <td>${item.abgehakt ? '<span class="badge badge-success">Gepickt</span>' : '<span class="badge badge-warning">Offen</span>'}</td>
+            <td>${item.bereits_ausgelagert ? '<span style="color:var(--danger)">Bereits ausgelagert</span>' : (item.aktueller_platz || item.lagerplatz || '?')}</td>
+            <td>${item.bereits_ausgelagert ? '<span class="badge badge-danger">Ausgelagert</span>' : (item.abgehakt ? '<span class="badge badge-success">Gepickt</span>' : '<span class="badge badge-warning">Offen</span>')}</td>
           </tr>`).join('')}
         </tbody></table></div>
       </div>`}
@@ -893,6 +909,33 @@ async function togglePickItem(el, abrufId, nr) {
   item.classList.toggle('done');
   el.textContent = done ? '✓' : '';
   await api('/api/pickliste/abhaken', { method: 'POST', body: { abruf_id: abrufId, paletten_nr: nr, abgehakt: done } });
+  updatePickCounter();
+}
+
+function updatePickCounter() {
+  const alle = document.querySelectorAll('.picklist-item');
+  const gepickt = document.querySelectorAll('.picklist-item.done');
+  const total = alle.length;
+  const done = gepickt.length;
+  const bar = document.querySelector('.card .progress-bar .fill');
+  const counter = document.querySelector('.card span[style*="font-size:13px"]');
+  if (counter) counter.innerHTML = `<strong>${done}</strong> / ${total} gepickt`;
+  if (bar) { bar.style.width = Math.round(done/total*100)+'%'; bar.className = `fill ${done===total?'green':'yellow'}`; }
+  const actionsDiv = counter?.closest('div');
+  if (!actionsDiv) return;
+  const existingBtn = actionsDiv.querySelector('.btn-success');
+  if (done > 0 && !existingBtn) {
+    const qrBtn = actionsDiv.querySelector('.btn-secondary');
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-success';
+    btn.onclick = picklisteAbschliessen;
+    btn.textContent = `Gepickte auslagern + Lieferschein (${done} Pal.)`;
+    actionsDiv.insertBefore(btn, qrBtn);
+  } else if (done > 0 && existingBtn) {
+    existingBtn.textContent = `Gepickte auslagern + Lieferschein (${done} Pal.)`;
+  } else if (done === 0 && existingBtn) {
+    existingBtn.remove();
+  }
 }
 
 async function picklisteQR() {
@@ -1328,7 +1371,8 @@ async function loadRegal(regal) {
         else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr; }
         else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
         else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
-        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}">${label}</div>`;
+        const hoehe = p.max_hoehe_cm ? `<span class="lp-hoehe">${p.max_hoehe_cm}</span>` : '';
+        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}${p.max_hoehe_cm ? ' (max ' + p.max_hoehe_cm + 'cm)' : ''}">${label}${hoehe}</div>`;
       }).join('')}
     </div>`;
 
@@ -1392,6 +1436,7 @@ async function lpBulkUmlagern() {
 
 async function showPlatzDetail(id) {
   const p = await api(`/api/lagerplaetze/${id}`);
+  const isGesperrt = p.belegt && p.bemerkung?.includes('Nicht nutzbar');
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
@@ -1401,9 +1446,10 @@ async function showPlatzDetail(id) {
       <table style="width:100%;font-size:13px">
         <tr><td style="color:var(--text-muted)">Bereich</td><td>${p.bereich}</td></tr>
         <tr><td style="color:var(--text-muted)">Ebene</td><td>${p.ebene}</td></tr>
+        <tr><td style="color:var(--text-muted)">Max. Höhe</td><td>${p.max_hoehe_cm ? p.max_hoehe_cm + ' cm' : '—'}</td></tr>
         <tr><td style="color:var(--text-muted)">Typ</td><td>${p.typ}</td></tr>
         <tr><td style="color:var(--text-muted)">Stapelbar</td><td>${p.stapelbar ? 'Ja (.a/.b)' : 'Nein'}</td></tr>
-        <tr><td style="color:var(--text-muted)">Status</td><td>${p.belegt ? '<span class="badge badge-danger">Belegt</span>' : '<span class="badge badge-success">Frei</span>'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Status</td><td>${isGesperrt ? '<span class="badge badge-warning">Gesperrt (×)</span>' : (p.belegt ? '<span class="badge badge-danger">Belegt</span>' : '<span class="badge badge-success">Frei</span>')}</td></tr>
         ${p.paletten_nr ? `
         <tr><td colspan="2" style="padding-top:12px"><strong>Palette</strong></td></tr>
         <tr><td style="color:var(--text-muted)">Paletten-Nr.</td><td><strong>${p.paletten_nr}</strong> <span class="badge badge-${p.nummern_typ === 'EB' ? 'eb' : 'kw'}">${p.nummern_typ}</span></td></tr>
@@ -1417,10 +1463,22 @@ async function showPlatzDetail(id) {
       <div class="modal-actions">
         ${p.paletten_nr ? `<button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();editPalette(${p.palette_id})">Bearbeiten</button>` : ''}
         ${p.paletten_nr ? `<a class="btn btn-secondary" href="/api/berichte/auslagerungsbeleg/${p.paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
+        ${!p.paletten_nr ? `<button class="btn btn-sm ${isGesperrt ? 'btn-success' : 'btn-warning'}" onclick="togglePlatzSperre(${p.id}, ${isGesperrt ? 'false' : 'true'})">${isGesperrt ? 'Entsperren' : 'Sperren (×)'}</button>` : ''}
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+async function togglePlatzSperre(platzId, sperren) {
+  try {
+    await api(`/api/lagerplaetze/${platzId}/sperre`, { method: 'POST', body: { gesperrt: sperren } });
+    toast(sperren ? 'Platz gesperrt' : 'Platz entsperrt', 'success');
+    document.querySelector('.modal-overlay')?.remove();
+    const activeRegal = document.querySelector('.lagerplan-tabs .active')?.dataset?.regal;
+    if (activeRegal) loadRegal(activeRegal);
+  } catch (e) { toast(e.message, 'error'); }
+}
 }
 
 // ═══ BEWEGUNGEN ══════════════════════════════════════════════════════════════
@@ -1563,6 +1621,11 @@ async function showKundeDetail(id) {
       <div class="stat-card"><div class="label">Kontingent</div><div class="value">${kunde.kontingent_plaetze || '—'}</div></div>
       <div class="stat-card ${kunde.ueberbelegung > 0 ? 'warning' : ''}"><div class="label">Überbelegung</div><div class="value">${kunde.ueberbelegung}</div></div>
     </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><h3>Adresse</h3><button class="btn btn-sm btn-secondary" onclick="editKundeAdresse(${kunde.id})">✎ Bearbeiten</button></div>
+      <p style="font-size:13px;white-space:pre-line;color:${kunde.adresse ? 'var(--text)' : 'var(--text-muted)'}">${kunde.adresse || 'Keine Adresse hinterlegt — für Lieferscheine bitte hinterlegen.'}</p>
+    </div>
     
     ${monatsStats.length > 0 ? `
     <div class="card">
@@ -1618,12 +1681,40 @@ function showNeuerKunde() {
       <div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="nk-name"></div><div class="form-group"><label>Kürzel</label><input type="text" id="nk-kuerzel"></div></div>
       <div class="form-row"><div class="form-group"><label>Nr.-Prefix</label><input type="text" id="nk-prefix" placeholder="z.B. EB, KW"></div><div class="form-group"><label>Format</label><input type="text" id="nk-format" placeholder="z.B. 6-stellig"></div></div>
       <div class="form-group"><label>Kontingent (Stellplätze)</label><input type="number" id="nk-kont" value="0"></div>
+      <div class="form-group"><label>Adresse (für Lieferschein)</label><textarea id="nk-adresse" rows="3" placeholder="Firmenname&#10;Straße Nr.&#10;PLZ Ort"></textarea></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
         <button class="btn btn-primary" onclick="saveNeuerKunde()">Speichern</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+function editKundeAdresse(id) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Adresse bearbeiten</h2>
+      <div class="form-group"><label>Adresse (für Lieferschein)</label><textarea id="ka-adresse" rows="4" placeholder="Firmenname&#10;Straße Nr.&#10;PLZ Ort&#10;Land" style="font-size:14px"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveKundeAdresse(${id})">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  api(`/api/kunden/${id}`).then(d => { document.getElementById('ka-adresse').value = d.kunde.adresse || ''; });
+}
+
+async function saveKundeAdresse(id) {
+  const adresse = document.getElementById('ka-adresse').value.trim();
+  try {
+    await api(`/api/kunden/${id}/adresse`, { method: 'PUT', body: { adresse } });
+    toast('Adresse gespeichert', 'success');
+    document.querySelector('.modal-overlay')?.remove();
+    showKundeDetail(id);
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function saveNeuerKunde() {

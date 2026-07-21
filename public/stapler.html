@@ -148,9 +148,9 @@
       background: #2a2a2a;
       border: 1px solid #3a3a3a;
       border-radius: 8px;
-      padding: 10px;
+      padding: 12px;
       margin-bottom: 16px;
-      max-height: 200px;
+      max-height: 280px;
       overflow-y: auto;
       display: none;
     }
@@ -381,8 +381,18 @@
       const regale = plaetze.filter(p => p.typ !== 'Gang' && p.typ !== 'Block');
       let html = '';
 
-      // Feste Schnellauswahl: Blöcke + Gänge (immer anzeigen, klickbar)
-      html += '<div style="margin-bottom:10px">';
+      // Regalplätze ZUERST (oben)
+      if (regale.length > 0) {
+        html += '<div style="font-size:11px;color:#4caf50;margin-bottom:6px;font-weight:600">REGALPLÄTZE (frei)</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">';
+        html += regale.map(p =>
+          `<span class="platz-chip" style="padding:10px 14px;font-size:14px" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' <span style="opacity:0.7;font-size:11px">(' + p.max_hoehe_cm + 'cm)</span>' : ''}</span>`
+        ).join('');
+        html += '</div>';
+      }
+
+      // Dann Blöcke + Gänge (unten)
+      html += '<div style="margin-top:8px;border-top:1px solid #333;padding-top:8px">';
       html += '<div style="font-size:11px;color:#e67e22;margin-bottom:6px;font-weight:600">BLOCKLAGER</div>';
       html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
       html += ['BlockE','BlockF'].map(b =>
@@ -390,18 +400,12 @@
       ).join('');
       html += '</div>';
       html += '<div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600">GÄNGE (Zwischenlager)</div>';
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
       html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
         `<span class="platz-chip" style="border-color:#888;color:#888;padding:10px 14px;font-size:13px" onclick="fillPlatz('${g}')">${g}</span>`
       ).join('');
       html += '</div></div>';
 
-      if (regale.length > 0) {
-        html += '<div style="font-size:11px;color:#4caf50;margin-bottom:4px;font-weight:600">REGALPLÄTZE (frei)</div>';
-        html += regale.map(p =>
-          `<span class="platz-chip" onclick="fillPlatz('${p.bezeichnung}')">${p.bezeichnung}${p.max_hoehe_cm ? ' <span style="opacity:0.7;font-size:11px">(' + p.max_hoehe_cm + 'cm)</span>' : ''}</span>`
-        ).join('');
-      }
       box.innerHTML = html;
     }
 

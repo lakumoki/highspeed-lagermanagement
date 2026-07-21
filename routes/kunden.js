@@ -84,4 +84,10 @@ router.put('/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+router.put('/:id/adresse', (req, res) => {
+  const { adresse } = req.body;
+  db.prepare('UPDATE kunden SET adresse = ? WHERE id = ?').run(adresse || null, req.params.id);
+  res.json({ ok: true });
+});
+
 module.exports = router;

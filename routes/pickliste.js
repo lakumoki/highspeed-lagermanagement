@@ -193,7 +193,10 @@ router.post('/ausfuehren', (req, res) => {
 // Aktuelle Abrufliste mit Status
 router.get('/aktuell', (req, res) => {
   const items = db.prepare(`
-    SELECT a.*, p.lagerplatz_bezeichnung as aktueller_platz, k.name as kunde_name
+    SELECT a.*, 
+      p.lagerplatz_bezeichnung as aktueller_platz, 
+      k.name as kunde_name,
+      CASE WHEN p.id IS NULL AND EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 1) THEN 1 ELSE 0 END as bereits_ausgelagert
     FROM abrufliste a
     LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0
     LEFT JOIN kunden k ON a.kunde_id = k.id
@@ -272,24 +275,35 @@ router.get('/lieferschein/:id', (req, res) => {
   if (!ls) return res.status(404).json({ error: 'Lieferschein nicht gefunden' });
 
   const paletten = JSON.parse(ls.paletten_details || '[]');
+  const kunde = ls.kunde_id ? db.prepare('SELECT name, adresse FROM kunden WHERE id = ?').get(ls.kunde_id) : null;
   const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${ls.beleg_nr}.pdf"`);
   doc.pipe(res);
 
+  // Logo (if available)
+  const path = require('path');
+  const logoPath = path.join(__dirname, '..', 'public', 'img', 'logo-highspeed.png');
+  try { const fs = require('fs'); if (fs.existsSync(logoPath)) doc.image(logoPath, 40, 25, { height: 35 }); } catch(e) {}
+
   // Absender
-  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED', 40, 30);
+  const absY = 30;
+  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, absY);
   doc.fontSize(8).font('Helvetica');
-  doc.text('Inh. Martin Klüber', 40, 44);
-  doc.text('Otto-Hahn-Str. 3 a · DE-22946 Trittau', 40, 55);
-  doc.text('Tel: +49 (0) 4154 - 709 671 · Fax: +49 (0) 4154 - 709 672', 40, 66);
-  doc.text('USt.-Nr.: 30 141 02003 · USt.-ID.-Nr.: DE 182818761', 40, 77);
+  doc.text('Inh. Martin Klüber', 40, absY + 14);
+  doc.text('Otto-Hahn-Str. 3 a · DE-22946 Trittau', 40, absY + 25);
+  doc.text('Tel: +49 (0) 4154 - 709 671 · Fax: +49 (0) 4154 - 709 672', 40, absY + 36);
+  doc.text('USt.-Nr.: 30 141 02003 · USt.-ID.-Nr.: DE 182818761', 40, absY + 47);
 
   // Empfänger
-  doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 30);
-  doc.font('Helvetica').text(ls.kunde_name || '—', 320, 43);
+  doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, absY);
+  doc.font('Helvetica');
+  const empfAddr = kunde?.adresse || ls.kunde_name || '—';
+  empfAddr.split('\n').forEach((line, i) => {
+    doc.text(line.trim(), 320, absY + 13 + (i * 11));
+  });
 
-  let y = 100;
+  let y = 105;
   doc.fontSize(13).font('Helvetica-Bold').text('LIEFERSCHEIN / AUSLAGERUNGSBELEG', 40, y);
   if (ls.lkw_gesamt > 1) doc.fontSize(10).font('Helvetica').text(`LKW ${ls.lkw_nr} von ${ls.lkw_gesamt}`, 430, y);
   y += 20;
@@ -324,22 +338,28 @@ router.get('/lieferschein/:id', (req, res) => {
     doc.text(p.charge || '—', 335, y, { width: 120 });
     doc.text(p.kunde || '—', 460, y, { width: 95 });
     y += 13;
-    if (y > 720) { doc.addPage(); y = 40; }
+    if (y > 700) { doc.addPage(); y = 40; }
   }
 
   y += 10;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
-  y += 30;
+  y += 25;
 
+  // Empfangsbestätigung
   doc.font('Helvetica').fontSize(9);
+  doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
+  y += 20;
+
   doc.text('Unterschrift Absender/Lager:', 40, y);
   doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+  y += 35;
+  doc.fontSize(8).text('Datum: _______________', 300, y);
 
-  doc.fontSize(7).text('HIGHSPEED · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
+  doc.fontSize(7).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
   doc.end();
 });
 

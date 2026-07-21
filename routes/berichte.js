@@ -81,11 +81,16 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.moveTo(50, y).lineTo(545, y).stroke();
   y += 20;
   
-  doc.fontSize(9).text('Unterschrift Absender/Lager:', 50, y);
+  doc.fontSize(9).text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 50, y);
+  y += 20;
+
+  doc.text('Unterschrift Absender/Lager:', 50, y);
   doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke();
   
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 40).lineTo(500, y + 40).stroke();
+  y += 45;
+  doc.fontSize(8).text('Datum: _______________', 300, y);
   
   doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 50, 780, { align: 'center', width: 495 });
   
@@ -202,11 +207,15 @@ router.post('/sammelbeleg', (req, res) => {
     y += 30;
 
     doc.font('Helvetica').fontSize(9);
+    doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
+    y += 20;
     doc.text('Unterschrift Absender/Lager:', 40, y);
     doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
 
     doc.text('Unterschrift Empfänger:', 300, y);
     doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+    y += 35;
+    doc.fontSize(8).text('Datum: _______________', 300, y);
 
     doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
   }
