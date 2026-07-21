@@ -228,7 +228,7 @@
 
       let html = `
         <div class="header">
-          <h1>${isDirekt ? 'Direktanlieferung' : 'Einlagerung'}</h1>
+          <h1>${isDirekt ? 'Direkteinlagerung' : 'Einlagerung'}</h1>
           <span class="badge">${erledigt}/${gesamt}</span>
         </div>
         ${isDirekt ? `<div style="background:#e67e22;color:#fff;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;text-align:center">3 Bewegungen pro Palette (Entladung + Handling + Einlagerung)${d.direkt_id ? ' — ID: ' + d.direkt_id : ''}${d.lkw_nr ? ' — LKW ' + d.lkw_nr : ''}</div>` : ''}

@@ -70,7 +70,7 @@ function renderApp() {
           <a href="#" data-page="suche"><span class="icon">⌕</span><span>Suche</span></a>
           
           <div class="nav-section">Lagerverwaltung</div>
-          <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direktanlieferung</span></a>
+          <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direkteinlagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Abruf / Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
           <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
@@ -117,7 +117,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirektanlieferung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirekteinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -141,7 +141,7 @@ async function pgDashboard() {
       <div class="card-header"><h3>Schnellaktionen</h3></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         <button class="btn btn-primary btn-lg" onclick="navigate('einlagerung')" style="justify-content:center">↓ Einlagern</button>
-        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">⬇ Direktanlieferung</button>
+        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">⬇ Direkteinlagerung</button>
         <button class="btn btn-danger btn-lg" onclick="navigate('auslagerung')" style="justify-content:center;background:var(--danger)">↑ Auslagern</button>
         <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf</button>
         <button class="btn btn-lg" onclick="navigate('musterung')" style="justify-content:center;background:#8e44ad;color:#fff">◈ Musterzug</button>
@@ -369,6 +369,7 @@ async function erstelleStaplerauftrag() {
             <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Tipp: Klick auf den Link kopiert ihn automatisch.</p>
             <button class="btn btn-sm btn-secondary" style="margin-top:10px" onclick="window.open('${data.url}','_blank')">Seite öffnen</button>
             <button class="btn btn-sm btn-secondary" style="margin-top:10px;margin-left:6px" onclick="druckeQR()">QR drucken</button>
+            <a class="btn btn-sm btn-primary" style="margin-top:10px;margin-left:6px" href="/api/berichte/einlagerungsbeleg/${data.id}" target="_blank">Einlagerungsbeleg PDF</a>
           </div>
         </div>
       </div>`;
@@ -526,19 +527,19 @@ async function doEinlagern() {
 }
 
 // ═══ DIREKTANLIEFERUNG ════════════════════════════════════════════════════════
-async function pgDirektanlieferung() {
+async function pgDirekteinlagerung() {
   const pc = document.getElementById('page-content');
   const kunden = await api('/api/kunden');
 
   pc.innerHTML = `
-    <div class="page-header"><h1>Direktanlieferung</h1><span style="color:var(--text-muted);font-size:13px">3 Bewegungen pro Palette (LKW-Entladung + Handling + Einlagerung)</span></div>
+    <div class="page-header"><h1>Direkteinlagerung</h1><span style="color:var(--text-muted);font-size:13px">3 Bewegungen pro Palette (LKW-Entladung + Handling + Einlagerung)</span></div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="btn btn-primary btn-sm" id="dtab-neu" onclick="direktTab('neu')">Neue Direktanlieferung</button>
+      <button class="btn btn-primary btn-sm" id="dtab-neu" onclick="direktTab('neu')">Neue Direkteinlagerung</button>
       <button class="btn btn-secondary btn-sm" id="dtab-liste" onclick="direktTab('liste')">Übersicht</button>
     </div>
     <div id="direkt-tab-neu">
       <div class="card">
-        <h3 style="margin-bottom:16px">Neue Direktanlieferung erstellen</h3>
+        <h3 style="margin-bottom:16px">Neue Direkteinlagerung erstellen</h3>
         <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">Ware kommt per LKW an. EB-Nummern eingeben, QR-Code für Staplerfahrer generieren. Pro Palette werden automatisch 3 Bewegungen gebucht.</p>
         <div class="form-row">
           <div class="form-group">
@@ -569,19 +570,19 @@ async function pgDirektanlieferung() {
           </div>
           <div id="da-freie-liste" style="max-height:200px;overflow-y:auto"></div>
         </div>
-        <button class="btn btn-primary btn-lg" onclick="erstelleDirektanlieferung()">Auftrag erstellen & QR generieren</button>
+        <button class="btn btn-primary btn-lg" onclick="erstelleDirekteinlagerung()">Auftrag erstellen & QR generieren</button>
         <button class="btn btn-lg" onclick="direktWareneingang()" style="background:#e67e22;color:#fff;margin-left:10px">Wareneingang (alle zwischenlagern)</button>
       </div>
       <div id="da-ergebnis"></div>
     </div>
     <div id="direkt-tab-liste" style="display:none">
       <div class="card" id="direkt-liste-box">
-        <h3 style="margin-bottom:16px">Direktanlieferungen</h3>
+        <h3 style="margin-bottom:16px">Direkteinlagerungen</h3>
         <p style="color:var(--text-muted)">Lade...</p>
       </div>
     </div>`;
 
-  loadDirektanlieferungen();
+  loadDirekteinlagerungen();
   // Letzten Kunden vorbelegen
   const lastKunde = localStorage.getItem('direkt_kunde_id');
   if (lastKunde) { const sel = document.getElementById('da-kunde'); if (sel) sel.value = lastKunde; }
@@ -614,7 +615,7 @@ async function zeigeFreiePlaetzeDirekt() {
   }).join('')}</div>`;
 }
 
-async function erstelleDirektanlieferung() {
+async function erstelleDirekteinlagerung() {
   const sel = document.getElementById('da-kunde');
   const kundeId = sel.value;
   localStorage.setItem('direkt_kunde_id', kundeId);
@@ -647,7 +648,7 @@ async function erstelleDirektanlieferung() {
 
     document.getElementById('da-ergebnis').innerHTML = `
       <div class="card" style="margin-top:16px;border:2px solid var(--success)">
-        <h3 style="color:var(--success);margin-bottom:12px">✓ Direktanlieferung erstellt — ${data.positionen} Paletten (${data.positionen * 3} Bewegungen)</h3>
+        <h3 style="color:var(--success);margin-bottom:12px">✓ Direkteinlagerung erstellt — ${data.positionen} Paletten (${data.positionen * 3} Bewegungen)</h3>
         ${data.direkt_id ? `<p style="margin-bottom:8px"><strong>ID:</strong> ${data.direkt_id}</p>` : ''}
         <p style="margin-bottom:14px;font-size:13px;color:var(--text-muted)">Der Staplerfahrer scannt den QR-Code und trägt die Lagerplätze ein:</p>
         <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
@@ -660,13 +661,14 @@ async function erstelleDirektanlieferung() {
             <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Klick auf den Link kopiert ihn. Pro Palette: LKW-Entladung + Handling + Einlagerung.</p>
             <button class="btn btn-sm btn-secondary" style="margin-top:10px" onclick="window.open('${data.url}','_blank')">Seite öffnen</button>
             <button class="btn btn-sm btn-secondary" style="margin-top:10px;margin-left:6px" onclick="druckeQRDirekt()">QR drucken</button>
+            <a class="btn btn-sm btn-primary" style="margin-top:10px;margin-left:6px" href="/api/berichte/einlagerungsbeleg/${data.id}" target="_blank">Einlagerungsbeleg PDF</a>
           </div>
         </div>
       </div>`;
 
     generateQRInElement('da-qr-box', data.url);
     document.getElementById('da-nummern').value = '';
-    loadDirektanlieferungen();
+    loadDirekteinlagerungen();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -715,7 +717,7 @@ async function direktWareneingang() {
       </div>`;
 
     document.getElementById('da-nummern').value = '';
-    loadDirektanlieferungen();
+    loadDirekteinlagerungen();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -723,23 +725,23 @@ function druckeQRDirekt() {
   const qr = document.getElementById('da-qr-box');
   if (!qr) return;
   const win = window.open('', '_blank');
-  win.document.write(`<html><head><title>QR-Code Direktanlieferung</title><style>body{text-align:center;padding:40px;font-family:sans-serif}img{width:250px;height:250px}</style></head><body><h2>Direktanlieferung</h2><p>QR-Code scannen — 3 Bewegungen pro Palette:</p>${qr.innerHTML}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  win.document.write(`<html><head><title>QR-Code Direkteinlagerung</title><style>body{text-align:center;padding:40px;font-family:sans-serif}img{width:250px;height:250px}</style></head><body><h2>Direkteinlagerung</h2><p>QR-Code scannen — 3 Bewegungen pro Palette:</p>${qr.innerHTML}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
   win.document.close();
 }
 
-async function loadDirektanlieferungen() {
+async function loadDirekteinlagerungen() {
   const box = document.getElementById('direkt-liste-box');
   if (!box) return;
   try {
     const liste = await api('/api/direktanlieferung');
     if (liste.length === 0) {
-      box.innerHTML = `<h3 style="margin-bottom:16px">Direktanlieferungen</h3><p style="color:var(--text-muted)">Noch keine Direktanlieferungen erstellt.</p>`;
+      box.innerHTML = `<h3 style="margin-bottom:16px">Direkteinlagerungen</h3><p style="color:var(--text-muted)">Noch keine Direkteinlagerungen erstellt.</p>`;
       return;
     }
     box.innerHTML = `
-      <h3 style="margin-bottom:16px">Direktanlieferungen (${liste.length})</h3>
+      <h3 style="margin-bottom:16px">Direkteinlagerungen (${liste.length})</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>#</th><th>ID</th><th>Kunde</th><th>LKW</th><th>Erstellt</th><th>Fortschritt</th><th>Bew.</th><th>Status</th><th>QR</th></tr></thead>
+        <thead><tr><th>#</th><th>ID</th><th>Kunde</th><th>LKW</th><th>Erstellt</th><th>Fortschritt</th><th>Bew.</th><th>Status</th><th>QR</th><th>Beleg</th></tr></thead>
         <tbody>${liste.map(a => `
           <tr>
             <td>${a.id}</td>
@@ -751,10 +753,11 @@ async function loadDirektanlieferungen() {
             <td>${a.erledigt * 3}/${a.gesamt * 3}</td>
             <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : a.status === 'in_arbeit' ? 'badge-warning' : 'badge-info'}">${a.status}</span></td>
             <td><button class="btn btn-sm btn-secondary" onclick="zeigeAuftragQR('${a.token}')">QR</button></td>
+            <td><a class="btn btn-sm btn-primary" href="/api/berichte/einlagerungsbeleg/${a.id}" target="_blank">PDF</a></td>
           </tr>
         `).join('')}</tbody>
       </table></div>`;
-  } catch (e) { box.innerHTML = `<h3>Direktanlieferungen</h3><p style="color:var(--danger)">${e.message}</p>`; }
+  } catch (e) { box.innerHTML = `<h3>Direkteinlagerungen</h3><p style="color:var(--danger)">${e.message}</p>`; }
 }
 
 // ═══ AUSLAGERUNG ═════════════════════════════════════════════════════════════
@@ -1534,26 +1537,81 @@ async function loadBewegungen() {
 // ═══ KONTINGENT ══════════════════════════════════════════════════════════════
 async function pgKontingent() {
   const pc = document.getElementById('page-content');
-  const data = await api('/api/kontingent/1');
-  
+  const kunden = await api('/api/kunden');
+
   pc.innerHTML = `
-    <div class="page-header"><h1>Kontingent — ${data.kunde?.name || 'Panpharma'}</h1></div>
+    <div class="page-header"><h1>Kontingent</h1></div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <label style="font-size:13px;font-weight:600">Kunde:</label>
+        <select id="kont-kunde" onchange="loadKontingent(this.value)" style="padding:6px 12px;font-size:13px;border-radius:6px;border:1px solid var(--border)">
+          ${kunden.map(k => `<option value="${k.id}">${k.name} — Kontingent: ${k.kontingent_plaetze || 0} Plätze</option>`).join('')}
+        </select>
+        <button class="btn btn-sm btn-secondary" onclick="editKontingentPlaetze()">Kontingent anpassen</button>
+      </div>
+    </div>
+    <div id="kont-content"></div>`;
+
+  if (kunden.length) loadKontingent(kunden[0].id);
+}
+
+async function loadKontingent(kundeId) {
+  const data = await api(`/api/kontingent/${kundeId}`);
+  const box = document.getElementById('kont-content');
+  const aktBestand = data.monate[0]?.lagerbestand || '—';
+  const ueber = data.monate[0]?.saldo_ueberkapazitaet || 0;
+
+  box.innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${data.kunde?.kontingent_plaetze || 642}</div><div class="sub">Stellplätze</div></div>
-      <div class="stat-card"><div class="label">Akt. Bestand</div><div class="value">${data.monate[0]?.lagerbestand || '—'}</div></div>
-      <div class="stat-card ${(data.monate[0]?.saldo_ueberkapazitaet || 0) > 0 ? 'warning' : ''}"><div class="label">Überkapazität</div><div class="value">${data.monate[0]?.saldo_ueberkapazitaet || 0}</div><div class="sub">zu berechnen</div></div>
+      <div class="stat-card"><div class="label">Kontingent</div><div class="value">${data.kunde?.kontingent_plaetze || 0}</div><div class="sub">Stellplätze</div></div>
+      <div class="stat-card"><div class="label">Akt. Bestand</div><div class="value">${aktBestand}</div></div>
+      <div class="stat-card ${ueber > 0 ? 'warning' : ''}"><div class="label">Überkapazität</div><div class="value">${ueber}</div><div class="sub">zu berechnen</div></div>
     </div>
     <div class="card">
-      <div class="card-header"><h3>Monatsverlauf</h3></div>
+      <div class="card-header"><h3>Monatsverlauf — ${data.kunde?.name || ''}</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Monat</th><th>Kontingent</th><th>Bestand</th><th>Einlag.</th><th>Auslag.</th><th>Bew.</th><th>Traffic</th><th>Überkapaz.</th></tr></thead><tbody>
-        ${data.monate.slice(0, 24).map(m => `<tr>
+        ${data.monate.length > 0 ? data.monate.slice(0, 24).map(m => `<tr>
           <td>${m.monat}</td><td>${m.kontingent_plaetze || '—'}</td><td>${m.lagerbestand || '—'}</td>
           <td>${m.einlagerungen || 0}</td><td>${m.auslagerungen || 0}</td>
           <td>${m.bewegungen_gesamt || 0}</td><td>${m.traffic_ratio ? (m.traffic_ratio * 100).toFixed(1) + '%' : '—'}</td>
           <td>${m.saldo_ueberkapazitaet || 0}</td>
-        </tr>`).join('')}
+        </tr>`).join('') : '<tr><td colspan="8" style="color:var(--text-muted)">Noch keine Kontingent-Daten vorhanden. Kontingent über "Kontingent anpassen" festlegen.</td></tr>'}
       </tbody></table></div>
     </div>`;
+}
+
+async function editKontingentPlaetze() {
+  const kundeId = document.getElementById('kont-kunde').value;
+  const kunde = (await api('/api/kunden')).find(k => k.id == kundeId);
+  const aktKont = kunde?.kontingent_plaetze || 0;
+  const monat = new Date().toISOString().substring(0, 7);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Kontingent anpassen — ${kunde?.name || ''}</h2>
+      <div class="form-group"><label>Stellplätze (Kontingent)</label><input type="number" id="kp-plaetze" value="${aktKont}"></div>
+      <div class="form-group"><label>Gültig ab Monat</label><input type="month" id="kp-monat" value="${monat}"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveKontingent(${kundeId})">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveKontingent(kundeId) {
+  const plaetze = parseInt(document.getElementById('kp-plaetze').value) || 0;
+  const monat = document.getElementById('kp-monat').value;
+  try {
+    await api('/api/kunden/' + kundeId, { method: 'PUT', body: { kontingent_plaetze: plaetze, name: (await api('/api/kunden')).find(k => k.id == kundeId)?.name } });
+    await api(`/api/kontingent/${kundeId}`, { method: 'POST', body: { monat, kontingent_plaetze: plaetze } });
+    toast('Kontingent gespeichert', 'success');
+    document.querySelector('.modal-overlay')?.remove();
+    loadKontingent(kundeId);
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ═══ BERICHTE / PDF ══════════════════════════════════════════════════════════
@@ -1745,7 +1803,7 @@ async function pgProtokoll() {
           <option value="Einlagerung">Einlagerung</option>
           <option value="Auslagerung">Auslagerung</option>
           <option value="Umlagerung">Umlagerung</option>
-          <option value="Direktanlieferung">Direktanlieferung</option>
+          <option value="Direkteinlagerung">Direkteinlagerung</option>
           <option value="Musterzug">Musterzug</option>
           <option value="Zwischengelagert">Zwischengelagert</option>
           <option value="Rückgängig">Rückgängig</option>

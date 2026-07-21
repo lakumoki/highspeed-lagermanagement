@@ -300,4 +300,170 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.end();
 });
 
+// Einlagerungsbeleg / Sammelbeleg für Einlagerungen (Quittung für Fahrer)
+router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
+  const auftragId = parseInt(req.params.auftrag_id);
+  const auftrag = db.prepare(`
+    SELECT a.*, k.name as kunde_name, k.adresse as kunde_adresse
+    FROM einlagerungsauftraege a
+    LEFT JOIN kunden k ON k.id = a.kunde_id
+    WHERE a.id = ?
+  `).get(auftragId);
+
+  if (!auftrag) return res.status(404).json({ error: 'Auftrag nicht gefunden' });
+
+  const positionen = db.prepare(`
+    SELECT * FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? ORDER BY id
+  `).all(auftragId);
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${auftragId}`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
+  doc.pipe(res);
+
+  // Absender
+  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
+  doc.fontSize(8).font('Helvetica');
+  doc.text(`${ABSENDER.inhaber}`, 40, 44);
+  doc.text(`${ABSENDER.strasse} · ${ABSENDER.plz_ort}`, 40, 55);
+  doc.text(`${ABSENDER.tel} · ${ABSENDER.fax}`, 40, 66);
+  doc.text(ABSENDER.ust, 40, 77);
+
+  // Empfänger/Lieferant
+  doc.fontSize(9).font('Helvetica-Bold').text('Anlieferer / Kunde:', 320, 30);
+  doc.font('Helvetica');
+  const empfAddr = auftrag.kunde_adresse || auftrag.kunde_name || '—';
+  empfAddr.split('\n').forEach((line, i) => {
+    doc.text(line.trim(), 320, 43 + (i * 11));
+  });
+
+  let y = 105;
+  const isDirekt = auftrag.typ === 'direktanlieferung';
+  doc.fontSize(13).font('Helvetica-Bold').text(isDirekt ? 'EINLAGERUNGSBELEG (Direkteinlagerung)' : 'EINLAGERUNGSBELEG', 40, y);
+  y += 20;
+
+  doc.fontSize(9).font('Helvetica');
+  doc.text(`Beleg-Nr.: ${belegNr}`, 40, y);
+  doc.text(`Datum: ${new Date(auftrag.erstellt_am).toLocaleDateString('de-DE')}`, 300, y);
+  y += 13;
+  doc.text(`Paletten: ${positionen.length}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}${isDirekt ? ' | 3 Bew./Pal.' : ''}`, 40, y);
+  y += 15;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+
+  // Tabellenkopf
+  doc.fontSize(8).font('Helvetica-Bold');
+  doc.text('Nr.', 40, y, { width: 25 });
+  doc.text('Pal.-Nr.', 68, y, { width: 90 });
+  doc.text('Lagerplatz', 162, y, { width: 100 });
+  doc.text('Status', 266, y, { width: 70 });
+  doc.text('Bemerkung', 340, y, { width: 215 });
+  y += 13;
+  doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+
+  doc.font('Helvetica').fontSize(8);
+  for (let i = 0; i < positionen.length; i++) {
+    const p = positionen[i];
+    doc.text(String(i + 1), 40, y, { width: 25 });
+    doc.text(p.paletten_nr || '—', 68, y, { width: 90 });
+    doc.text(p.lagerplatz || 'Wareneingang', 162, y, { width: 100 });
+    doc.text(p.status === 'eingelagert' ? 'OK' : 'Offen', 266, y, { width: 70 });
+    doc.text(p.bemerkung || '', 340, y, { width: 215 });
+    y += 13;
+    if (y > 700) { doc.addPage(); y = 40; }
+  }
+
+  y += 10;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+  doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${positionen.length} Palette(n)${isDirekt ? ` — ${positionen.length * 3} Bewegungen` : ''}`, 40, y);
+  y += 25;
+
+  doc.font('Helvetica').fontSize(9);
+  doc.text('Sendung vollständig und in einwandfreiem Zustand übergeben.', 40, y);
+  y += 20;
+
+  doc.text('Unterschrift Empfänger/Lager:', 40, y);
+  doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+  doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
+  doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+  y += 35;
+  doc.fontSize(8).text('Datum: _______________', 300, y);
+
+  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
+  doc.end();
+});
+
+// Einzel-Einlagerungsbeleg (nach einzelner Einlagerung)
+router.post('/einlagerungsbeleg-einzel', (req, res) => {
+  const { paletten_nummern, kunde_id } = req.body;
+  if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
+    return res.status(400).json({ error: 'Palettennummern erforderlich' });
+  }
+
+  const kunde = db.prepare('SELECT name, adresse FROM kunden WHERE id = ?').get(kunde_id);
+  const paletten = [];
+  for (const nr of paletten_nummern) {
+    const p = db.prepare("SELECT p.*, l.bezeichnung as platz FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.geloescht = 0 ORDER BY p.id DESC LIMIT 1").get(nr);
+    paletten.push({ nr, platz: p?.platz || '?', artikel: p?.artikel_nr || '', charge: p?.chargen_nr || '' });
+  }
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
+  doc.pipe(res);
+
+  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
+  doc.fontSize(8).font('Helvetica');
+  doc.text(`${ABSENDER.inhaber}`, 40, 44);
+  doc.text(`${ABSENDER.strasse} · ${ABSENDER.plz_ort}`, 40, 55);
+  doc.text(`${ABSENDER.tel} · ${ABSENDER.fax}`, 40, 66);
+
+  doc.fontSize(9).font('Helvetica-Bold').text('Kunde:', 320, 30);
+  doc.font('Helvetica');
+  const addr = kunde?.adresse || kunde?.name || '—';
+  addr.split('\n').forEach((line, i) => { doc.text(line.trim(), 320, 43 + (i * 11)); });
+
+  let y = 100;
+  doc.fontSize(13).font('Helvetica-Bold').text('EINLAGERUNGSBELEG', 40, y);
+  y += 20;
+  doc.fontSize(9).font('Helvetica');
+  doc.text(`Beleg-Nr.: ${belegNr}`, 40, y);
+  doc.text(`Datum: ${new Date().toLocaleDateString('de-DE')}`, 300, y);
+  y += 13;
+  doc.text(`Paletten: ${paletten.length}`, 40, y);
+  y += 15;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+
+  doc.fontSize(8).font('Helvetica-Bold');
+  doc.text('Nr.', 40, y); doc.text('Pal.-Nr.', 68, y); doc.text('Lagerplatz', 165, y); doc.text('Artikel', 280, y); doc.text('Charge', 400, y);
+  y += 13;
+  doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+
+  doc.font('Helvetica').fontSize(8);
+  paletten.forEach((p, i) => {
+    doc.text(String(i + 1), 40, y); doc.text(p.nr, 68, y); doc.text(p.platz, 165, y); doc.text(p.artikel, 280, y); doc.text(p.charge, 400, y);
+    y += 13;
+    if (y > 700) { doc.addPage(); y = 40; }
+  });
+
+  y += 10;
+  doc.moveTo(40, y).lineTo(555, y).stroke();
+  y += 8;
+  doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
+  y += 25;
+  doc.font('Helvetica').fontSize(9).text('Sendung vollständig und in einwandfreiem Zustand übergeben.', 40, y);
+  y += 20;
+  doc.text('Unterschrift Empfänger/Lager:', 40, y);
+  doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+  doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
+  doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
+
+  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
+  doc.end();
+});
+
 module.exports = router;

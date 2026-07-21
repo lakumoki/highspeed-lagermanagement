@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 
-// POST / — Neue Direktanlieferung erstellen (delegiert an /api/auftraege mit typ=direktanlieferung)
+// POST / — Neue Direkteinlagerung erstellen (delegiert an /api/auftraege mit typ=direktanlieferung)
 router.post('/', (req, res) => {
   const { kunde_id, positionen, bemerkung, lkw_nr } = req.body;
 
@@ -38,7 +38,7 @@ router.post('/', (req, res) => {
   proxyReq.end();
 });
 
-// GET / — Alle Direktanlieferungen
+// GET / — Alle Direkteinlagerungen
 router.get('/', (req, res) => {
   const auftraege = db.prepare(`
     SELECT a.*, k.name as kunde_name,
@@ -54,16 +54,18 @@ router.get('/', (req, res) => {
   res.json(auftraege);
 });
 
-// GET /:id — Details einer Direktanlieferung
+// GET /:id — Details einer Direkteinlagerung
 router.get('/:id', (req, res) => {
+  const idParam = parseInt(req.params.id);
+  if (isNaN(idParam)) return res.status(400).json({ error: 'Ungültige ID' });
   const auftrag = db.prepare(`
     SELECT a.*, k.name as kunde_name
     FROM einlagerungsauftraege a
     LEFT JOIN kunden k ON k.id = a.kunde_id
     WHERE a.id = ? AND a.typ = 'direktanlieferung'
-  `).get(parseInt(req.params.id));
+  `).get(idParam);
 
-  if (!auftrag) return res.status(404).json({ error: 'Direktanlieferung nicht gefunden' });
+  if (!auftrag) return res.status(404).json({ error: 'Direkteinlagerung nicht gefunden' });
 
   const positionen = db.prepare(`
     SELECT * FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? ORDER BY id
