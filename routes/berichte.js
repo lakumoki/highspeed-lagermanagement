@@ -84,7 +84,7 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.fontSize(9).text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 50, y);
   y += 20;
 
-  doc.text('Unterschrift Absender/Lager:', 50, y);
+  doc.text('Datum: _______________', 50, y);
   doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke();
   
   doc.text('Unterschrift Empfänger:', 300, y);
@@ -209,7 +209,7 @@ router.post('/sammelbeleg', (req, res) => {
     doc.font('Helvetica').fontSize(9);
     doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
     y += 20;
-    doc.text('Unterschrift Absender/Lager:', 40, y);
+    doc.text('Datum: _______________', 40, y);
     doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
 
     doc.text('Unterschrift Empfänger:', 300, y);
@@ -347,7 +347,7 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.text(`Beleg-Nr.: ${belegNr}`, 40, y);
   doc.text(`Datum: ${new Date(auftrag.erstellt_am).toLocaleDateString('de-DE')}`, 300, y);
   y += 13;
-  doc.text(`Paletten: ${positionen.length}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}${isDirekt ? ' | 3 Bew./Pal.' : ''}`, 40, y);
+  doc.text(`Paletten: ${positionen.length}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}`, 40, y);
   y += 15;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
@@ -377,7 +377,7 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   y += 10;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
-  doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${positionen.length} Palette(n)${isDirekt ? ` — ${positionen.length * 3} Bewegungen` : ''}`, 40, y);
+  doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${positionen.length} Palette(n)`, 40, y);
   y += 25;
 
   doc.font('Helvetica').fontSize(9);

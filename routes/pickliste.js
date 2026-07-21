@@ -352,12 +352,10 @@ router.get('/lieferschein/:id', (req, res) => {
   doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
   y += 20;
 
-  doc.text('Unterschrift Absender/Lager:', 40, y);
+  doc.text('Datum: _______________', 40, y);
   doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
-  y += 35;
-  doc.fontSize(8).text('Datum: _______________', 300, y);
 
   doc.fontSize(7).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
   doc.end();

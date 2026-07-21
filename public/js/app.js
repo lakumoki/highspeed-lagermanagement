@@ -193,23 +193,55 @@ async function pgSuche() {
   document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 }
 
+let lastSearchResults = [];
+let searchSortCol = null;
+let searchSortDir = 1;
+
 async function doSearch() {
   const q = document.getElementById('search-input').value.trim();
   const typ = document.getElementById('search-typ').value;
   if (!q) return;
   
-  const results = await api(`/api/paletten/suche?q=${encodeURIComponent(q)}&typ=${typ}`);
+  lastSearchResults = await api(`/api/paletten/suche?q=${encodeURIComponent(q)}&typ=${typ}`);
+  searchSortCol = null;
+  searchSortDir = 1;
+  renderSearchResults();
+}
+
+function sortSearch(col) {
+  if (searchSortCol === col) { searchSortDir *= -1; }
+  else { searchSortCol = col; searchSortDir = 1; }
+  renderSearchResults();
+}
+
+function renderSearchResults() {
+  const results = [...lastSearchResults];
   const box = document.getElementById('search-results');
-  
   if (!results.length) { box.innerHTML = '<p style="color:var(--text-muted);padding:20px">Keine Ergebnisse gefunden.</p>'; return; }
-  
-  const aktiv = results.filter(r => !r.ausgelagert);
+
+  if (searchSortCol) {
+    results.sort((a, b) => {
+      const va = (a[searchSortCol] || '').toString().toLowerCase();
+      const vb = (b[searchSortCol] || '').toString().toLowerCase();
+      return va.localeCompare(vb, 'de', { numeric: true }) * searchSortDir;
+    });
+  }
+
   const ausgelagert = results.filter(r => r.ausgelagert);
+  const arrow = (col) => searchSortCol === col ? (searchSortDir === 1 ? ' ▲' : ' ▼') : '';
   
   box.innerHTML = `
     <div class="card">
       <div class="card-header"><h3>${results.length} Ergebnis${results.length !== 1 ? 'se' : ''}${ausgelagert.length > 0 ? ` <span style="font-size:12px;color:var(--text-muted)">(davon ${ausgelagert.length} ausgelagert)</span>` : ''}</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Pal.-Nr.</th><th>Typ</th><th>Lagerplatz</th><th>Artikel</th><th>Charge</th><th>Kunde</th><th>Status</th><th>Aktion</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr>
+        <th style="cursor:pointer" onclick="sortSearch('paletten_nr')">Pal.-Nr.${arrow('paletten_nr')}</th>
+        <th>Typ</th>
+        <th style="cursor:pointer" onclick="sortSearch('platz')">Lagerplatz${arrow('platz')}</th>
+        <th style="cursor:pointer" onclick="sortSearch('artikel_nr')">Artikel${arrow('artikel_nr')}</th>
+        <th style="cursor:pointer" onclick="sortSearch('chargen_nr')">Charge${arrow('chargen_nr')}</th>
+        <th style="cursor:pointer" onclick="sortSearch('kunde_name')">Kunde${arrow('kunde_name')}</th>
+        <th>Status</th><th>Aktion</th>
+      </tr></thead><tbody>
         ${results.map(r => `<tr style="${r.ausgelagert ? 'opacity:0.6;background:#f5f5f5' : ''}">
           <td><strong>${r.paletten_nr || r.bezeichnung || '—'}</strong></td>
           <td><span class="badge badge-${(r.nummern_typ || '').toLowerCase() === 'eb' ? 'eb' : 'kw'}">${r.nummern_typ || '—'}</span></td>
