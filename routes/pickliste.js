@@ -281,10 +281,10 @@ router.get('/lieferschein/:id', (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename="${ls.beleg_nr}.pdf"`);
   doc.pipe(res);
 
-  // Logo (if available)
+  // Logo (rechts oben)
   const path = require('path');
   const logoPath = path.join(__dirname, '..', 'public', 'img', 'logo-highspeed.png');
-  try { const fs = require('fs'); if (fs.existsSync(logoPath)) doc.image(logoPath, 40, 25, { height: 35 }); } catch(e) {}
+  try { const fs = require('fs'); if (fs.existsSync(logoPath)) doc.image(logoPath, 440, 25, { height: 28 }); } catch(e) {}
 
   // Absender
   const absY = 30;

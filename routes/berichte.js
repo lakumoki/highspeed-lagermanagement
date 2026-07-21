@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
 
 const ABSENDER = {
   firma: 'HIGHSPEED',
@@ -14,7 +16,13 @@ const ABSENDER = {
   email: 'mk@highspeedlogistik.de'
 };
 
+const LOGO_PATH = path.join(__dirname, '..', 'public', 'img', 'logo-highspeed.png');
+const HAS_LOGO = fs.existsSync(LOGO_PATH);
+
 function pdfAbsenderBlock(doc, x, y) {
+  if (HAS_LOGO) {
+    try { doc.image(LOGO_PATH, 440, y, { height: 28 }); } catch {}
+  }
   doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, x, y);
   doc.fontSize(8).font('Helvetica');
   doc.text(ABSENDER.inhaber, x, y + 14);
@@ -262,13 +270,16 @@ router.get('/monatsbericht-pdf', (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename="Monatsbericht_${kunde?.name || ''}_${von}_${bis}.pdf"`);
   doc.pipe(res);
 
+  // Logo
+  try { if (HAS_LOGO) doc.image(LOGO_PATH, 680, 18, { height: 40 }); } catch {}
+
   // Header
   doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Lagerbericht', 40, 30);
   doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
   doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
 
   if (kontingent) {
-    doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${bestand.c} | Überkapazität: ${Math.max(0, bestand.c - kontingent.kontingent_plaetze)}`, 400, 48);
+    doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${bestand.c} | Überkapazität: ${Math.max(0, bestand.c - kontingent.kontingent_plaetze)}`, 350, 60);
   }
 
   doc.moveTo(40, 78).lineTo(780, 78).stroke();
@@ -276,10 +287,10 @@ router.get('/monatsbericht-pdf', (req, res) => {
   // Tabellenkopf
   let y = 88;
   doc.fontSize(7).font('Helvetica-Bold');
-  doc.text('Datum', 40, y, { width: 65 });
-  doc.text('Typ', 108, y, { width: 80 });
-  doc.text('Anz.', 192, y, { width: 25 });
-  doc.text('Paletten-Nummern / Details', 220, y, { width: 560 });
+  doc.text('Datum', 40, y, { width: 55 });
+  doc.text('Typ', 98, y, { width: 60 });
+  doc.text('Anz.', 160, y, { width: 25 });
+  doc.text('Paletten-Nummern / Details', 188, y, { width: 590 });
   y += 12;
 
   doc.font('Helvetica').fontSize(7);
@@ -293,18 +304,22 @@ router.get('/monatsbericht-pdf', (req, res) => {
     else if (bew.typ === 'Extra Handling') sumExtra += anzahl;
     else if (bew.typ === 'Entladung') sumEntl += anzahl;
 
-    doc.text(d, 40, y, { width: 65 });
-    doc.text(bew.typ + (bew.handling_art ? ` (${bew.handling_art})` : ''), 108, y, { width: 80 });
-    doc.text(String(anzahl), 192, y, { width: 25 });
+    // Typ kürzen für Lesbarkeit
+    let typLabel = bew.typ;
+    if (bew.direktanlieferung_id) typLabel += ' (Direkt)';
+
+    doc.text(d, 40, y, { width: 55 });
+    doc.text(typLabel, 98, y, { width: 60 });
+    doc.text(String(anzahl), 160, y, { width: 25 });
     
     let details;
     if (bew.nummern) {
-      details = bew.nummern.join(', ') + (bew.bemerkung ? ' · ' + bew.bemerkung : '');
+      details = bew.nummern.join(', ');
     } else {
       details = [bew.paletten_nummern, bew.bemerkung].filter(Boolean).join(' · ');
     }
-    const detailLines = doc.heightOfString(details, { width: 555 });
-    doc.text(details, 220, y, { width: 555 });
+    const detailLines = doc.heightOfString(details, { width: 585 });
+    doc.text(details, 188, y, { width: 585 });
     y += Math.max(11, detailLines + 3);
 
     if (y > 540) { doc.addPage({ layout: 'landscape' }); y = 40; }
@@ -316,7 +331,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   y += 5;
   doc.font('Helvetica-Bold');
   doc.text('SUMME', 40, y);
-  doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 108, y, { width: 670 });
+  doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680 });
 
   doc.fontSize(6).font('Helvetica').text(`Generiert: ${new Date().toLocaleString('de-DE')}`, 40, 560, { width: 740, align: 'center' });
 
@@ -344,6 +359,9 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
+
+  // Logo
+  try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
 
   // Absender
   doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
@@ -440,6 +458,9 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
+
+  // Logo
+  try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
 
   doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
   doc.fontSize(8).font('Helvetica');
