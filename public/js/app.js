@@ -732,13 +732,6 @@ async function direktWareneingang() {
     }
   }
 
-  // Duplikat-Prüfung innerhalb der Liste
-  const dupsInList = nummern.filter((n, i) => nummern.indexOf(n) !== i);
-  if (dupsInList.length > 0) {
-    toast(`Duplikate in der Liste: ${[...new Set(dupsInList)].slice(0, 5).join(', ')}. Bitte korrigieren.`, 'error');
-    return;
-  }
-
   if (!confirm(`${nummern.length} Paletten direkt in den Wareneingang buchen?\n\nPro Palette werden 3 Bewegungen erzeugt.`)) return;
 
   try {
@@ -847,7 +840,7 @@ async function doAuslagern() {
         <div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px">
           <strong style="color:var(--success, #28a745)">✓ Auslagerung erfolgreich</strong>
           <p style="margin:8px 0 0;font-size:13px">${data.message}</p>
-          <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="window.open('/api/berichte/auslagerungsbeleg/${nummern[0]}','_blank')">PDF-Beleg öffnen</button>
+          <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="openSammelbeleg(['${nummern[0]}'])">PDF-Beleg öffnen</button>
         </div>`;
       document.getElementById('ausl-nr').value = '';
       document.getElementById('ausl-bem').value = '';
@@ -1534,14 +1527,21 @@ async function togglePlatzSperre(platzId, sperren) {
 // ═══ BEWEGUNGEN ══════════════════════════════════════════════════════════════
 async function pgBewegungen() {
   const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
   pc.innerHTML = `
     <div class="page-header"><h1>Bewegungen</h1></div>
     <div class="card">
       <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group"><label>Kunde</label>
+          <select id="bew-kunde">
+            <option value="">Alle Kunden</option>
+            ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
+          </select>
+        </div>
         <div class="form-group"><label>Von</label><input type="date" id="bew-von"></div>
         <div class="form-group"><label>Bis</label><input type="date" id="bew-bis"></div>
         <div class="form-group"><label>Typ</label>
-          <select id="bew-typ"><option value="">Alle</option><option value="Einlagerung">Einlagerung</option><option value="Auslagerung">Auslagerung</option><option value="Extra Handling">Extra Handling</option></select>
+          <select id="bew-typ"><option value="">Alle</option><option value="Einlagerung">Einlagerung</option><option value="Auslagerung">Auslagerung</option><option value="Entladung">Entladung</option><option value="Extra Handling">Extra Handling</option></select>
         </div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadBewegungen()">Filtern</button></div>
       </div>
@@ -1554,8 +1554,10 @@ async function loadBewegungen() {
   const von = document.getElementById('bew-von')?.value || '';
   const bis = document.getElementById('bew-bis')?.value || '';
   const typ = document.getElementById('bew-typ')?.value || '';
+  const kundeId = document.getElementById('bew-kunde')?.value || '';
   
-  let url = '/api/bewegungen?kunde_id=1&limit=100';
+  let url = `/api/bewegungen?limit=200`;
+  if (kundeId) url += `&kunde_id=${kundeId}`;
   if (von) url += `&von=${von}`;
   if (bis) url += `&bis=${bis}`;
   if (typ) url += `&typ=${encodeURIComponent(typ)}`;
@@ -1663,16 +1665,25 @@ async function saveKontingent(kundeId) {
 }
 
 // ═══ BERICHTE / PDF ══════════════════════════════════════════════════════════
-function pgBerichte() {
+async function pgBerichte() {
   const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
+  const now = new Date();
+  const monatsStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const monatsEnde = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()}`;
   pc.innerHTML = `
     <div class="page-header"><h1>Berichte & PDF-Export</h1></div>
     <div class="card">
       <h3 style="margin-bottom:16px">Monatsbericht (Abrechnungsdokument)</h3>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen im Zeitraum — identisch zur Excel-Struktur.</p>
-      <div class="form-row-3">
-        <div class="form-group"><label>Von</label><input type="date" id="ber-von" value="2026-01-01"></div>
-        <div class="form-group"><label>Bis</label><input type="date" id="ber-bis" value="2026-01-31"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Kunde</label>
+          <select id="ber-kunde">
+            ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Von</label><input type="date" id="ber-von" value="${monatsStart}"></div>
+        <div class="form-group"><label>Bis</label><input type="date" id="ber-bis" value="${monatsEnde}"></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genMonatsbericht()">PDF generieren</button></div>
       </div>
     </div>
@@ -1688,7 +1699,9 @@ function pgBerichte() {
 function genMonatsbericht() {
   const von = document.getElementById('ber-von').value;
   const bis = document.getElementById('ber-bis').value;
-  window.open(`/api/berichte/monatsbericht-pdf?kunde_id=1&von=${von}&bis=${bis}`, '_blank');
+  const kundeId = document.getElementById('ber-kunde').value;
+  if (!kundeId) { toast('Bitte Kunde auswählen', 'error'); return; }
+  window.open(`/api/berichte/monatsbericht-pdf?kunde_id=${kundeId}&von=${von}&bis=${bis}`, '_blank');
 }
 
 function genEinzelbeleg() {

@@ -45,13 +45,6 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Mindestens eine Palette erforderlich' });
   }
 
-  // Duplikat-Prüfung innerhalb der Liste
-  const nummern = positionen.map(p => (p.paletten_nr || '').trim()).filter(n => n);
-  const dupsInList = nummern.filter((n, i) => nummern.indexOf(n) !== i);
-  if (dupsInList.length > 0) {
-    return res.status(400).json({ error: `Duplikate in der Liste: ${[...new Set(dupsInList)].slice(0, 5).join(', ')}` });
-  }
-
   const token = crypto.randomUUID();
   const benutzer = req.session?.user?.benutzername || 'System';
   const auftragTyp = typ || 'standard';
@@ -291,8 +284,6 @@ router.post('/:token/zwischenlagern', (req, res) => {
   const transaction = db.transaction(() => {
     for (const pos of offene) {
       const nr = pos.paletten_nr;
-      const duplikat = db.prepare("SELECT id FROM paletten WHERE paletten_nr = ? AND ausgelagert = 0 AND geloescht = 0").get(nr);
-      if (duplikat) { skipped.push(nr); continue; }
 
       let nummernTyp = 'Sonstige';
       if (nr.match(/^\d{6}$/)) nummernTyp = 'EB';

@@ -233,12 +233,29 @@ router.get('/monatsbericht-pdf', (req, res) => {
   const kontingent = db.prepare('SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC LIMIT 1').get(kid);
   
   const bewegungen = db.prepare(`
-    SELECT datum, typ, anzahl, paletten_nummern, handling_art, bemerkung
+    SELECT datum, typ, anzahl, paletten_nummern, handling_art, bemerkung, direktanlieferung_id
     FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ?
     ORDER BY datum, id
   `).all(kid, von, bis);
 
   const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
+
+  // Direkteinlagerungen zusammenfassen (gleiche direktanlieferung_id + typ + datum)
+  const grouped = [];
+  const direktGroups = {};
+  for (const bew of bewegungen) {
+    if (bew.direktanlieferung_id) {
+      const key = `${bew.datum}|${bew.typ}|${bew.direktanlieferung_id}`;
+      if (!direktGroups[key]) {
+        direktGroups[key] = { ...bew, nummern: [], gesamtAnzahl: 0 };
+        grouped.push(direktGroups[key]);
+      }
+      direktGroups[key].nummern.push(bew.paletten_nummern);
+      direktGroups[key].gesamtAnzahl += bew.anzahl;
+    } else {
+      grouped.push(bew);
+    }
+  }
 
   const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape' });
   res.setHeader('Content-Type', 'application/pdf');
@@ -268,18 +285,24 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.font('Helvetica').fontSize(7);
   let sumEinl = 0, sumAusl = 0, sumExtra = 0, sumEntl = 0;
 
-  for (const bew of bewegungen) {
+  for (const bew of grouped) {
     const d = new Date(bew.datum).toLocaleDateString('de-DE');
-    if (bew.typ === 'Einlagerung') sumEinl += bew.anzahl;
-    else if (bew.typ === 'Auslagerung') sumAusl += bew.anzahl;
-    else if (bew.typ === 'Extra Handling') sumExtra += bew.anzahl;
-    else if (bew.typ === 'Entladung') sumEntl += bew.anzahl;
+    const anzahl = bew.gesamtAnzahl || bew.anzahl;
+    if (bew.typ === 'Einlagerung') sumEinl += anzahl;
+    else if (bew.typ === 'Auslagerung') sumAusl += anzahl;
+    else if (bew.typ === 'Extra Handling') sumExtra += anzahl;
+    else if (bew.typ === 'Entladung') sumEntl += anzahl;
 
     doc.text(d, 40, y, { width: 65 });
     doc.text(bew.typ + (bew.handling_art ? ` (${bew.handling_art})` : ''), 108, y, { width: 80 });
-    doc.text(String(bew.anzahl), 192, y, { width: 25 });
+    doc.text(String(anzahl), 192, y, { width: 25 });
     
-    const details = [bew.paletten_nummern, bew.bemerkung].filter(Boolean).join(' · ');
+    let details;
+    if (bew.nummern) {
+      details = bew.nummern.join(', ') + (bew.bemerkung ? ' · ' + bew.bemerkung : '');
+    } else {
+      details = [bew.paletten_nummern, bew.bemerkung].filter(Boolean).join(' · ');
+    }
     const detailLines = doc.heightOfString(details, { width: 555 });
     doc.text(details, 220, y, { width: 555 });
     y += Math.max(11, detailLines + 3);
