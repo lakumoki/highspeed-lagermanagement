@@ -248,12 +248,12 @@ router.get('/monatsbericht-pdf', (req, res) => {
 
   const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
 
-  // Direkteinlagerungen zusammenfassen (gleiche direktanlieferung_id + typ + datum)
+  // Direkteinlagerungen zusammenfassen (gleicher Typ + Datum → eine Zeile)
   const grouped = [];
   const direktGroups = {};
   for (const bew of bewegungen) {
     if (bew.direktanlieferung_id) {
-      const key = `${bew.datum}|${bew.typ}|${bew.direktanlieferung_id}`;
+      const key = `${bew.datum}|${bew.typ}`;
       if (!direktGroups[key]) {
         direktGroups[key] = { ...bew, nummern: [], gesamtAnzahl: 0 };
         grouped.push(direktGroups[key]);
