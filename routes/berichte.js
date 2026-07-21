@@ -288,9 +288,9 @@ router.get('/monatsbericht-pdf', (req, res) => {
   let y = 88;
   doc.fontSize(7).font('Helvetica-Bold');
   doc.text('Datum', 40, y, { width: 55 });
-  doc.text('Typ', 98, y, { width: 60 });
-  doc.text('Anz.', 160, y, { width: 25 });
-  doc.text('Paletten-Nummern / Details', 188, y, { width: 590 });
+  doc.text('Typ', 98, y, { width: 95 });
+  doc.text('Anz.', 196, y, { width: 25 });
+  doc.text('Paletten-Nummern / Details', 224, y, { width: 555 });
   y += 12;
 
   doc.font('Helvetica').fontSize(7);
@@ -304,13 +304,12 @@ router.get('/monatsbericht-pdf', (req, res) => {
     else if (bew.typ === 'Extra Handling') sumExtra += anzahl;
     else if (bew.typ === 'Entladung') sumEntl += anzahl;
 
-    // Typ kürzen für Lesbarkeit
     let typLabel = bew.typ;
-    if (bew.direktanlieferung_id) typLabel += ' (Direkt)';
+    if (bew.direktanlieferung_id) typLabel = 'D: ' + bew.typ;
 
-    doc.text(d, 40, y, { width: 55 });
-    doc.text(typLabel, 98, y, { width: 60 });
-    doc.text(String(anzahl), 160, y, { width: 25 });
+    doc.text(d, 40, y, { width: 55, lineBreak: false });
+    doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
+    doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
     
     let details;
     if (bew.nummern) {
@@ -318,8 +317,8 @@ router.get('/monatsbericht-pdf', (req, res) => {
     } else {
       details = [bew.paletten_nummern, bew.bemerkung].filter(Boolean).join(' · ');
     }
-    const detailLines = doc.heightOfString(details, { width: 585 });
-    doc.text(details, 188, y, { width: 585 });
+    const detailLines = doc.heightOfString(details, { width: 550 });
+    doc.text(details, 224, y, { width: 550 });
     y += Math.max(11, detailLines + 3);
 
     if (y > 540) { doc.addPage({ layout: 'landscape' }); y = 40; }
@@ -331,7 +330,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   y += 5;
   doc.font('Helvetica-Bold');
   doc.text('SUMME', 40, y);
-  doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680 });
+  doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680, lineBreak: false });
 
   doc.fontSize(6).font('Helvetica').text(`Generiert: ${new Date().toLocaleString('de-DE')}`, 40, 560, { width: 740, align: 'center' });
 
