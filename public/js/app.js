@@ -1482,7 +1482,6 @@ async function togglePlatzSperre(platzId, sperren) {
     if (activeRegal) loadRegal(activeRegal);
   } catch (e) { toast(e.message, 'error'); }
 }
-}
 
 // ═══ BEWEGUNGEN ══════════════════════════════════════════════════════════════
 async function pgBewegungen() {
