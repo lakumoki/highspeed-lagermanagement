@@ -1958,13 +1958,17 @@ async function savePalette(id) {
 // ═══ DOKUMENTENARCHIV ═════════════════════════════════════════════════════════
 async function pgDokumente() {
   const pc = document.getElementById('page-content');
-  const docs = await api('/api/pickliste/archiv');
+  const [docs, auftraege] = await Promise.all([
+    api('/api/pickliste/archiv'),
+    api('/api/auftraege')
+  ]);
 
   pc.innerHTML = `
-    <div class="page-header"><h1>Dokumentenarchiv</h1><p style="font-size:12px;color:var(--text-muted)">Alle generierten Lieferscheine & Belege</p></div>
-    <div class="card">
+    <div class="page-header"><h1>Dokumentenarchiv</h1><p style="font-size:12px;color:var(--text-muted)">Alle generierten Lieferscheine & Einlagerungsbelege</p></div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><h3>Lieferscheine / Auslagerungsbelege</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${docs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Noch keine Dokumente vorhanden</td></tr>' :
+        ${docs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Noch keine Lieferscheine vorhanden</td></tr>' :
         docs.map(d => `<tr>
           <td><strong>${d.beleg_nr}</strong></td>
           <td>${d.kunde_name || '—'}</td>
@@ -1973,6 +1977,23 @@ async function pgDokumente() {
           <td>${d.benutzer || '—'}</td>
           <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
           <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Einlagerungsbelege</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Direkt-ID</th><th>Typ</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Status</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
+        ${auftraege.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Noch keine Einlagerungsbelege vorhanden</td></tr>' :
+        auftraege.map(a => `<tr>
+          <td>${a.id}</td>
+          <td><strong>${a.direkt_id || '—'}</strong></td>
+          <td><span class="badge ${a.typ === 'direktanlieferung' ? 'badge-warning' : 'badge-info'}">${a.typ === 'direktanlieferung' ? 'Direkt' : 'Standard'}</span></td>
+          <td>${a.kunde_name || '—'}</td>
+          <td>${a.gesamt}</td>
+          <td>${a.lkw_nr || '—'}</td>
+          <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : 'badge-info'}">${a.status}</span></td>
+          <td>${a.erstellt_am ? new Date(a.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+          <td><a class="btn btn-sm btn-primary" href="/api/berichte/einlagerungsbeleg/${a.id}" target="_blank">PDF</a></td>
         </tr>`).join('')}
       </tbody></table></div>
     </div>`;

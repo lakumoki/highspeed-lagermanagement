@@ -123,7 +123,7 @@ router.get('/', (req, res) => {
     LEFT JOIN kunden k ON k.id = a.kunde_id
     ${where}
     ORDER BY a.erstellt_am DESC
-    LIMIT 50
+    LIMIT 200
   `).all(...params);
 
   res.json(auftraege);

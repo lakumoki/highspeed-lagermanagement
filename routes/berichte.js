@@ -347,7 +347,10 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.text(`Beleg-Nr.: ${belegNr}`, 40, y);
   doc.text(`Datum: ${new Date(auftrag.erstellt_am).toLocaleDateString('de-DE')}`, 300, y);
   y += 13;
-  doc.text(`Paletten: ${positionen.length}${auftrag.direkt_id ? ' | Direkt-ID: ' + auftrag.direkt_id : ''}`, 40, y);
+  let infoLine = `Paletten: ${positionen.length}`;
+  if (auftrag.direkt_id) infoLine += ` | Direkt-ID: ${auftrag.direkt_id}`;
+  if (auftrag.lkw_nr) infoLine += ` | LKW: ${auftrag.lkw_nr}`;
+  doc.text(infoLine, 40, y);
   y += 15;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
