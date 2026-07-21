@@ -98,7 +98,6 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 40).lineTo(500, y + 40).stroke();
   y += 45;
-  doc.fontSize(8).text('Datum: _______________', 300, y);
   
   doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 50, 780, { align: 'center', width: 495 });
   
@@ -223,7 +222,6 @@ router.post('/sammelbeleg', (req, res) => {
     doc.text('Unterschrift Empfänger:', 300, y);
     doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
     y += 35;
-    doc.fontSize(8).text('Datum: _______________', 300, y);
 
     doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
   }
