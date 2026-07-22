@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pickliste – Staplerfahrer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a1a; color: #fff; padding: 12px; }
+    h1 { font-size: 18px; text-align: center; margin-bottom: 12px; color: #f1c40f; }
+    .info { text-align: center; font-size: 13px; color: #aaa; margin-bottom: 16px; }
+    .item { background: #2a2a2a; border: 2px solid #444; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+    .item.done { border-color: #27ae60; background: #1a3a2a; opacity: 0.7; }
+    .item.notfound { border-color: #e74c3c; background: #3a1a1a; }
+    .item .nr { font-size: 20px; font-weight: 700; font-family: monospace; flex: 1; }
+    .item .platz { font-size: 14px; color: #f1c40f; font-weight: 600; }
+    .item .check { width: 36px; height: 36px; border-radius: 50%; background: #444; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
+    .item.done .check { background: #27ae60; }
+    .counter { text-align: center; font-size: 14px; color: #f1c40f; margin-bottom: 12px; font-weight: 600; }
+    .empty { text-align: center; color: #888; padding: 40px 0; }
+  </style>
+</head>
+<body>
+  <h1>📋 Pickliste</h1>
+  <div class="counter" id="counter">Lade...</div>
+  <div id="list"></div>
+
+  <script>
+    async function load() {
+      try {
+        const res = await fetch('/api/pickliste/aktuell');
+        const items = await res.json();
+        if (items.length === 0) {
+          document.getElementById('list').innerHTML = '<div class="empty">Keine aktive Pickliste vorhanden.</div>';
+          document.getElementById('counter').textContent = '';
+          return;
+        }
+        const done = items.filter(i => i.abgehakt).length;
+        document.getElementById('counter').textContent = `${done} von ${items.length} gepickt`;
+        document.getElementById('list').innerHTML = items.map(item => `
+          <div class="item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'notfound' : ''}" data-id="${item.abruf_id}" data-nr="${item.paletten_nr}">
+            <div>
+              <div class="nr">${item.paletten_nr}</div>
+              <div class="platz">${item.lagerplatz || '?'}</div>
+            </div>
+            <div class="check" onclick="togglePick(this, '${item.abruf_id}', '${item.paletten_nr}', ${item.abgehakt ? 1 : 0})">${item.abgehakt ? '✓' : '○'}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('list').innerHTML = '<div class="empty">Fehler beim Laden.</div>';
+      }
+    }
+
+    async function togglePick(el, abrufId, nr, current) {
+      const newVal = current ? 0 : 1;
+      await fetch('/api/pickliste/abhaken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ abruf_id: abrufId, paletten_nr: nr, abgehakt: newVal })
+      });
+      load();
+    }
+
+    load();
+    setInterval(load, 10000);
+  </script>
+</body>
+</html>

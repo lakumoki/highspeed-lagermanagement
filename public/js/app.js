@@ -73,6 +73,7 @@ function renderApp() {
           <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direkteinlagerung</span></a>
           <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Abruf / Pickliste</span></a>
           <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
+          <a href="#" data-page="handling"><span class="icon">⚙</span><span>Handling</span></a>
           <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
           <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
           <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Direktauslagerung</span></a>
@@ -86,7 +87,7 @@ function renderApp() {
           <div class="nav-section">System</div>
           <a href="#" data-page="kunden"><span class="icon">⊕</span><span>Kunden</span></a>
           <a href="#" data-page="protokoll"><span class="icon">⊙</span><span>Protokoll</span></a>
-          <a href="#" data-page="dokumente"><span class="icon">▤</span><span>Dokumente</span></a>
+          <a href="#" data-page="dokumente"><span class="icon">▤</span><span>Dokumentenarchiv</span></a>
         </nav>
         <div class="sidebar-footer">
           <div class="user-name">${currentUser.vollname}</div>
@@ -117,7 +118,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirekteinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirekteinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, handling: pgHandling, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -581,17 +582,17 @@ async function pgDirekteinlagerung() {
             </select>
           </div>
           <div class="form-group">
-            <label>LKW-Nr.</label>
-            <input type="text" id="da-lkw" placeholder="z.B. 1, 2, 3...">
+            <label>LKW / Trailer</label>
+            <input type="text" id="da-lkw" placeholder="Kennzeichen eingeben">
           </div>
         </div>
         <div class="form-group">
-          <label>Paletten-Nummern * <span style="color:var(--text-muted);font-size:11px">(eine pro Zeile)</span></label>
-          <textarea id="da-nummern" rows="8" placeholder="645524\n645525\n645526\n..." style="font-family:monospace"></textarea>
+          <label>Paletten-Nummern * <span style="color:var(--text-muted);font-size:11px">(eine pro Zeile, optional mit Bemerkung: Nr;Bemerkung)</span></label>
+          <textarea id="da-nummern" rows="8" placeholder="645524\n645525;Vorschaden links\n645526\n..." style="font-family:monospace"></textarea>
         </div>
         <div class="form-group">
-          <label>Bemerkung</label>
-          <input type="text" id="da-bemerkung" placeholder="Optional">
+          <label>Allgemeine Bemerkung</label>
+          <input type="text" id="da-bemerkung" placeholder="Optional (gilt für alle)">
         </div>
         <div style="margin-bottom:16px;padding:12px;background:var(--bg-secondary,#f8f9fa);border-radius:8px;border:1px solid var(--border,#e0e0e0)">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -658,7 +659,13 @@ async function erstelleDirekteinlagerung() {
 
   if (!text) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
 
-  const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
+  const zeilen = text.split(/[\n]+/).map(z => z.trim()).filter(z => z.length > 0);
+  const positionen = zeilen.map(z => {
+    const idx = z.indexOf(';');
+    if (idx > 0) return { paletten_nr: z.substring(0, idx).trim(), bemerkung: z.substring(idx + 1).trim() };
+    return { paletten_nr: z.trim(), bemerkung: null };
+  });
+  const nummern = positionen.map(p => p.paletten_nr);
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
 
   if (prefix === 'EB') {
@@ -680,7 +687,7 @@ async function erstelleDirekteinlagerung() {
       kunde_id: kundeId,
       typ: 'direktanlieferung',
       lkw_nr: lkwNr || null,
-      positionen: nummern.map(nr => ({ paletten_nr: nr })),
+      positionen: positionen,
       bemerkung: bemerkung || null
     }});
 
@@ -817,6 +824,11 @@ function pgAuslagerung() {
           <label>Bemerkung</label>
           <input type="text" id="ausl-bem" placeholder="Optional">
         </div>
+        <div class="form-group">
+          <label>Anzahl LKW (Split)</label>
+          <input type="number" id="ausl-lkw-anzahl" min="1" value="1" placeholder="1" style="width:80px">
+          <small style="display:block;color:var(--text-muted);margin-top:4px">Auf wie viele LKW aufteilen?</small>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="doAuslagern()">Auslagern</button>
       <div id="ausl-result" style="margin-top:16px"></div>
@@ -879,11 +891,12 @@ async function doAuslagern() {
   }
 }
 
-function openSammelbeleg(nummern) {
+function openSammelbeleg(nummern, lkwAnzahl) {
+  const lkw = lkwAnzahl || parseInt(document.getElementById('ausl-lkw-anzahl')?.value) || 1;
   fetch('/api/berichte/sammelbeleg', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paletten_nummern: nummern })
+    body: JSON.stringify({ paletten_nummern: nummern, lkw_anzahl: lkw })
   }).then(r => r.blob()).then(blob => {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
@@ -1163,10 +1176,17 @@ async function pgMusterung() {
       <div class="form-row-3">
         <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="must-nr" placeholder="EB/KW-Nr."></div>
         <div class="form-group"><label>Anzahl Trays *</label><input type="number" id="must-menge" value="1" min="1" max="20" onchange="updateMustBew()" oninput="updateMustBew()"></div>
-        <div class="form-group"><label>Bemerkung</label><input type="text" id="must-bem" placeholder="Optional"></div>
+        <div class="form-group"><label>Lieferoption *</label>
+          <select id="must-lieferoption">
+            <option value="Abholtisch">Abholtisch</option>
+            <option value="Mit nächstem Abruf">Mit nächstem Abruf</option>
+            <option value="Direktlieferung durch HIGHSPEED">Direktlieferung durch HIGHSPEED</option>
+          </select>
+        </div>
       </div>
+      <div class="form-group" style="margin-top:8px"><label>Bemerkung</label><input type="text" id="must-bem" placeholder="Optional (wird auf Musterbeleg angedruckt)"></div>
       <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="must-info">→ 3 Bewegungen werden gebucht</div>
-      <button class="btn btn-primary" onclick="doMusterung()" style="background:#8e44ad">Musterzug buchen</button>
+      <button class="btn btn-primary" onclick="doMusterung()" style="background:#8e44ad">Musterzug buchen + Beleg</button>
     </div>
     <div class="card">
       <div class="card-header"><h3>Bisherige Musterzüge (${muster.length})</h3></div>
@@ -1184,9 +1204,60 @@ function updateMustBew() {
 async function doMusterung() {
   try {
     const trays = parseInt(document.getElementById('must-menge').value) || 1;
-    const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: trays, bemerkung: document.getElementById('must-bem').value.trim() } });
+    const lieferoption = document.getElementById('must-lieferoption').value;
+    const bemerkung = document.getElementById('must-bem').value.trim();
+    const data = await api('/api/musterung', { method: 'POST', body: { paletten_nr: document.getElementById('must-nr').value.trim(), menge: trays, bemerkung, lieferoption } });
     toast(data.message, 'success');
+    if (data.beleg_url) {
+      window.open(data.beleg_url, '_blank');
+    }
     pgMusterung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ HANDLING ════════════════════════════════════════════════════════════════
+async function pgHandling() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Handling</h1><p style="font-size:12px;color:var(--text-muted)">Umetikettieren, Neuverpackung, neue EB-Nummern etc. — kostenpflichtig</p></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Handling-Auftrag buchen</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
+        Pro Palette: <strong>1× Auslagerung + X× Handling + 1× Einlagerung</strong><br>
+        <em>Beispiel: 1 Palette, 2 Handlings = 4 Bewegungen (raus + 2× Handling + rein)</em>
+      </p>
+      <div class="form-row">
+        <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="hdl-nr" placeholder="EB/KW-Nr."></div>
+        <div class="form-group"><label>Anzahl Handlings *</label><input type="number" id="hdl-menge" value="1" min="1" max="20" oninput="document.getElementById('hdl-info').textContent='→ '+(parseInt(this.value||1)+2)+' Bewegungen'"></div>
+        <div class="form-group"><label>Art des Handlings *</label>
+          <select id="hdl-art">
+            <option value="Umetikettierung">Umetikettierung</option>
+            <option value="Neue EB-Nummer">Neue EB-Nummer anbringen</option>
+            <option value="Neuverpackung">Neuverpackung</option>
+            <option value="Sonstiges">Sonstiges</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Bemerkung</label><input type="text" id="hdl-bem" placeholder="Optional (Details zum Handling)"></div>
+      <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="hdl-info">→ 3 Bewegungen werden gebucht</div>
+      <button class="btn btn-primary" onclick="doHandling()">Handling buchen + Beleg</button>
+    </div>`;
+}
+
+async function doHandling() {
+  const nr = document.getElementById('hdl-nr').value.trim();
+  if (!nr) { toast('Paletten-Nr. eingeben', 'error'); return; }
+  const menge = parseInt(document.getElementById('hdl-menge').value) || 1;
+  const art = document.getElementById('hdl-art').value;
+  const bemerkung = document.getElementById('hdl-bem').value.trim();
+  
+  if (!confirm(`Handling für Palette "${nr}" buchen?\n${menge + 2} Bewegungen (1× raus + ${menge}× ${art} + 1× rein)`)) return;
+  
+  try {
+    const data = await api('/api/handling', { method: 'POST', body: { paletten_nr: nr, menge, art, bemerkung } });
+    toast(data.message, 'success');
+    if (data.beleg_url) window.open(data.beleg_url, '_blank');
+    pgHandling();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -1571,14 +1642,21 @@ async function loadBewegungen() {
         <div style="font-size:12px">${data.zusammenfassung.map(z => `${z.typ}: ${z.summe}`).join(' · ')}</div>
       </div>
       <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Typ</th><th>Anzahl</th><th>Paletten</th><th>Benutzer</th><th></th></tr></thead><tbody>
-        ${data.bewegungen.map(b => `<tr>
+        ${data.bewegungen.map((b, idx) => `<tr style="cursor:pointer" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'table-row' : 'none'">
           <td>${b.datum ? new Date(b.datum).toLocaleDateString('de-DE') : '—'}</td>
           <td><span class="badge badge-${b.typ === 'Einlagerung' ? 'success' : b.typ === 'Auslagerung' ? 'danger' : b.typ === 'Entladung' ? 'eb' : 'warning'}">${b.typ}</span></td>
           <td>${b.anzahl}</td>
           <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.paletten_nummern || '—'}</td>
           <td style="font-size:12px">${b.benutzer || '—'}</td>
-          <td>${b.korrektur ? '<span class="badge badge-warning">Korrektur</span>' : ''}</td>
-        </tr>`).join('')}
+          <td style="font-size:11px;color:var(--text-muted)">▼</td>
+        </tr>
+        <tr style="display:none;background:var(--bg-secondary,#f8f9fa)"><td colspan="6" style="padding:10px 16px;font-size:12px">
+          <strong>Paletten:</strong> ${b.paletten_nummern || '—'}<br>
+          <strong>Bemerkung:</strong> ${b.bemerkung || '—'}<br>
+          <strong>Kunde:</strong> ${b.kunde_name || '—'} | <strong>Monat:</strong> ${b.monat || '—'}
+          ${b.handling_art ? `<br><strong>Art:</strong> ${b.handling_art}` : ''}
+          ${b.abruf_id ? `<br><strong>Abruf:</strong> ${b.abruf_id}` : ''}
+        </td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }
@@ -1669,44 +1747,34 @@ async function pgBerichte() {
   const pc = document.getElementById('page-content');
   const kunden = await api('/api/kunden');
   const now = new Date();
-  const monatsStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  const monatsEnde = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()}`;
+  const monatValue = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   pc.innerHTML = `
     <div class="page-header"><h1>Berichte & PDF-Export</h1></div>
     <div class="card">
       <h3 style="margin-bottom:16px">Monatsbericht (Abrechnungsdokument)</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen im Zeitraum — identisch zur Excel-Struktur.</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen des gewählten Monats.</p>
       <div class="form-row">
         <div class="form-group"><label>Kunde</label>
           <select id="ber-kunde">
             ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label>Von</label><input type="date" id="ber-von" value="${monatsStart}"></div>
-        <div class="form-group"><label>Bis</label><input type="date" id="ber-bis" value="${monatsEnde}"></div>
+        <div class="form-group"><label>Monat</label><input type="month" id="ber-monat" value="${monatValue}"></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genMonatsbericht()">PDF generieren</button></div>
-      </div>
-    </div>
-    <div class="card">
-      <h3 style="margin-bottom:16px">Einzelbeleg</h3>
-      <div class="form-row">
-        <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="ber-nr" placeholder="z.B. 654321"></div>
-        <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genEinzelbeleg()">Auslagerungsbeleg</button></div>
       </div>
     </div>`;
 }
 
 function genMonatsbericht() {
-  const von = document.getElementById('ber-von').value;
-  const bis = document.getElementById('ber-bis').value;
+  const monat = document.getElementById('ber-monat').value;
+  if (!monat) { toast('Bitte Monat auswählen', 'error'); return; }
   const kundeId = document.getElementById('ber-kunde').value;
   if (!kundeId) { toast('Bitte Kunde auswählen', 'error'); return; }
+  const [year, month] = monat.split('-').map(Number);
+  const von = `${year}-${String(month).padStart(2,'0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const bis = `${year}-${String(month).padStart(2,'0')}-${lastDay}`;
   window.open(`/api/berichte/monatsbericht-pdf?kunde_id=${kundeId}&von=${von}&bis=${bis}`, '_blank');
-}
-
-function genEinzelbeleg() {
-  const nr = document.getElementById('ber-nr').value.trim();
-  if (nr) window.open(`/api/berichte/auslagerungsbeleg/${nr}`, '_blank');
 }
 
 // ═══ KUNDEN ══════════════════════════════════════════════════════════════════
@@ -1976,13 +2044,24 @@ async function pgDokumente() {
     api('/api/auftraege')
   ]);
 
+  // Belege nach Typ filtern
+  const lieferscheine = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('LS-'));
+  const musterbelege = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('MUSTER-'));
+  const handlingbelege = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('HDL-'));
+
   pc.innerHTML = `
-    <div class="page-header"><h1>Dokumentenarchiv</h1><p style="font-size:12px;color:var(--text-muted)">Alle generierten Lieferscheine & Einlagerungsbelege</p></div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><h3>Lieferscheine / Auslagerungsbelege</h3></div>
+    <div class="page-header"><h1>Dokumentenarchiv</h1></div>
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="active" onclick="showDokTab('ls')">Lieferscheine / Auslagerung</button>
+      <button onclick="showDokTab('einl')">Einlagerungsbelege</button>
+      <button onclick="showDokTab('muster')">Musterbelege</button>
+      <button onclick="showDokTab('handling')">Handlingbelege</button>
+    </div>
+    <div id="dok-tab-ls" class="card">
+      <div class="card-header"><h3>Lieferscheine / Auslagerungsbelege (${lieferscheine.length})</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${docs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Noch keine Lieferscheine vorhanden</td></tr>' :
-        docs.map(d => `<tr>
+        ${lieferscheine.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
+        lieferscheine.map(d => `<tr>
           <td><strong>${d.beleg_nr}</strong></td>
           <td>${d.kunde_name || '—'}</td>
           <td>${d.anzahl}</td>
@@ -1993,10 +2072,10 @@ async function pgDokumente() {
         </tr>`).join('')}
       </tbody></table></div>
     </div>
-    <div class="card">
-      <div class="card-header"><h3>Einlagerungsbelege</h3></div>
+    <div id="dok-tab-einl" class="card" style="display:none">
+      <div class="card-header"><h3>Einlagerungsbelege (${auftraege.length})</h3></div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>Direkt-ID</th><th>Typ</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Status</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${auftraege.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Noch keine Einlagerungsbelege vorhanden</td></tr>' :
+        ${auftraege.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
         auftraege.map(a => `<tr>
           <td>${a.id}</td>
           <td><strong>${a.direkt_id || '—'}</strong></td>
@@ -2009,7 +2088,44 @@ async function pgDokumente() {
           <td><a class="btn btn-sm btn-primary" href="/api/berichte/einlagerungsbeleg/${a.id}" target="_blank">PDF</a></td>
         </tr>`).join('')}
       </tbody></table></div>
+    </div>
+    <div id="dok-tab-muster" class="card" style="display:none">
+      <div class="card-header"><h3>Musterbelege (${musterbelege.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
+        ${musterbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Musterbelege vorhanden</td></tr>' :
+        musterbelege.map(d => `<tr>
+          <td><strong>${d.beleg_nr}</strong></td>
+          <td>${d.kunde_name || '—'}</td>
+          <td>${d.paletten_nummern || '—'}</td>
+          <td>${d.benutzer || '—'}</td>
+          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+          <td><a class="btn btn-sm btn-primary" href="/api/musterung/beleg/${d.beleg_nr?.replace('MUSTER-','')}" target="_blank">PDF</a></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+    <div id="dok-tab-handling" class="card" style="display:none">
+      <div class="card-header"><h3>Handlingbelege (${handlingbelege.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
+        ${handlingbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Handlingbelege vorhanden</td></tr>' :
+        handlingbelege.map(d => `<tr>
+          <td><strong>${d.beleg_nr}</strong></td>
+          <td>${d.kunde_name || '—'}</td>
+          <td>${d.paletten_nummern || '—'}</td>
+          <td>${d.benutzer || '—'}</td>
+          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+          <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
+        </tr>`).join('')}
+      </tbody></table></div>
     </div>`;
+}
+
+function showDokTab(tab) {
+  ['ls','einl','muster','handling'].forEach(t => {
+    document.getElementById(`dok-tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tabs button').forEach((btn, i) => {
+    btn.className = ['ls','einl','muster','handling'][i] === tab ? 'active' : '';
+  });
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────

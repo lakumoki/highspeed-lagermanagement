@@ -28,11 +28,7 @@ function pdfAbsenderBlock(doc, x, y) {
   doc.text(ABSENDER.inhaber, x, y + 14);
   doc.text(ABSENDER.strasse, x, y + 25);
   doc.text(ABSENDER.plz_ort, x, y + 36);
-  doc.text(ABSENDER.tel, x, y + 47);
-  doc.text(ABSENDER.fax, x, y + 58);
-  doc.text(ABSENDER.ust, x, y + 69);
-  doc.text(ABSENDER.email, x, y + 80);
-  return y + 95;
+  return y + 52;
 }
 
 // Auslagerungsbeleg PDF (Einzel)
@@ -106,7 +102,7 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
 
 // Sammel-Auslagerungsbeleg PDF (mehrere Paletten, ab 18 Stk. → 2. LKW-Seite)
 router.post('/sammelbeleg', (req, res) => {
-  const { paletten_nummern } = req.body;
+  const { paletten_nummern, lkw_anzahl } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
     return res.status(400).json({ error: 'paletten_nummern Array erforderlich' });
   }
@@ -124,8 +120,9 @@ router.post('/sammelbeleg', (req, res) => {
 
   if (paletten.length === 0) return res.status(404).json({ error: 'Keine Paletten gefunden' });
 
-  const LKW_KAPAZITAET = 17;
-  const lkwAnzahl = Math.ceil(paletten.length / LKW_KAPAZITAET);
+  // LKW-Anzahl: wenn angegeben, auf X LKW splitten; sonst alles auf 1 LKW
+  const lkwAnzahl = (lkw_anzahl && parseInt(lkw_anzahl) > 0) ? parseInt(lkw_anzahl) : 1;
+  const LKW_KAPAZITAET = Math.ceil(paletten.length / lkwAnzahl);
   const kunde = paletten[0]?.kunde_name || '—';
   const kundeAdresse = paletten[0]?.kunde_adresse || '';
   const datum = new Date().toLocaleDateString('de-DE');
@@ -163,7 +160,7 @@ router.post('/sammelbeleg', (req, res) => {
     if (kundeAdresse) doc.text(kundeAdresse, 320, 55, { width: 200 });
 
     // Dokumenttitel
-    let y = 130;
+    let y = 95;
     doc.fontSize(13).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 40, y);
     if (lkwAnzahl > 1) {
       doc.fontSize(10).font('Helvetica').text(`LKW ${lkw + 1} von ${lkwAnzahl}`, 430, y);
@@ -245,51 +242,59 @@ router.get('/monatsbericht-pdf', (req, res) => {
   `).all(kid, von, bis);
 
   const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
+  // Überbelegung: inkl. Zwischenlager-Paletten (Wareneingang)
+  const zwischenlager = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0 AND lagerplatz_bezeichnung = 'Wareneingang'").get(kid);
+  const gesamtBestand = bestand.c;
 
-  // Direkteinlagerungen zusammenfassen (gleicher Typ + Datum → eine Zeile)
+  // Gruppierung: Gleicher Datum + Typ → eine Zeile (Direkt UND reguläre Auslagerungen)
   const grouped = [];
-  const direktGroups = {};
+  const groupKeys = {};
   for (const bew of bewegungen) {
-    if (bew.direktanlieferung_id) {
-      const key = `${bew.datum}|${bew.typ}`;
-      if (!direktGroups[key]) {
-        direktGroups[key] = { ...bew, nummern: [], gesamtAnzahl: 0 };
-        grouped.push(direktGroups[key]);
-      }
-      direktGroups[key].nummern.push(bew.paletten_nummern);
-      direktGroups[key].gesamtAnzahl += bew.anzahl;
-    } else {
-      grouped.push(bew);
+    const key = `${bew.datum}|${bew.typ}|${bew.direktanlieferung_id ? 'D' : 'R'}`;
+    if (!groupKeys[key]) {
+      groupKeys[key] = { ...bew, nummern: [], gesamtAnzahl: 0 };
+      grouped.push(groupKeys[key]);
     }
+    if (bew.paletten_nummern) {
+      groupKeys[key].nummern.push(...bew.paletten_nummern.split(',').map(s => s.trim()).filter(Boolean));
+    }
+    groupKeys[key].gesamtAnzahl += bew.anzahl;
   }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape' });
+  // Berechne Inhalt im Voraus für korrekte Seitenzählung
+  const pageHeight = 540;
+  const headerHeight = 100;
+  const rowMinHeight = 11;
+  
+  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape', bufferPages: true });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="Monatsbericht_${kunde?.name || ''}_${von}_${bis}.pdf"`);
   doc.pipe(res);
 
-  // Logo
-  try { if (HAS_LOGO) doc.image(LOGO_PATH, 680, 18, { height: 40 }); } catch {}
-
-  // Header
-  doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Lagerbericht', 40, 30);
-  doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
-  doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
-
-  if (kontingent) {
-    doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${bestand.c} | Überkapazität: ${Math.max(0, bestand.c - kontingent.kontingent_plaetze)}`, 350, 60);
+  // Header zeichnen (wird auf erster Seite gezeichnet)
+  function drawHeader() {
+    try { if (HAS_LOGO) doc.image(LOGO_PATH, 680, 18, { height: 40 }); } catch {}
+    doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Monatsbericht', 40, 30);
+    doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
+    doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
+    if (kontingent) {
+      const ueberbelegung = Math.max(0, gesamtBestand - kontingent.kontingent_plaetze);
+      doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${gesamtBestand} | Überbelegung: ${ueberbelegung}`, 350, 60);
+    }
+    doc.moveTo(40, 78).lineTo(780, 78).stroke();
   }
 
-  doc.moveTo(40, 78).lineTo(780, 78).stroke();
+  function drawTableHeader(yPos) {
+    doc.fontSize(7).font('Helvetica-Bold');
+    doc.text('Datum', 40, yPos, { width: 55 });
+    doc.text('Typ', 98, yPos, { width: 95 });
+    doc.text('Anz.', 196, yPos, { width: 25 });
+    doc.text('Paletten-Nummern / Details', 224, yPos, { width: 555 });
+    return yPos + 12;
+  }
 
-  // Tabellenkopf
-  let y = 88;
-  doc.fontSize(7).font('Helvetica-Bold');
-  doc.text('Datum', 40, y, { width: 55 });
-  doc.text('Typ', 98, y, { width: 95 });
-  doc.text('Anz.', 196, y, { width: 25 });
-  doc.text('Paletten-Nummern / Details', 224, y, { width: 555 });
-  y += 12;
+  drawHeader();
+  let y = drawTableHeader(88);
 
   doc.font('Helvetica').fontSize(7);
   let sumEinl = 0, sumAusl = 0, sumExtra = 0, sumEntl = 0;
@@ -305,32 +310,43 @@ router.get('/monatsbericht-pdf', (req, res) => {
     let typLabel = bew.typ;
     if (bew.direktanlieferung_id) typLabel = 'D: ' + bew.typ;
 
+    const details = bew.nummern.length > 0 ? bew.nummern.join(', ') : (bew.bemerkung || '');
+    const detailLines = doc.heightOfString(details, { width: 550 });
+    const rowHeight = Math.max(rowMinHeight, detailLines + 3);
+
+    if (y + rowHeight > pageHeight) {
+      doc.addPage({ layout: 'landscape' });
+      y = drawTableHeader(40);
+      doc.font('Helvetica').fontSize(7);
+    }
+
     doc.text(d, 40, y, { width: 55, lineBreak: false });
     doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
     doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
-    
-    let details;
-    if (bew.nummern) {
-      details = bew.nummern.join(', ');
-    } else {
-      details = [bew.paletten_nummern, bew.bemerkung].filter(Boolean).join(' · ');
-    }
-    const detailLines = doc.heightOfString(details, { width: 550 });
     doc.text(details, 224, y, { width: 550 });
-    y += Math.max(11, detailLines + 3);
-
-    if (y > 540) { doc.addPage({ layout: 'landscape' }); y = 40; }
+    y += rowHeight;
   }
 
   // Summenzeile
+  if (y + 30 > pageHeight) {
+    doc.addPage({ layout: 'landscape' });
+    y = 40;
+  }
   y += 5;
   doc.moveTo(40, y).lineTo(780, y).stroke();
   y += 5;
-  doc.font('Helvetica-Bold');
+  doc.font('Helvetica-Bold').fontSize(7);
   doc.text('SUMME', 40, y);
   doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680, lineBreak: false });
 
-  doc.fontSize(6).font('Helvetica').text(`Generiert: ${new Date().toLocaleString('de-DE')}`, 40, 560, { width: 740, align: 'center' });
+  // Seitennummerierung + Generiert-Zeitstempel auf allen Seiten
+  const pages = doc.bufferedPageRange();
+  const totalPages = pages.count;
+  for (let i = 0; i < totalPages; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(6).font('Helvetica');
+    doc.text(`Generiert: ${new Date().toLocaleString('de-DE')} | Seite ${i + 1} von ${totalPages}`, 40, 560, { width: 740, align: 'center' });
+  }
 
   doc.end();
 });
@@ -361,12 +377,11 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
 
   // Absender
-  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
+  doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
   doc.fontSize(8).font('Helvetica');
-  doc.text(`${ABSENDER.inhaber}`, 40, 44);
-  doc.text(`${ABSENDER.strasse} · ${ABSENDER.plz_ort}`, 40, 55);
-  doc.text(`${ABSENDER.tel} · ${ABSENDER.fax}`, 40, 66);
-  doc.text(ABSENDER.ust, 40, 77);
+  doc.text(ABSENDER.inhaber, 40, 44);
+  doc.text(ABSENDER.strasse, 40, 55);
+  doc.text(ABSENDER.plz_ort, 40, 66);
 
   // Empfänger/Lieferant
   doc.fontSize(9).font('Helvetica-Bold').text('Anlieferer / Kunde:', 320, 30);
@@ -422,7 +437,7 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   y += 25;
 
   doc.font('Helvetica').fontSize(9);
-  doc.text('Sendung vollständig und in einwandfreiem Zustand übergeben.', 40, y);
+  doc.text('Annahme der Sendung erfolgt unter Vorbehalt der späteren Prüfung.', 40, y);
   y += 20;
 
   doc.text('Unterschrift Empfänger/Lager:', 40, y);
@@ -459,11 +474,11 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   // Logo
   try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
 
-  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, 30);
+  doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
   doc.fontSize(8).font('Helvetica');
-  doc.text(`${ABSENDER.inhaber}`, 40, 44);
-  doc.text(`${ABSENDER.strasse} · ${ABSENDER.plz_ort}`, 40, 55);
-  doc.text(`${ABSENDER.tel} · ${ABSENDER.fax}`, 40, 66);
+  doc.text(ABSENDER.inhaber, 40, 44);
+  doc.text(ABSENDER.strasse, 40, 55);
+  doc.text(ABSENDER.plz_ort, 40, 66);
 
   doc.fontSize(9).font('Helvetica-Bold').text('Kunde:', 320, 30);
   doc.font('Helvetica');
@@ -499,7 +514,7 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
   y += 25;
-  doc.font('Helvetica').fontSize(9).text('Sendung vollständig und in einwandfreiem Zustand übergeben.', 40, y);
+  doc.font('Helvetica').fontSize(9).text('Annahme der Sendung erfolgt unter Vorbehalt der späteren Prüfung.', 40, y);
   y += 20;
   doc.text('Unterschrift Empfänger/Lager:', 40, y);
   doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();

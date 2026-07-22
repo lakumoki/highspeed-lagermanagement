@@ -28,6 +28,12 @@ router.post('/', (req, res) => {
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
   // Gang-/Zwischenplätze, Block-Plätze und stapelbare a/b-Positionen erlauben Mehrfachbelegung
   if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block' && !platz.unter_position) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
+  // a/b-Plätze: Bei Einlagerung automatisch entsperren wenn gesperrt
+  if (platz.unter_position && platz.belegt && platz.bemerkung && platz.bemerkung.includes('gesperrt')) {
+    db.prepare("UPDATE lagerplaetze SET belegt = 0, bemerkung = NULL WHERE id = ?").run(platz.id);
+    platz.belegt = 0;
+    platz.bemerkung = null;
+  }
   
   // Höhenprüfung
   if (paletten_hoehe_cm && platz.max_hoehe_cm && parseFloat(paletten_hoehe_cm) > platz.max_hoehe_cm) {

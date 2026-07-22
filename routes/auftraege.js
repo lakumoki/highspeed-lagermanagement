@@ -35,6 +35,7 @@ db.exec(`
 try { db.exec("ALTER TABLE einlagerungsauftraege ADD COLUMN typ TEXT DEFAULT 'standard'"); } catch {}
 try { db.exec("ALTER TABLE einlagerungsauftraege ADD COLUMN direkt_id TEXT"); } catch {}
 try { db.exec("ALTER TABLE einlagerungsauftraege ADD COLUMN lkw_nr TEXT"); } catch {}
+try { db.exec("ALTER TABLE einlagerungsauftrag_positionen ADD COLUMN bemerkung TEXT"); } catch {}
 
 // POST / — Neuen Auftrag erstellen (Büro, Auth)
 router.post('/', (req, res) => {
@@ -64,8 +65,8 @@ router.post('/', (req, res) => {
   `);
 
   const insertPosition = db.prepare(`
-    INSERT INTO einlagerungsauftrag_positionen (auftrag_id, paletten_nr, artikel_nr, chargen_nr)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO einlagerungsauftrag_positionen (auftrag_id, paletten_nr, artikel_nr, chargen_nr, bemerkung)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
   const transaction = db.transaction(() => {
@@ -75,7 +76,7 @@ router.post('/', (req, res) => {
     for (const pos of positionen) {
       const nr = (pos.paletten_nr || '').trim();
       if (!nr) continue;
-      insertPosition.run(auftragId, nr, pos.artikel_nr || null, pos.chargen_nr || null);
+      insertPosition.run(auftragId, nr, pos.artikel_nr || null, pos.chargen_nr || null, pos.bemerkung || null);
     }
 
     return auftragId;

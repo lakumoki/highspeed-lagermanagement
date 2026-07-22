@@ -4,9 +4,13 @@ const db = require('../database/init');
 
 // Dashboard-Übersicht
 router.get('/', (req, res) => {
-  const plaetze = db.prepare('SELECT COUNT(*) as total FROM lagerplaetze').get();
-  const belegt = db.prepare('SELECT COUNT(*) as total FROM lagerplaetze WHERE belegt = 1').get();
+  // Vollwertige Plätze (ohne a/b-Unterpositionen)
+  const plaetze = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NULL OR unter_position = ''").get();
+  const belegt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE belegt = 1 AND (unter_position IS NULL OR unter_position = '')").get();
   const frei = plaetze.total - belegt.total;
+  // a/b-Zusatzplätze (nur wenn entsperrt = nicht gesperrt)
+  const abGesamt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != ''").get();
+  const abFrei = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != '' AND belegt = 0 AND (bemerkung IS NULL OR bemerkung NOT LIKE '%gesperrt%')").get();
   const paletten = db.prepare("SELECT COUNT(*) as total FROM paletten WHERE ausgelagert = 0 AND geloescht = 0").get();
   const kunden = db.prepare('SELECT COUNT(*) as total FROM kunden WHERE aktiv = 1').get();
   
@@ -57,6 +61,8 @@ router.get('/', (req, res) => {
     plaetze_gesamt: plaetze.total,
     plaetze_belegt: belegt.total,
     plaetze_frei: frei,
+    ab_plaetze_gesamt: abGesamt.total,
+    ab_plaetze_frei: abFrei.total,
     auslastung: Math.round(belegt.total / plaetze.total * 100),
     paletten_aktiv: paletten.total,
     kunden_aktiv: kunden.total,

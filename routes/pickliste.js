@@ -288,12 +288,11 @@ router.get('/lieferschein/:id', (req, res) => {
 
   // Absender
   const absY = 30;
-  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED Logistik', 40, absY);
+  doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED', 40, absY);
   doc.fontSize(8).font('Helvetica');
   doc.text('Inh. Martin Klüber', 40, absY + 14);
-  doc.text('Otto-Hahn-Str. 3 a · DE-22946 Trittau', 40, absY + 25);
-  doc.text('Tel: +49 (0) 4154 - 709 671 · Fax: +49 (0) 4154 - 709 672', 40, absY + 36);
-  doc.text('USt.-Nr.: 30 141 02003 · USt.-ID.-Nr.: DE 182818761', 40, absY + 47);
+  doc.text('Otto-Hahn-Str. 3 a', 40, absY + 25);
+  doc.text('DE-22946 Trittau', 40, absY + 36);
 
   // Empfänger
   doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, absY);
@@ -312,7 +311,13 @@ router.get('/lieferschein/:id', (req, res) => {
   doc.text(`Beleg-Nr.: ${ls.beleg_nr}`, 40, y);
   doc.text(`Datum: ${new Date(ls.erstellt_am).toLocaleDateString('de-DE')}`, 300, y);
   y += 13;
-  doc.text(`Paletten: ${ls.anzahl} | Abruf: ${ls.abruf_id || '—'}`, 40, y);
+  // Gesamtanzahl berechnen (alle LKW zusammen)
+  let gesamtPaletten = ls.anzahl;
+  if (ls.lkw_gesamt > 1) {
+    const alle = db.prepare("SELECT SUM(anzahl) as total FROM lieferscheine WHERE beleg_nr LIKE ? OR beleg_nr = ?").get(`${ls.beleg_nr.split('-LKW')[0]}%`, ls.beleg_nr);
+    if (alle && alle.total) gesamtPaletten = alle.total;
+  }
+  doc.text(`Paletten: ${ls.anzahl} von ${gesamtPaletten} | Abruf: ${ls.abruf_id || '—'}`, 40, y);
   y += 15;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
@@ -369,7 +374,7 @@ router.get('/archiv', (req, res) => {
 
 // Staplerfahrer-Link für aktive Pickliste
 router.get('/stapler-link', (req, res) => {
-  res.redirect('/api/pickliste/aktuell');
+  res.redirect('/stapler-pickliste.html');
 });
 
 module.exports = router;

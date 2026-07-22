@@ -60,6 +60,7 @@ app.use('/api/protokoll', require('./routes/protokoll'));
 app.use('/api/bewegungen', require('./routes/bewegungen'));
 app.use('/api/kontingent', require('./routes/kontingent'));
 app.use('/api/musterung', require('./routes/musterung'));
+app.use('/api/handling', require('./routes/handling'));
 app.use('/api/pickliste', require('./routes/pickliste'));
 app.use('/api/umlagerung', require('./routes/umlagerung'));
 app.use('/api/auftraege', require('./routes/auftraege'));
