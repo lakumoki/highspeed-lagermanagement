@@ -4,13 +4,13 @@ const db = require('../database/init');
 
 // Dashboard-Übersicht
 router.get('/', (req, res) => {
-  // Vollwertige Plätze (ohne a/b-Unterpositionen)
-  const plaetze = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NULL OR unter_position = ''").get();
-  const belegt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE belegt = 1 AND (unter_position IS NULL OR unter_position = '')").get();
+  // Nur Regalplätze zählen (ohne Block, Gang, Zwischenlager) — diese sind planbar
+  const plaetze = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE (unter_position IS NULL OR unter_position = '') AND typ NOT IN ('Gang','Block')").get();
+  const belegt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE belegt = 1 AND (unter_position IS NULL OR unter_position = '') AND typ NOT IN ('Gang','Block')").get();
   const frei = plaetze.total - belegt.total;
   // a/b-Zusatzplätze (nur wenn entsperrt = nicht gesperrt)
-  const abGesamt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != ''").get();
-  const abFrei = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != '' AND belegt = 0 AND (bemerkung IS NULL OR bemerkung NOT LIKE '%gesperrt%')").get();
+  const abGesamt = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != '' AND typ NOT IN ('Gang','Block')").get();
+  const abFrei = db.prepare("SELECT COUNT(*) as total FROM lagerplaetze WHERE unter_position IS NOT NULL AND unter_position != '' AND belegt = 0 AND (bemerkung IS NULL OR bemerkung NOT LIKE '%gesperrt%') AND typ NOT IN ('Gang','Block')").get();
   const paletten = db.prepare("SELECT COUNT(*) as total FROM paletten WHERE ausgelagert = 0 AND geloescht = 0").get();
   const kunden = db.prepare('SELECT COUNT(*) as total FROM kunden WHERE aktiv = 1').get();
   
