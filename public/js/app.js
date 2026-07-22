@@ -1443,7 +1443,7 @@ async function pgLagerplan() {
   pc.innerHTML = `
     <div class="page-header"><h1>Lagerplan</h1></div>
     <div class="lagerplan-tabs" id="lp-tabs">
-      ${uebersicht.map(r => `<button data-regal="${r.regal}" onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei} frei)</small></button>`).join('')}
+      ${uebersicht.map(r => `<button data-regal="${r.regal}" onclick="loadRegal('${r.regal}')">${r.regal} <small style="opacity:.6">(${r.frei > 0 ? r.frei + ' frei' : r.belegt + ' Pal.'})</small></button>`).join('')}
     </div>
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;gap:16px;font-size:12px;align-items:center;flex-wrap:wrap">

@@ -56,28 +56,26 @@ router.get('/plan/uebersicht', (req, res) => {
     ORDER BY regal
   `).all();
 
-  // Gang-/Zwischenplätze
+  // Gang-/Zwischenplätze: zeige Palette-Anzahl statt "frei" (unbegrenzte Kapazität)
   const gaenge = db.prepare(`
-    SELECT regal,
-      COUNT(*) as gesamt,
-      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
-      SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
-    FROM lagerplaetze
-    WHERE typ = 'Gang'
-    GROUP BY regal
-    ORDER BY regal
+    SELECT l.regal,
+      1 as gesamt,
+      (SELECT COUNT(*) FROM paletten p WHERE p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0) as belegt,
+      0 as frei
+    FROM lagerplaetze l
+    WHERE l.typ = 'Gang'
+    ORDER BY l.regal
   `).all();
 
-  // Block-Plätze (nur E und F relevant)
+  // Block-Plätze: zeige Palette-Anzahl (Blocks haben keine numerischen Einzelplätze)
   const bloecke = db.prepare(`
-    SELECT 'Block ' || regal as regal,
-      COUNT(*) as gesamt,
-      SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
-      SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
-    FROM lagerplaetze
-    WHERE typ = 'Block' AND regal IN ('E','F')
-    GROUP BY regal
-    ORDER BY regal
+    SELECT 'Block ' || l.regal as regal,
+      1 as gesamt,
+      (SELECT COUNT(*) FROM paletten p WHERE p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0) as belegt,
+      0 as frei
+    FROM lagerplaetze l
+    WHERE l.typ = 'Block' AND l.regal IN ('E','F')
+    ORDER BY l.regal
   `).all();
 
   res.json([...regale, ...gaenge, ...bloecke]);
