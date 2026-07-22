@@ -1277,26 +1277,35 @@ async function pgUmlagerung() {
           <button class="btn btn-sm btn-primary" onclick="warenEingangQR()">QR für Staplerfahrer</button>
         </div>
       </div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Paletten auswählen und gemeinsam auf einen Platz verschieben, oder einzeln umlagern.</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Jede Palette einzeln zuweisen oder Bulk-Verschiebung auf Gang/Block.</p>
       <div style="margin-bottom:10px;padding:10px;background:var(--bg-secondary,#f8f9fa);border-radius:8px;border:1px solid var(--border,#e0e0e0)">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <label style="font-size:13px;font-weight:600"><input type="checkbox" id="we-select-all" onchange="weSelectAll(this.checked)"> Alle</label>
           <span id="we-selected-count" style="font-size:12px;color:var(--text-muted)">0 ausgewählt</span>
           <input type="number" id="we-hoehe-filter" placeholder="Höhe (cm)" style="width:100px;padding:5px 8px;font-size:13px">
-          <button class="btn btn-sm btn-secondary" onclick="weZeigeFreie()">Freie Plätze</button>
-          <input type="text" id="we-bulk-platz" placeholder="Ziel-Platz..." style="width:130px;padding:5px 8px;font-size:13px">
-          <button class="btn btn-sm btn-primary" onclick="weBulkUmlagern()">Ausgewählte umlagern</button>
+          <button class="btn btn-sm btn-secondary" onclick="weZeigeFreie()">Freie Plätze anzeigen</button>
         </div>
-        <div id="we-freie-box" style="margin-top:8px;max-height:150px;overflow-y:auto"></div>
-        <div id="we-block-hint" style="margin-top:6px;display:none;font-size:12px;color:#e67e22;font-weight:600"></div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:#e67e22">Bulk → Block/Gang:</span>
+          ${['BlockE','BlockF'].map(b => `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`).join('')}
+          ${['XA','XB','XC','XD','P1','P21','P31','P41'].map(g => `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer">${g}</button>`).join('')}
+          <input type="text" id="we-bulk-platz" placeholder="Gang/Block..." style="width:110px;padding:5px 8px;font-size:13px">
+          <button class="btn btn-sm btn-primary" onclick="weBulkUmlagern()">Bulk umlagern</button>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:#2980b9">Individuelle Zuordnung:</span>
+          <button class="btn btn-sm btn-success" onclick="weIndividuellUmlagern()">Alle mit Platz umlagern</button>
+          <span style="font-size:11px;color:var(--text-muted)">(lagert alle Paletten ein, bei denen ein Platz eingetragen ist)</span>
+        </div>
+        <div id="we-freie-box" style="margin-top:8px;max-height:180px;overflow-y:auto"></div>
       </div>
       <div class="table-wrap" style="max-height:400px;overflow-y:auto"><table><thead><tr><th style="width:30px"></th><th>Pal.-Nr.</th><th>Kunde</th><th>Neuer Platz</th><th></th></tr></thead><tbody>
         ${wareneingang.sort((a,b) => a.paletten_nr.localeCompare(b.paletten_nr)).map(p => `<tr>
           <td><input type="checkbox" class="we-cb" data-nr="${p.paletten_nr}" data-id="${p.id}" onchange="weCheckChanged()"></td>
           <td><strong>${p.paletten_nr}</strong></td>
           <td>${p.kunde_name || '—'}</td>
-          <td><input type="text" id="we-platz-${p.id}" placeholder="z.B. A42, XB..." style="width:100px;padding:4px 8px;font-size:13px"></td>
-          <td><button class="btn btn-sm btn-secondary" onclick="umlagerungAusWareneingang(${p.id},'${p.paletten_nr}')">Umlagern</button></td>
+          <td><input type="text" class="we-platz-input" id="we-platz-${p.id}" data-nr="${p.paletten_nr}" placeholder="z.B. A42, XB..." style="width:110px;padding:4px 8px;font-size:13px"></td>
+          <td><button class="btn btn-sm btn-secondary" onclick="umlagerungAusWareneingang(${p.id},'${p.paletten_nr}')">→</button></td>
         </tr>`).join('')}
       </tbody></table></div>
     </div>` : ''}
@@ -1328,69 +1337,85 @@ function weSelectAll(checked) {
 
 function weCheckChanged() {
   const checked = document.querySelectorAll('.we-cb:checked');
-  const count = checked.length;
-  document.getElementById('we-selected-count').textContent = `${count} ausgewählt`;
-  const hint = document.getElementById('we-block-hint');
-  if (count > 0) {
-    hint.style.display = 'block';
-    let html = '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">';
-    if (count > 3) {
-      html += `<span style="font-size:12px;font-weight:600;color:#e67e22">Blöcke:</span>`;
-      html += ['BlockE','BlockF'].map(b =>
-        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`
-      ).join('');
-      html += `<span style="margin-left:10px;font-size:12px;font-weight:600;color:#aaa">Gänge:</span>`;
-    } else {
-      html += `<span style="font-size:12px;font-weight:600;color:#aaa">Schnellauswahl:</span>`;
-      html += ['BlockE','BlockF'].map(b =>
-        `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`
-      ).join('');
-      html += `<span style="margin-left:10px;font-size:12px;color:#aaa">|</span>`;
-    }
-    html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
-      `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:4px 10px;font-size:11px;border-radius:4px;cursor:pointer">${g}</button>`
-    ).join('');
-    html += '</div>';
-    hint.innerHTML = html;
-  } else {
-    hint.style.display = 'none';
-  }
+  document.getElementById('we-selected-count').textContent = `${checked.length} ausgewählt`;
 }
+
+let weLastFocusedInput = null;
+document.addEventListener('focusin', (e) => {
+  if (e.target.classList?.contains('we-platz-input') || e.target.id === 'we-bulk-platz') {
+    weLastFocusedInput = e.target;
+  }
+});
 
 async function weZeigeFreie() {
   const hoehe = document.getElementById('we-hoehe-filter')?.value?.trim();
   const url = hoehe ? `/api/einlagerung/freie-plaetze?hoehe=${hoehe}` : '/api/einlagerung/freie-plaetze';
   const plaetze = await api(url);
   const box = document.getElementById('we-freie-box');
-  const checked = document.querySelectorAll('.we-cb:checked').length;
 
-  // Bei >3 ausgewählt: Gang-Plätze zuerst hervorheben
-  let sorted = plaetze;
-  if (checked > 3) {
-    sorted = [...plaetze.filter(p => p.typ === 'Gang'), ...plaetze.filter(p => p.typ !== 'Gang')];
+  // Regalplätze (für individuelle Zuordnung) zuerst, dann Gänge
+  const regalPlaetze = plaetze.filter(p => p.typ !== 'Gang' && p.typ !== 'Block');
+  const gangPlaetze = plaetze.filter(p => p.typ === 'Gang' || p.typ === 'Block');
+
+  box.innerHTML = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${plaetze.length} freie Plätze${hoehe ? ` (≥ ${hoehe} cm)` : ''} — <strong>Klick übernimmt in das zuletzt fokussierte Feld</strong></div>
+    <div style="margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:#2ecc71">Regalplätze (je 1 Palette):</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">${regalPlaetze.map(p => {
+    const hLabel = p.max_hoehe_cm ? ` ${p.max_hoehe_cm}` : '';
+    return `<span onclick="weSetPlatz('${p.bezeichnung}')" style="display:inline-block;padding:3px 7px;background:#2ecc71;color:#fff;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer" title="${p.bereich}${hLabel ? ' | ' + hLabel + 'cm' : ''}">${p.bezeichnung}${hLabel ? '<small style=opacity:.7> ' + hLabel + '</small>' : ''}</span>`;
+  }).join('')}</div>
+    ${gangPlaetze.length > 0 ? `<div><span style="font-size:11px;font-weight:600;color:#e67e22">Gang/Block (Mehrfachbelegung möglich):</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${gangPlaetze.map(p =>
+    `<span onclick="weSetPlatz('${p.bezeichnung}')" style="display:inline-block;padding:3px 7px;background:#e67e22;color:#fff;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer">${p.bezeichnung}</span>`
+  ).join('')}</div>` : ''}`;
+}
+
+function weSetPlatz(bez) {
+  if (weLastFocusedInput) {
+    weLastFocusedInput.value = bez;
+    weLastFocusedInput.focus();
+    // Springe zum nächsten leeren Platz-Input
+    const inputs = [...document.querySelectorAll('.we-platz-input')];
+    const idx = inputs.indexOf(weLastFocusedInput);
+    for (let i = idx + 1; i < inputs.length; i++) {
+      if (!inputs[i].value) { inputs[i].focus(); break; }
+    }
+  } else {
+    document.getElementById('we-bulk-platz').value = bez;
   }
-
-  box.innerHTML = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">${sorted.length} Plätze${hoehe ? ` (≥ ${hoehe} cm)` : ''} — Klick übernimmt</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px">${sorted.map(p => {
-    const hLabel = p.max_hoehe_cm ? ` ${p.max_hoehe_cm}cm` : '';
-    const isGang = p.typ === 'Gang';
-    return `<span onclick="document.getElementById('we-bulk-platz').value='${p.bezeichnung}'" style="display:inline-block;padding:4px 8px;background:${isGang ? '#e67e22' : 'var(--success,#2ecc71)'};color:#fff;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer" title="${p.bereich}${hLabel}">${p.bezeichnung}${hLabel}</span>`;
-  }).join('')}</div>`;
 }
 
 async function weBulkUmlagern() {
   const checked = [...document.querySelectorAll('.we-cb:checked')];
   if (checked.length === 0) { toast('Bitte Paletten auswählen', 'error'); return; }
   const platz = document.getElementById('we-bulk-platz')?.value?.trim();
-  if (!platz) { toast('Bitte Ziel-Platz eingeben', 'error'); return; }
+  if (!platz) { toast('Bitte Gang/Block-Platz eingeben', 'error'); return; }
 
   const nummern = checked.map(cb => cb.dataset.nr);
-  if (!confirm(`${nummern.length} Paletten nach "${platz}" umlagern?`)) return;
+  if (!confirm(`${nummern.length} Paletten nach "${platz}" (Gang/Block) umlagern?`)) return;
 
   try {
     const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { paletten_nummern: nummern, nach_platz: platz } });
     toast(data.message, 'success');
     if (data.errors && data.errors.length > 0) toast(`Fehler: ${data.errors.join(', ')}`, 'error');
+    pgUmlagerung();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function weIndividuellUmlagern() {
+  const inputs = [...document.querySelectorAll('.we-platz-input')];
+  const zuweisungen = inputs
+    .filter(inp => inp.value.trim())
+    .map(inp => ({ nr: inp.dataset.nr, platz: inp.value.trim() }));
+  
+  if (zuweisungen.length === 0) { toast('Bitte mindestens einen Platz in der Tabelle eintragen', 'error'); return; }
+  if (!confirm(`${zuweisungen.length} Paletten individuell umlagern?\n\n${zuweisungen.map(z => `${z.nr} → ${z.platz}`).join('\n')}`)) return;
+
+  try {
+    const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { zuweisungen } });
+    toast(data.message, 'success');
+    if (data.errors && data.errors.length > 0) {
+      toast(`Fehler: ${data.errors.join(', ')}`, 'error');
+    }
     pgUmlagerung();
   } catch (e) { toast(e.message, 'error'); }
 }
