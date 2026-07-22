@@ -2044,18 +2044,38 @@ async function editPalette(id) {
   document.body.appendChild(overlay);
 }
 
-async function savePalette(id) {
+async function savePalette(id, force) {
+  const body = {
+    paletten_nr: document.getElementById('ep-nr').value.trim(),
+    lagerplatz_bezeichnung: document.getElementById('ep-platz').value.trim(),
+    menge: parseInt(document.getElementById('ep-menge').value) || 1,
+    artikel_nr: document.getElementById('ep-artikel').value.trim() || null,
+    chargen_nr: document.getElementById('ep-charge').value.trim() || null,
+    bemerkung: document.getElementById('ep-bem').value.trim() || null
+  };
+  if (force) body.force = true;
+  
   try {
-    await api(`/api/paletten/${id}`, { method: 'PUT', body: {
-      paletten_nr: document.getElementById('ep-nr').value.trim(),
-      lagerplatz_bezeichnung: document.getElementById('ep-platz').value.trim(),
-      menge: parseInt(document.getElementById('ep-menge').value) || 1,
-      artikel_nr: document.getElementById('ep-artikel').value.trim() || null,
-      chargen_nr: document.getElementById('ep-charge').value.trim() || null,
-      bemerkung: document.getElementById('ep-bem').value.trim() || null
-    }});
+    const resp = await fetch(`/api/paletten/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    
+    if (resp.status === 409 && data.belegt) {
+      if (confirm(`⚠️ ${data.error}`)) {
+        savePalette(id, true);
+      }
+      return;
+    }
+    if (!resp.ok) {
+      toast(data.error || 'Fehler beim Speichern', 'error');
+      return;
+    }
+    
     document.querySelector('.modal-overlay')?.remove();
-    toast('Palette gespeichert', 'success');
+    toast('Palette gespeichert — Umlagerung protokolliert ✓', 'success');
     if (currentPage === 'suche') doSearch();
     else if (currentPage === 'lagerplan') pgLagerplan();
   } catch (e) { toast(e.message, 'error'); }

@@ -133,22 +133,38 @@ router.put('/:id', (req, res) => {
   if (menge !== undefined) { updates.push('menge = ?'); params.push(menge); }
   
   if (lagerplatz_bezeichnung !== undefined && lagerplatz_bezeichnung !== existing.lagerplatz_bezeichnung) {
-    const neuerPlatz = db.prepare('SELECT id FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(lagerplatz_bezeichnung);
-    if (neuerPlatz) {
-      // Alten Platz freigeben — nur wenn keine andere aktive Palette dort steht
-      if (existing.lagerplatz_id) {
-        const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(existing.lagerplatz_id, existing.id);
-        if (!andere || andere.c === 0) {
-          db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);
-        }
-      }
-      // Neuen belegen
-      db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
-      updates.push('lagerplatz_id = ?', 'lagerplatz_bezeichnung = ?');
-      params.push(neuerPlatz.id, lagerplatz_bezeichnung);
-      // Umlagerung protokollieren
-      db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, benutzer) VALUES (?,?,?,?,?)').run(existing.id, existing.paletten_nr, existing.lagerplatz_bezeichnung, lagerplatz_bezeichnung, req.session?.user?.benutzername || 'System');
+    const neuerPlatz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(lagerplatz_bezeichnung);
+    if (!neuerPlatz) {
+      return res.status(400).json({ error: `Platz "${lagerplatz_bezeichnung}" nicht gefunden` });
     }
+    
+    // Belegungsprüfung: reguläre Plätze dürfen nur 1 Palette haben
+    if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang' && neuerPlatz.typ !== 'Block') {
+      // Prüfe ob force-Flag gesetzt (= Benutzer hat Warnung bestätigt)
+      if (!req.body.force) {
+        const belegtMit = db.prepare("SELECT paletten_nr FROM paletten WHERE lagerplatz_id = ? AND ausgelagert = 0 AND geloescht = 0 AND id != ?").get(neuerPlatz.id, existing.id);
+        return res.status(409).json({ 
+          error: `Platz "${lagerplatz_bezeichnung}" ist bereits belegt${belegtMit ? ' mit ' + belegtMit.paletten_nr : ''}! Trotzdem umlagern?`,
+          belegt: true
+        });
+      }
+    }
+    
+    // Alten Platz freigeben — nur wenn keine andere aktive Palette dort steht
+    if (existing.lagerplatz_id) {
+      const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(existing.lagerplatz_id, existing.id);
+      if (!andere || andere.c === 0) {
+        db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(existing.lagerplatz_id);
+      }
+    }
+    // Neuen belegen
+    db.prepare('UPDATE lagerplaetze SET belegt = 1 WHERE id = ?').run(neuerPlatz.id);
+    updates.push('lagerplatz_id = ?', 'lagerplatz_bezeichnung = ?');
+    params.push(neuerPlatz.id, neuerPlatz.bezeichnung);
+    // Umlagerung protokollieren
+    const benutzer = req.session?.user?.benutzername || 'System';
+    const jetzt = new Date().toISOString();
+    db.prepare('INSERT INTO umlagerungen (palette_id, paletten_nr, von_platz, nach_platz, datum, benutzer, bemerkung) VALUES (?,?,?,?,?,?,?)').run(existing.id, existing.paletten_nr, existing.lagerplatz_bezeichnung, neuerPlatz.bezeichnung, jetzt, benutzer, 'Über Bearbeitung');
   }
   
   if (updates.length === 0) return res.json({ ok: true, message: 'Keine Änderungen' });
