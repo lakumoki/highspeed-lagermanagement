@@ -23,15 +23,29 @@ router.post('/', (req, res) => {
   if (nr.match(/^\d{6}$/)) { nummernTyp = 'EB'; if (!kundeId) kundeId = 1; }
   else if (nr.match(/^KW|^Kw/i)) { nummernTyp = 'KW'; if (!kundeId) kundeId = 2; }
   
+  // Format-Validierung basierend auf Kunden-Konfiguration
+  if (kundeId) {
+    const kundeConf = db.prepare('SELECT nummern_format FROM kunden WHERE id = ?').get(kundeId);
+    if (kundeConf?.nummern_format) {
+      const stelligMatch = kundeConf.nummern_format.match(/(\d+)-stellig/i);
+      if (stelligMatch) {
+        const expectedLen = parseInt(stelligMatch[1]);
+        const numericPart = nr.replace(/^[A-Za-z]+/, '');
+        if (numericPart.length !== expectedLen) {
+          return res.status(400).json({ error: `Palettennummer muss ${expectedLen}-stellig sein (Kunden-Format: ${kundeConf.nummern_format}). Eingabe: "${nr}"` });
+        }
+      }
+    }
+  }
+  
   // Lagerplatz prüfen (case-insensitive)
   const platz = db.prepare('SELECT * FROM lagerplaetze WHERE bezeichnung = ? COLLATE NOCASE').get(platzBez);
   if (!platz) return res.status(400).json({ error: `Lagerplatz "${platzBez}" nicht gefunden` });
   // Gang-/Zwischenplätze, Block-Plätze und stapelbare a/b-Positionen erlauben Mehrfachbelegung
   if (platz.belegt && platz.typ !== 'Gang' && platz.typ !== 'Block' && !platz.unter_position) return res.status(400).json({ error: `Lagerplatz "${platzBez}" ist bereits belegt` });
-  // a/b-Plätze: Bei Einlagerung automatisch entsperren wenn gesperrt
-  if (platz.unter_position && platz.belegt && platz.bemerkung && platz.bemerkung.includes('gesperrt')) {
-    db.prepare("UPDATE lagerplaetze SET belegt = 0, bemerkung = NULL WHERE id = ?").run(platz.id);
-    platz.belegt = 0;
+  // a/b-Plätze: Bei Einlagerung automatisch entsperren (egal ob 'gesperrt', 'Nicht nutzbar', oder sonstige Blockierung)
+  if (platz.unter_position && platz.belegt && platz.bemerkung && (platz.bemerkung.includes('gesperrt') || platz.bemerkung.includes('Nicht nutzbar'))) {
+    db.prepare("UPDATE lagerplaetze SET bemerkung = NULL WHERE id = ?").run(platz.id);
     platz.bemerkung = null;
   }
   

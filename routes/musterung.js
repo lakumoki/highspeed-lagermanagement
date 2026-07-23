@@ -88,7 +88,6 @@ router.get('/beleg/:lfd', (req, res) => {
   doc.text(`Palette: ${m.paletten_nr}`, 40, y); y += 14;
   doc.text(`Lagerplatz: ${m.lagerplatz || '—'}`, 40, y); y += 14;
   doc.text(`Anzahl Trays: ${m.menge}`, 40, y); y += 14;
-  doc.text(`Bewegungen: ${m.handling_gebuehr}`, 40, y); y += 14;
   doc.text(`Lieferoption: ${m.lieferoption || 'Abholtisch'}`, 40, y); y += 14;
   if (m.bemerkung) { doc.text(`Bemerkung: ${m.bemerkung}`, 40, y); y += 14; }
   y += 20;

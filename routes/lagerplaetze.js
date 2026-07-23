@@ -51,7 +51,7 @@ router.get('/plan/uebersicht', (req, res) => {
       SUM(CASE WHEN belegt = 1 THEN 1 ELSE 0 END) as belegt,
       SUM(CASE WHEN belegt = 0 THEN 1 ELSE 0 END) as frei
     FROM lagerplaetze
-    WHERE typ NOT IN ('Gang','Block')
+    WHERE typ NOT IN ('Gang','Block') AND (unter_position IS NULL OR unter_position = '')
     GROUP BY regal
     ORDER BY regal
   `).all();

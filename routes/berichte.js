@@ -50,16 +50,16 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.pipe(res);
   
   // Absender (links oben)
-  let y = pdfAbsenderBlock(doc, 50, 40);
+  pdfAbsenderBlock(doc, 50, 40);
   
   // Empfänger (rechts oben)
   doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 40);
   doc.font('Helvetica').fontSize(9).text(pal.kunde_name || '—', 320, 53);
   if (pal.kunde_adresse) doc.text(pal.kunde_adresse, 320, 65, { width: 200 });
 
-  y += 10;
-  doc.fontSize(14).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 50, y);
-  y += 22;
+  let y = 110;
+  doc.fontSize(13).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 50, y);
+  y += 20;
   doc.moveTo(50, y).lineTo(545, y).stroke();
   y += 15;
   
@@ -88,21 +88,19 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
   doc.fontSize(9).text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 50, y);
   y += 20;
 
-  doc.text('Datum: _______________', 50, y);
-  doc.moveTo(50, y + 40).lineTo(250, y + 40).stroke();
+  doc.text('Unterschrift Empfänger:', 50, y);
+  doc.moveTo(50, y + 30).lineTo(250, y + 30).stroke();
+  doc.text('Datum: _______________', 300, y);
   
-  doc.text('Unterschrift Empfänger:', 300, y);
-  doc.moveTo(300, y + 40).lineTo(500, y + 40).stroke();
-  y += 45;
-  
-  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 50, 780, { align: 'center', width: 495 });
+  const genDatumEinzel = new Date().toLocaleString('de-DE');
+  doc.fontSize(7).text(`Generiert am ${genDatumEinzel} · Seite 1/1`, 50, 780, { align: 'center', width: 495 });
   
   doc.end();
 });
 
 // Sammel-Auslagerungsbeleg PDF (mehrere Paletten, ab 18 Stk. → 2. LKW-Seite)
 router.post('/sammelbeleg', (req, res) => {
-  const { paletten_nummern, lkw_anzahl } = req.body;
+  const { paletten_nummern, lkw_anzahl, lkw_kennzeichen, pal_pro_lkw } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern) || paletten_nummern.length === 0) {
     return res.status(400).json({ error: 'paletten_nummern Array erforderlich' });
   }
@@ -120,9 +118,19 @@ router.post('/sammelbeleg', (req, res) => {
 
   if (paletten.length === 0) return res.status(404).json({ error: 'Keine Paletten gefunden' });
 
-  // LKW-Anzahl: wenn angegeben, auf X LKW splitten; sonst alles auf 1 LKW
-  const lkwAnzahl = (lkw_anzahl && parseInt(lkw_anzahl) > 0) ? parseInt(lkw_anzahl) : 1;
-  const LKW_KAPAZITAET = Math.ceil(paletten.length / lkwAnzahl);
+  // LKW-Split: pal_pro_lkw hat Vorrang (z.B. 33 = 33 Pal pro LKW)
+  let lkwAnzahl, LKW_KAPAZITAET;
+  if (pal_pro_lkw && parseInt(pal_pro_lkw) > 0) {
+    LKW_KAPAZITAET = parseInt(pal_pro_lkw);
+    lkwAnzahl = Math.ceil(paletten.length / LKW_KAPAZITAET);
+  } else if (lkw_anzahl && parseInt(lkw_anzahl) > 1) {
+    lkwAnzahl = parseInt(lkw_anzahl);
+    LKW_KAPAZITAET = Math.ceil(paletten.length / lkwAnzahl);
+  } else {
+    lkwAnzahl = 1;
+    LKW_KAPAZITAET = paletten.length;
+  }
+  const lkwKennzeichen = lkw_kennzeichen || '';
   const kunde = paletten[0]?.kunde_name || '—';
   const kundeAdresse = paletten[0]?.kunde_adresse || '';
   const datum = new Date().toLocaleDateString('de-DE');
@@ -160,7 +168,7 @@ router.post('/sammelbeleg', (req, res) => {
     if (kundeAdresse) doc.text(kundeAdresse, 320, 55, { width: 200 });
 
     // Dokumenttitel
-    let y = 95;
+    let y = 110;
     doc.fontSize(13).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 40, y);
     if (lkwAnzahl > 1) {
       doc.fontSize(10).font('Helvetica').text(`LKW ${lkw + 1} von ${lkwAnzahl}`, 430, y);
@@ -171,7 +179,9 @@ router.post('/sammelbeleg', (req, res) => {
     doc.text(`Beleg-Nr.: ${belegNr}${lkwAnzahl > 1 ? `-LKW${lkw+1}` : ''}`, 40, y);
     doc.text(`Datum: ${datum}`, 300, y);
     y += 13;
-    doc.text(`Paletten gesamt: ${paletten.length} | Auf diesem Beleg: ${chunk.length}`, 40, y);
+    let infoZeile = `Paletten gesamt: ${paletten.length} | Auf diesem Beleg: ${chunk.length}`;
+    if (lkwKennzeichen) infoZeile += ` | LKW: ${lkwKennzeichen}`;
+    doc.text(infoZeile, 40, y);
     y += 15;
 
     doc.moveTo(40, y).lineTo(555, y).stroke();
@@ -213,14 +223,12 @@ router.post('/sammelbeleg', (req, res) => {
     doc.font('Helvetica').fontSize(9);
     doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
     y += 20;
-    doc.text('Datum: _______________', 40, y);
+    doc.text('Unterschrift Empfänger:', 40, y);
     doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+    doc.text('Datum: _______________', 300, y);
 
-    doc.text('Unterschrift Empfänger:', 300, y);
-    doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
-    y += 35;
-
-    doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
+    const genSammel = new Date().toLocaleString('de-DE');
+    doc.fontSize(7).text(`Generiert am ${genSammel} · Seite ${lkw + 1}/${lkwAnzahl}`, 40, 780, { align: 'center', width: 515 });
   }
 
   doc.end();
@@ -242,9 +250,36 @@ router.get('/monatsbericht-pdf', (req, res) => {
   `).all(kid, von, bis);
 
   const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
-  // Überbelegung: inkl. Zwischenlager-Paletten (Wareneingang)
-  const zwischenlager = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0 AND lagerplatz_bezeichnung = 'Wareneingang'").get(kid);
   const gesamtBestand = bestand.c;
+
+  // Maximale Überbelegung im Zeitraum berechnen:
+  // Startbestand am Monatsbeginn = aktueller Bestand - alle Einlagerungen seit von + alle Auslagerungen seit von
+  const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung'").get(kid, von, bis);
+  const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung'").get(kid, von, bis);
+  const bestandAnfang = gesamtBestand - einlSeitVon.s + auslSeitVon.s;
+
+  // Tagesbestand simulieren: Für jeden Tag Einlagerungen addieren, Auslagerungen subtrahieren
+  const tagesBewegungen = db.prepare(`
+    SELECT datum, typ, SUM(anzahl) as summe 
+    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ IN ('Einlagerung','Auslagerung')
+    GROUP BY datum, typ ORDER BY datum
+  `).all(kid, von, bis);
+
+  let simulierterBestand = bestandAnfang;
+  let maxBestand = bestandAnfang;
+  const tagesMap = {};
+  for (const tb of tagesBewegungen) {
+    if (!tagesMap[tb.datum]) tagesMap[tb.datum] = { ein: 0, aus: 0 };
+    if (tb.typ === 'Einlagerung') tagesMap[tb.datum].ein += tb.summe;
+    else if (tb.typ === 'Auslagerung') tagesMap[tb.datum].aus += tb.summe;
+  }
+  const sortedDays = Object.keys(tagesMap).sort();
+  for (const day of sortedDays) {
+    simulierterBestand += tagesMap[day].ein;
+    if (simulierterBestand > maxBestand) maxBestand = simulierterBestand;
+    simulierterBestand -= tagesMap[day].aus;
+  }
+  const maxUeberbelegung = kontingent ? Math.max(0, maxBestand - kontingent.kontingent_plaetze) : 0;
 
   // Gruppierung: Gleicher Datum + Typ → eine Zeile (Direkt UND reguläre Auslagerungen)
   const grouped = [];
@@ -278,8 +313,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
     doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
     doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
     if (kontingent) {
-      const ueberbelegung = Math.max(0, gesamtBestand - kontingent.kontingent_plaetze);
-      doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand: ${gesamtBestand} | Überbelegung: ${ueberbelegung}`, 350, 60);
+      doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand aktuell: ${gesamtBestand} | Max. Überbelegung: ${maxUeberbelegung}`, 350, 60);
     }
     doc.moveTo(40, 78).lineTo(780, 78).stroke();
   }
@@ -345,7 +379,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   for (let i = 0; i < totalPages; i++) {
     doc.switchToPage(i);
     doc.fontSize(6).font('Helvetica');
-    doc.text(`Generiert: ${new Date().toLocaleString('de-DE')} | Seite ${i + 1} von ${totalPages}`, 40, 560, { width: 740, align: 'center' });
+    doc.text(`Generiert: ${new Date().toLocaleString('de-DE')} | Seite ${i + 1} von ${totalPages}`, 40, 545, { width: 740, align: 'center', lineBreak: false });
   }
 
   doc.end();
@@ -444,10 +478,10 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
   doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
-  y += 35;
-  doc.fontSize(8).text('Datum: _______________', 300, y);
 
-  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
+  // Fußzeile: Generiert am ... Seite 1/1
+  const genDatum = new Date().toLocaleString('de-DE');
+  doc.fontSize(7).text(`Generiert am ${genDatum} · Seite 1/1`, 40, 780, { align: 'center', width: 515 });
   doc.end();
 });
 
@@ -521,7 +555,8 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-  doc.fontSize(7).text(`${ABSENDER.firma} · ${ABSENDER.inhaber} · ${ABSENDER.strasse} · ${ABSENDER.plz_ort} · ${ABSENDER.email}`, 40, 790, { align: 'center', width: 515 });
+  const genDatum2 = new Date().toLocaleString('de-DE');
+  doc.fontSize(7).text(`Generiert am ${genDatum2} · Seite 1/1`, 40, 780, { align: 'center', width: 515 });
   doc.end();
 });
 

@@ -61,10 +61,13 @@ router.post('/bulk', (req, res) => {
         
         // Belegungsprüfung für reguläre Plätze
         if (neuerPlatz.belegt && neuerPlatz.typ !== 'Gang' && neuerPlatz.typ !== 'Block') {
-          // Prüfe ob es ein a/b-Platz ist (stapelbar)
           if (!neuerPlatz.unter_position) {
             errors.push(`${z.nr}: Platz "${z.platz}" ist bereits belegt`);
             continue;
+          }
+          // a/b-Platz automatisch entsperren bei Umlagerung
+          if (neuerPlatz.unter_position && neuerPlatz.bemerkung && (neuerPlatz.bemerkung.includes('gesperrt') || neuerPlatz.bemerkung.includes('Nicht nutzbar'))) {
+            db.prepare("UPDATE lagerplaetze SET bemerkung = NULL WHERE id = ?").run(neuerPlatz.id);
           }
         }
         

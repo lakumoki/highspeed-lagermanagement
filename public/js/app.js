@@ -130,7 +130,7 @@ async function pgDashboard() {
   pc.innerHTML = `
     <div class="page-header"><h1>Dashboard</h1></div>
     <div class="stats-grid">
-      <div class="stat-card"><div class="label">Lagerplätze</div><div class="value">${d.plaetze_gesamt}</div><div class="sub">${d.plaetze_belegt} belegt · ${d.plaetze_frei} frei</div></div>
+      <div class="stat-card"><div class="label">Lagerplätze</div><div class="value">${d.plaetze_gesamt}</div><div class="sub">${d.plaetze_belegt} belegt · ${d.plaetze_frei} frei${d.ab_plaetze_frei > 0 ? ` · +${d.ab_plaetze_frei} Zusatz (a/b)` : ''}</div></div>
       <div class="stat-card ${pct > 90 ? 'warning' : ''}"><div class="label">Auslastung</div><div class="value">${pct}%</div><div class="progress-bar"><div class="fill ${barClass}" style="width:${pct}%"></div></div></div>
       <div class="stat-card"><div class="label">Aktive Paletten</div><div class="value">${d.paletten_aktiv}</div><div class="sub">mit Paletten-Nr.</div></div>
       <div class="stat-card"><div class="label">Offene Abrufe</div><div class="value">${d.offene_abrufe}</div><div class="sub">Pickliste ausstehend</div></div>
@@ -728,7 +728,14 @@ async function direktWareneingang() {
 
   if (!text) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
 
-  const nummern = text.split(/[\n,;]+/).map(n => n.trim()).filter(n => n.length > 0);
+  // Parsing: Zeilen mit optionaler Bemerkung nach Semikolon (Nr;Bemerkung)
+  const zeilen = text.split(/[\n]+/).map(z => z.trim()).filter(z => z.length > 0);
+  const positionen = zeilen.map(z => {
+    const idx = z.indexOf(';');
+    if (idx > 0) return { paletten_nr: z.substring(0, idx).trim(), bemerkung: z.substring(idx + 1).trim() };
+    return { paletten_nr: z.trim(), bemerkung: null };
+  });
+  const nummern = positionen.map(p => p.paletten_nr);
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
 
   if (prefix === 'EB') {
@@ -747,7 +754,7 @@ async function direktWareneingang() {
       kunde_id: kundeId,
       typ: 'direktanlieferung',
       lkw_nr: lkwNr || null,
-      positionen: nummern.map(nr => ({ paletten_nr: nr })),
+      positionen: positionen,
       bemerkung: bemerkung || null
     }});
 
@@ -820,17 +827,23 @@ function pgAuslagerung() {
           <label>Paletten-Nr. (mehrere Nummern per Zeilenumbruch möglich)</label>
           <textarea id="ausl-nr" rows="3" placeholder="EB- oder KW-Nummern einfügen (eine pro Zeile)" style="width:100%;padding:10px;font-size:14px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>LKW / Trailer</label>
+          <input type="text" id="ausl-lkw-kz" placeholder="Kennzeichen eingeben">
+        </div>
+        <div class="form-group">
+          <label>Paletten pro LKW</label>
+          <input type="number" id="ausl-lkw-anzahl" min="1" placeholder="z.B. 33" style="width:100px">
+          <small style="display:block;color:var(--text-muted);margin-top:4px">Leer = alles auf 1 LKW</small>
+        </div>
         <div class="form-group">
           <label>Bemerkung</label>
           <input type="text" id="ausl-bem" placeholder="Optional">
         </div>
-        <div class="form-group">
-          <label>Anzahl LKW (Split)</label>
-          <input type="number" id="ausl-lkw-anzahl" min="1" value="1" placeholder="1" style="width:80px">
-          <small style="display:block;color:var(--text-muted);margin-top:4px">Auf wie viele LKW aufteilen?</small>
-        </div>
       </div>
-      <button class="btn btn-primary" onclick="doAuslagern()">Auslagern</button>
+      <button class="btn btn-primary" onclick="doAuslagern()">Auslagern + Beleg</button>
       <div id="ausl-result" style="margin-top:16px"></div>
     </div>`;
 }
@@ -892,11 +905,13 @@ async function doAuslagern() {
 }
 
 function openSammelbeleg(nummern, lkwAnzahl) {
-  const lkw = lkwAnzahl || parseInt(document.getElementById('ausl-lkw-anzahl')?.value) || 1;
+  const palProLkw = parseInt(document.getElementById('ausl-lkw-anzahl')?.value) || 0;
+  const lkw = lkwAnzahl || (palProLkw > 0 ? Math.ceil(nummern.length / palProLkw) : 1);
+  const lkwKz = document.getElementById('ausl-lkw-kz')?.value?.trim() || '';
   fetch('/api/berichte/sammelbeleg', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paletten_nummern: nummern, lkw_anzahl: lkw })
+    body: JSON.stringify({ paletten_nummern: nummern, lkw_anzahl: lkw, lkw_kennzeichen: lkwKz, pal_pro_lkw: palProLkw || null })
   }).then(r => r.blob()).then(blob => {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
@@ -1226,9 +1241,12 @@ async function pgHandling() {
         Pro Palette: <strong>1× Auslagerung + X× Handling + 1× Einlagerung</strong><br>
         <em>Beispiel: 1 Palette, 2 Handlings = 4 Bewegungen (raus + 2× Handling + rein)</em>
       </p>
+      <div class="form-group">
+        <label>Paletten-Nr. * <span style="color:var(--text-muted);font-size:11px">(eine oder mehrere, je Zeile eine Nr.)</span></label>
+        <textarea id="hdl-nr" rows="4" placeholder="645524\n645525\n645526\n..." style="font-family:monospace;width:100%"></textarea>
+      </div>
       <div class="form-row">
-        <div class="form-group"><label>Paletten-Nr. *</label><input type="text" id="hdl-nr" placeholder="EB/KW-Nr."></div>
-        <div class="form-group"><label>Anzahl Handlings *</label><input type="number" id="hdl-menge" value="1" min="1" max="20" oninput="document.getElementById('hdl-info').textContent='→ '+(parseInt(this.value||1)+2)+' Bewegungen'"></div>
+        <div class="form-group"><label>Anzahl Handlings pro Palette *</label><input type="number" id="hdl-menge" value="1" min="1" max="20" oninput="document.getElementById('hdl-info').textContent='→ '+(parseInt(this.value||1)+2)+' Bewegungen pro Palette'"></div>
         <div class="form-group"><label>Art des Handlings *</label>
           <select id="hdl-art">
             <option value="Umetikettierung">Umetikettierung</option>
@@ -1239,26 +1257,35 @@ async function pgHandling() {
         </div>
       </div>
       <div class="form-group"><label>Bemerkung</label><input type="text" id="hdl-bem" placeholder="Optional (Details zum Handling)"></div>
-      <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="hdl-info">→ 3 Bewegungen werden gebucht</div>
+      <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="hdl-info">→ 3 Bewegungen pro Palette</div>
       <button class="btn btn-primary" onclick="doHandling()">Handling buchen + Beleg</button>
     </div>`;
 }
 
 async function doHandling() {
-  const nr = document.getElementById('hdl-nr').value.trim();
-  if (!nr) { toast('Paletten-Nr. eingeben', 'error'); return; }
+  const raw = document.getElementById('hdl-nr').value.trim();
+  if (!raw) { toast('Paletten-Nr. eingeben', 'error'); return; }
+  const nummern = raw.split(/[\n,]+/).map(n => n.trim()).filter(Boolean);
+  if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
+  
   const menge = parseInt(document.getElementById('hdl-menge').value) || 1;
   const art = document.getElementById('hdl-art').value;
   const bemerkung = document.getElementById('hdl-bem').value.trim();
+  const bewProPal = menge + 2;
+
+  if (!confirm(`Handling für ${nummern.length} Palette(n) buchen?\n\nJe ${bewProPal} Bewegungen (1× raus + ${menge}× ${art} + 1× rein)\nGesamt: ${nummern.length * bewProPal} Bewegungen`)) return;
+
+  let erfolg = 0, fehler = [];
+  for (const nr of nummern) {
+    try {
+      await api('/api/handling', { method: 'POST', body: { paletten_nr: nr, menge, art, bemerkung } });
+      erfolg++;
+    } catch (e) { fehler.push({ nr, msg: e.message }); }
+  }
   
-  if (!confirm(`Handling für Palette "${nr}" buchen?\n${menge + 2} Bewegungen (1× raus + ${menge}× ${art} + 1× rein)`)) return;
-  
-  try {
-    const data = await api('/api/handling', { method: 'POST', body: { paletten_nr: nr, menge, art, bemerkung } });
-    toast(data.message, 'success');
-    if (data.beleg_url) window.open(data.beleg_url, '_blank');
-    pgHandling();
-  } catch (e) { toast(e.message, 'error'); }
+  if (erfolg > 0) toast(`${erfolg} Handling-Aufträge gebucht (${erfolg * bewProPal} Bewegungen)`, 'success');
+  if (fehler.length > 0) toast(`${fehler.length} Fehler: ${fehler.map(f => f.nr + ': ' + f.msg).join(', ')}`, 'error');
+  document.getElementById('hdl-nr').value = '';
 }
 
 // ═══ UMLAGERUNG ══════════════════════════════════════════════════════════════
@@ -1627,19 +1654,21 @@ async function pgBewegungen() {
   pc.innerHTML = `
     <div class="page-header"><h1>Bewegungen</h1></div>
     <div class="card">
-      <div class="form-row" style="margin-bottom:14px">
+      <div class="form-row" style="margin-bottom:8px">
         <div class="form-group"><label>Kunde</label>
           <select id="bew-kunde">
             <option value="">Alle Kunden</option>
             ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label>Von</label><input type="date" id="bew-von"></div>
-        <div class="form-group"><label>Bis</label><input type="date" id="bew-bis"></div>
         <div class="form-group"><label>Typ</label>
           <select id="bew-typ"><option value="">Alle</option><option value="Einlagerung">Einlagerung</option><option value="Auslagerung">Auslagerung</option><option value="Entladung">Entladung</option><option value="Extra Handling">Extra Handling</option></select>
         </div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadBewegungen()">Filtern</button></div>
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group"><label>Von</label><input type="date" id="bew-von"></div>
+        <div class="form-group"><label>Bis</label><input type="date" id="bew-bis"></div>
       </div>
     </div>
     <div id="bew-results"></div>`;
@@ -1773,6 +1802,16 @@ async function pgBerichte() {
   const kunden = await api('/api/kunden');
   const now = new Date();
   const monatValue = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  
+  // Dropdown-Monate generieren (letzte 24 Monate)
+  const monatOptionen = [];
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = `${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+    monatOptionen.push(`<option value="${val}"${i === 0 ? ' selected' : ''}>${label}</option>`);
+  }
+  
   pc.innerHTML = `
     <div class="page-header"><h1>Berichte & PDF-Export</h1></div>
     <div class="card">
@@ -1780,14 +1819,22 @@ async function pgBerichte() {
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen des gewählten Monats.</p>
       <div class="form-row">
         <div class="form-group"><label>Kunde</label>
-          <select id="ber-kunde">
+          <select id="ber-kunde" onchange="localStorage.setItem('bericht_kunde_id',this.value)">
             ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label>Monat</label><input type="month" id="ber-monat" value="${monatValue}"></div>
+        <div class="form-group"><label>Monat</label>
+          <select id="ber-monat">
+            ${monatOptionen.join('')}
+          </select>
+        </div>
         <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="genMonatsbericht()">PDF generieren</button></div>
       </div>
     </div>`;
+  
+  // Letzten Kunden vorbelegen
+  const lastKunde = localStorage.getItem('bericht_kunde_id');
+  if (lastKunde) { const sel = document.getElementById('ber-kunde'); if (sel) sel.value = lastKunde; }
 }
 
 function genMonatsbericht() {
@@ -1908,22 +1955,45 @@ function editKundeAdresse(id) {
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   overlay.innerHTML = `
     <div class="modal">
-      <h2>Adresse bearbeiten</h2>
+      <h2>Kunde bearbeiten</h2>
+      <div class="form-row">
+        <div class="form-group"><label>Name</label><input type="text" id="ka-name"></div>
+        <div class="form-group"><label>Kürzel</label><input type="text" id="ka-kuerzel" placeholder="z.B. PPH, KW"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nr.-Prefix</label><input type="text" id="ka-prefix" placeholder="z.B. EB, KW"></div>
+        <div class="form-group"><label>Format</label><input type="text" id="ka-format" placeholder="z.B. 6-stellig"></div>
+      </div>
+      <div class="form-group"><label>Kontingent (Stellplätze)</label><input type="number" id="ka-kont" value="0"></div>
       <div class="form-group"><label>Adresse (für Lieferschein)</label><textarea id="ka-adresse" rows="4" placeholder="Firmenname&#10;Straße Nr.&#10;PLZ Ort&#10;Land" style="font-size:14px"></textarea></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
-        <button class="btn btn-primary" onclick="saveKundeAdresse(${id})">Speichern</button>
+        <button class="btn btn-primary" onclick="saveKundeDetails(${id})">Speichern</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  api(`/api/kunden/${id}`).then(d => { document.getElementById('ka-adresse').value = d.kunde.adresse || ''; });
+  api(`/api/kunden/${id}`).then(d => {
+    const k = d.kunde;
+    document.getElementById('ka-name').value = k.name || '';
+    document.getElementById('ka-kuerzel').value = k.kuerzel || '';
+    document.getElementById('ka-prefix').value = k.nummern_prefix || '';
+    document.getElementById('ka-format').value = k.nummern_format || '';
+    document.getElementById('ka-kont').value = k.kontingent_plaetze || 0;
+    document.getElementById('ka-adresse').value = k.adresse || '';
+  });
 }
 
-async function saveKundeAdresse(id) {
-  const adresse = document.getElementById('ka-adresse').value.trim();
+async function saveKundeDetails(id) {
   try {
-    await api(`/api/kunden/${id}/adresse`, { method: 'PUT', body: { adresse } });
-    toast('Adresse gespeichert', 'success');
+    await api(`/api/kunden/${id}`, { method: 'PUT', body: {
+      name: document.getElementById('ka-name').value.trim(),
+      kuerzel: document.getElementById('ka-kuerzel').value.trim() || null,
+      nummern_prefix: document.getElementById('ka-prefix').value.trim() || null,
+      nummern_format: document.getElementById('ka-format').value.trim() || null,
+      kontingent_plaetze: parseInt(document.getElementById('ka-kont').value) || 0,
+      adresse: document.getElementById('ka-adresse').value.trim() || null
+    }});
+    toast('Kundendaten gespeichert', 'success');
     document.querySelector('.modal-overlay')?.remove();
     showKundeDetail(id);
   } catch (e) { toast(e.message, 'error'); }

@@ -37,7 +37,8 @@
         }
         const done = items.filter(i => i.abgehakt).length;
         document.getElementById('counter').textContent = `${done} von ${items.length} gepickt`;
-        document.getElementById('list').innerHTML = items.map(item => `
+        
+        let html = items.map(item => `
           <div class="item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'notfound' : ''}" data-id="${item.abruf_id}" data-nr="${item.paletten_nr}">
             <div>
               <div class="nr">${item.paletten_nr}</div>
@@ -46,6 +47,18 @@
             <div class="check" onclick="togglePick(this, '${item.abruf_id}', '${item.paletten_nr}', ${item.abgehakt ? 1 : 0})">${item.abgehakt ? '✓' : '○'}</div>
           </div>
         `).join('');
+        
+        if (done > 0) {
+          html += `
+            <div style="margin-top:20px;text-align:center">
+              <button onclick="abschliessen()" style="width:100%;padding:16px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">
+                ✓ Auftrag abschließen (${done} Pal. auslagern)
+              </button>
+              <p style="color:#888;font-size:12px;margin-top:8px">Gepickte Paletten werden ausgelagert & Lieferschein erstellt</p>
+            </div>`;
+        }
+        
+        document.getElementById('list').innerHTML = html;
       } catch (e) {
         document.getElementById('list').innerHTML = '<div class="empty">Fehler beim Laden.</div>';
       }
@@ -59,6 +72,30 @@
         body: JSON.stringify({ abruf_id: abrufId, paletten_nr: nr, abgehakt: newVal })
       });
       load();
+    }
+
+    async function abschliessen() {
+      if (!confirm('Gepickte Paletten jetzt auslagern und Lieferschein erstellen?')) return;
+      try {
+        const res = await fetch('/api/pickliste/abschliessen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('list').innerHTML = `
+            <div style="text-align:center;padding:40px 20px;background:#1a3a2a;border:1px solid #27ae60;border-radius:10px">
+              <h2 style="color:#27ae60;margin-bottom:8px">✓ Auftrag abgeschlossen</h2>
+              <p style="color:#aaa;font-size:14px">${data.ausgelagert || 0} Palette(n) ausgelagert. Lieferschein erstellt.</p>
+            </div>`;
+          document.getElementById('counter').textContent = 'Erledigt';
+        } else {
+          alert(data.error || 'Fehler beim Abschließen');
+        }
+      } catch (e) {
+        alert('Netzwerkfehler: ' + e.message);
+      }
     }
 
     load();
