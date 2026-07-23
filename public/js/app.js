@@ -140,27 +140,14 @@ async function pgDashboard() {
     
     <div class="card">
       <div class="card-header"><h3>Schnellaktionen</h3></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-        <button class="btn btn-primary btn-lg" onclick="navigate('einlagerung')" style="justify-content:center">↓ Einlagern</button>
-        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">⬇ Direkteinlagerung</button>
-        <button class="btn btn-danger btn-lg" onclick="navigate('auslagerung')" style="justify-content:center;background:var(--danger)">↑ Auslagern</button>
-        <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf</button>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+        <button class="btn btn-lg" onclick="navigate('direktanlieferung')" style="justify-content:center;background:#e67e22;color:#fff">⬇ Direkteinlagerung (Fremd-LKW)</button>
+        <button class="btn btn-lg" onclick="navigate('pickliste')" style="justify-content:center;background:var(--info);color:#fff">☑ Abruf / Pickliste</button>
         <button class="btn btn-lg" onclick="navigate('musterung')" style="justify-content:center;background:#8e44ad;color:#fff">◈ Musterzug</button>
-        <button class="btn btn-secondary btn-lg" onclick="navigate('umlagerung')" style="justify-content:center">⇄ Umlagern</button>
+        <button class="btn btn-secondary btn-lg" onclick="navigate('umlagerung')" style="justify-content:center">⇄ Umlagerung</button>
       </div>
     </div>
     
-    ${d.kontingent ? `
-    <div class="card">
-      <div class="card-header"><h3>Kontingent Panpharma</h3><span class="badge badge-warning">${d.kontingent.monat}${d.kontingent.live ? ' (Live)' : ''}</span></div>
-      <div class="form-row">
-        <div><strong>Stellplätze:</strong> ${d.kontingent.kontingent_plaetze}</div>
-        <div><strong>Bestand:</strong> ${d.kontingent.lagerbestand}</div>
-        <div><strong>Verfügbar:</strong> <span style="color:${d.kontingent.verfuegbar < 0 ? 'var(--danger)' : 'var(--success)'}">${d.kontingent.verfuegbar}</span></div>
-        <div><strong>Überkapazität:</strong> ${d.kontingent.saldo_ueberkapazitaet || 0}</div>
-        <div><strong>Bewegungen:</strong> ${d.kontingent.bewegungen_gesamt}</div>
-      </div>
-    </div>` : ''}
     <div class="card">
       <div class="card-header"><h3>Bereiche</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Bereich</th><th>Gesamt</th><th>Belegt</th><th>Frei</th><th>%</th></tr></thead><tbody>

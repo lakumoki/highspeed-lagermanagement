@@ -194,11 +194,13 @@ router.post('/ausfuehren', (req, res) => {
 router.get('/aktuell', (req, res) => {
   const items = db.prepare(`
     SELECT a.*, 
-      p.lagerplatz_bezeichnung as aktueller_platz, 
+      p.lagerplatz_bezeichnung as aktueller_platz,
       k.name as kunde_name,
       CASE WHEN p.id IS NULL AND EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 1) THEN 1 ELSE 0 END as bereits_ausgelagert
     FROM abrufliste a
-    LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0
+    LEFT JOIN paletten p ON p.id = (
+      SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
+    )
     LEFT JOIN kunden k ON a.kunde_id = k.id
     ORDER BY a.lkw_nr, a.lfd_nummer
   `).all();
@@ -212,7 +214,15 @@ router.post('/abschliessen', (req, res) => {
   const jetzt = new Date().toISOString();
   const benutzer = req.session?.user?.benutzername || 'System';
 
-  const gepickt = db.prepare("SELECT a.*, p.id as pal_id, p.kunde_id, p.lagerplatz_id, p.lagerplatz_bezeichnung, p.artikel_nr, p.chargen_nr, k.name as kunde_name FROM abrufliste a LEFT JOIN paletten p ON p.paletten_nr = a.paletten_nr AND p.ausgelagert = 0 AND p.geloescht = 0 LEFT JOIN kunden k ON p.kunde_id = k.id WHERE a.abgehakt = 1").all();
+  const gepickt = db.prepare(`
+    SELECT a.*, p.id as pal_id, p.kunde_id, p.lagerplatz_id, p.lagerplatz_bezeichnung, p.artikel_nr, p.chargen_nr, k.name as kunde_name 
+    FROM abrufliste a 
+    LEFT JOIN paletten p ON p.id = (
+      SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
+    )
+    LEFT JOIN kunden k ON p.kunde_id = k.id 
+    WHERE a.abgehakt = 1
+  `).all();
 
   if (gepickt.length === 0) return res.status(400).json({ error: 'Keine gepickten Paletten vorhanden' });
 
