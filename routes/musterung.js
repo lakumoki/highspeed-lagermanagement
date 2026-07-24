@@ -47,7 +47,14 @@ router.post('/', (req, res) => {
   db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, handling_art, benutzer, monat) VALUES (?, ?, 'Einlagerung', 1, ?, 'Musterzug - Rücklagerung', ?, ?)").run(kid, heute, paletten_nr, benutzer, heute.substring(0, 7));
   
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Musterzug', `Palette ${paletten_nr} | Platz: ${palette.platz} | ${trays} Tray${trays > 1 ? 's' : ''} | Kunde: ${palette.kunde_name || '?'} | Lieferoption: ${lieferoption || 'Abholtisch'} | ${gesamtBewegungen} Bew.${bemerkung ? ' | Bem.: ' + bemerkung : ''}`, benutzer, jetzt);
-  
+
+  // Im Dokumentenarchiv speichern
+  db.prepare("INSERT INTO lieferscheine (beleg_nr, kunde_id, kunde_name, lkw_nr, lkw_gesamt, paletten_nummern, paletten_details, anzahl, benutzer, erstellt_am) VALUES (?,?,?,1,1,?,?,1,?,?)").run(
+    `MUSTER-${lfd}`, kid, palette.kunde_name || '—', paletten_nr,
+    JSON.stringify([{ nr: paletten_nr, platz: palette.platz, trays, lieferoption: lieferoption || 'Abholtisch', bemerkung: bemerkung || '' }]),
+    benutzer, jetzt
+  );
+
   res.json({ ok: true, lfd_nummer: lfd, message: `Musterzug aus ${paletten_nr}: ${gesamtBewegungen} Bewegungen gebucht (${trays} Tray${trays > 1 ? 's' : ''})`, bewegungen: gesamtBewegungen, beleg_url: `/api/musterung/beleg/${lfd}` });
 });
 

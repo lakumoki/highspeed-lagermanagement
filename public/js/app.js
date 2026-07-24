@@ -1262,16 +1262,18 @@ async function doHandling() {
 
   if (!confirm(`Handling für ${nummern.length} Palette(n) buchen?\n\nJe ${bewProPal} Bewegungen (1× raus + ${menge}× ${art} + 1× rein)\nGesamt: ${nummern.length * bewProPal} Bewegungen`)) return;
 
-  let erfolg = 0, fehler = [];
+  let erfolg = 0, fehler = [], lastBelegUrl = null;
   for (const nr of nummern) {
     try {
-      await api('/api/handling', { method: 'POST', body: { paletten_nr: nr, menge, art, bemerkung } });
+      const res = await api('/api/handling', { method: 'POST', body: { paletten_nr: nr, menge, art, bemerkung } });
       erfolg++;
+      if (res.beleg_url) lastBelegUrl = res.beleg_url;
     } catch (e) { fehler.push({ nr, msg: e.message }); }
   }
   
   if (erfolg > 0) toast(`${erfolg} Handling-Aufträge gebucht (${erfolg * bewProPal} Bewegungen)`, 'success');
   if (fehler.length > 0) toast(`${fehler.length} Fehler: ${fehler.map(f => f.nr + ': ' + f.msg).join(', ')}`, 'error');
+  if (lastBelegUrl && erfolg > 0) window.open(lastBelegUrl, '_blank');
   document.getElementById('hdl-nr').value = '';
 }
 
@@ -1521,12 +1523,15 @@ async function loadRegal(regal) {
         let cls = 'frei';
         let label = p.position;
         const isSelected = p.paletten_nr && lpSelectedPaletten.has(p.paletten_nr);
+        const count = p.pal_count || (p.paletten_nr ? 1 : 0);
         if (isSelected) { cls = 'belegt-selected'; label = '✓'; }
+        else if (p.paletten_nr && count > 1) { cls = 'belegt-nr'; label = `${count}×`; }
         else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr; }
         else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
         else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
         const hoehe = p.max_hoehe_cm ? `<span class="lp-hoehe">${p.max_hoehe_cm}</span>` : '';
-        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}${p.max_hoehe_cm ? ' (max ' + p.max_hoehe_cm + 'cm)' : ''}">${label}${hoehe}</div>`;
+        const titleCount = count > 1 ? ` (${count} Paletten)` : '';
+        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}${titleCount}${p.max_hoehe_cm ? ' (max ' + p.max_hoehe_cm + 'cm)' : ''}">${label}${hoehe}</div>`;
       }).join('')}
     </div>`;
 
@@ -2215,7 +2220,7 @@ async function pgDokumente() {
           <td>${d.paletten_nummern || '—'}</td>
           <td>${d.benutzer || '—'}</td>
           <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
-          <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
+          <td><a class="btn btn-sm btn-primary" href="/api/handling/beleg/${d.beleg_nr?.split('-').pop()}" target="_blank">PDF</a></td>
         </tr>`).join('')}
       </tbody></table></div>
     </div>`;

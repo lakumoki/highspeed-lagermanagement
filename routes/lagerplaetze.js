@@ -88,19 +88,25 @@ router.get('/plan/regal/:regal', (req, res) => {
   if (regal.startsWith('Block ')) {
     const blockRegal = regal.replace('Block ', '');
     plaetze = db.prepare(`
-      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
+      SELECT l.*,
+        (SELECT p2.paletten_nr FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as paletten_nr,
+        (SELECT p2.nummern_typ FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as nummern_typ,
+        (SELECT p2.artikel_nr FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as artikel_nr,
+        (SELECT k.name FROM paletten p2 JOIN kunden k ON p2.kunde_id = k.id WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as kunde_name,
+        (SELECT COUNT(*) FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0) as pal_count
       FROM lagerplaetze l
-      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-      LEFT JOIN kunden k ON p.kunde_id = k.id
       WHERE l.regal = ? AND l.typ = 'Block'
       ORDER BY l.position, l.unter_position
     `).all(blockRegal);
   } else {
     plaetze = db.prepare(`
-      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, k.name as kunde_name
+      SELECT l.*,
+        (SELECT p2.paletten_nr FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as paletten_nr,
+        (SELECT p2.nummern_typ FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as nummern_typ,
+        (SELECT p2.artikel_nr FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as artikel_nr,
+        (SELECT k.name FROM paletten p2 JOIN kunden k ON p2.kunde_id = k.id WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0 ORDER BY p2.id DESC LIMIT 1) as kunde_name,
+        (SELECT COUNT(*) FROM paletten p2 WHERE p2.lagerplatz_id = l.id AND p2.ausgelagert = 0 AND p2.geloescht = 0) as pal_count
       FROM lagerplaetze l
-      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.ausgelagert = 0 AND p.geloescht = 0
-      LEFT JOIN kunden k ON p.kunde_id = k.id
       WHERE l.regal = ? AND l.typ != 'Block'
       ORDER BY l.position, l.unter_position
     `).all(regal);
