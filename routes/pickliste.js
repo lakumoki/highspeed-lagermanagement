@@ -91,7 +91,7 @@ router.post('/pdf', (req, res) => {
   }
   if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'Items erforderlich' });
   
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="Pickliste_${abruf_id || 'neu'}.pdf"`);
   doc.pipe(res);
@@ -143,13 +143,19 @@ router.post('/pdf', (req, res) => {
       doc.rect(530, y, 12, 12).stroke();
       y += 20;
       
-      if (y > 750) { doc.addPage(); y = 50; }
+      if (y > 720) { doc.addPage(); y = 50; }
     }
-    
-    // Footer
-    doc.fontSize(8).text(`${lkwItems.length} Paletten · Seite gedruckt am ${new Date().toLocaleString('de-DE')}`, 40, 770, { align: 'center', width: 515 });
   }
-  
+
+  const pickGenTimestamp = new Date().toLocaleString('de-DE');
+  const pickPages = doc.bufferedPageRange();
+  for (let i = 0; i < pickPages.count; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${pickGenTimestamp} · Seite ${i + 1}/${pickPages.count}`, 40, 775, { align: 'center', width: 515 });
+    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
+  }
+
   doc.end();
 });
 
@@ -203,13 +209,10 @@ router.post('/ausfuehren', (req, res) => {
 router.get('/aktuell', (req, res) => {
   const items = db.prepare(`
     SELECT a.*, 
-      p.lagerplatz_bezeichnung as aktueller_platz,
       k.name as kunde_name,
-      CASE WHEN p.id IS NULL AND EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 1) THEN 1 ELSE 0 END as bereits_ausgelagert
+      CASE WHEN NOT EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0)
+           AND EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 1) THEN 1 ELSE 0 END as bereits_ausgelagert
     FROM abrufliste a
-    LEFT JOIN paletten p ON p.id = (
-      SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
-    )
     LEFT JOIN kunden k ON a.kunde_id = k.id
     ORDER BY a.lkw_nr, a.lfd_nummer
   `).all();
@@ -362,9 +365,10 @@ router.get('/lieferschein/:id', (req, res) => {
     doc.text(p.charge || '—', 335, y, { width: 120 });
     doc.text(p.kunde || '—', 460, y, { width: 95 });
     y += 13;
-    if (y > 700) { doc.addPage(); y = 40; }
+    if (y > 690) { doc.addPage(); y = 40; }
   }
 
+  if (y > 690) { doc.addPage(); y = 40; }
   y += 10;
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;

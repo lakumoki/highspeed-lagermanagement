@@ -68,7 +68,16 @@ router.post('/bulk', (req, res) => {
       for (const z of zuweisungen) {
         if (!z.nr || !z.platz) { errors.push(`Unvollständige Zuweisung`); continue; }
         
-        const palette = findUnprocessedPalette(z.nr, usedIds);
+        let palette;
+        if (z.palette_id) {
+          palette = db.prepare(`
+            SELECT p.*, l.id as alter_platz_id, l.bezeichnung as von_platz
+            FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+            WHERE p.id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+          `).get(z.palette_id);
+          if (palette && usedIds.has(palette.id)) palette = null;
+        }
+        if (!palette) palette = findUnprocessedPalette(z.nr, usedIds);
         if (!palette) { errors.push(`${z.nr}: nicht gefunden`); continue; }
         usedIds.add(palette.id);
         

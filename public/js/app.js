@@ -30,6 +30,15 @@ function toast(msg, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
+function setLastKunde(kundeId) { localStorage.setItem('last_kunde_id', kundeId); }
+function getLastKunde() { return localStorage.getItem('last_kunde_id'); }
+function preSelectKunde(selectId) {
+  const last = getLastKunde();
+  if (!last) return;
+  const sel = document.getElementById(selectId);
+  if (sel && [...sel.options].find(o => o.value === last)) sel.value = last;
+}
+
 // ─── LOGIN ───────────────────────────────────────────────────────────────────
 function renderLogin() {
   app.innerHTML = `
@@ -269,7 +278,7 @@ async function pgEinlagerung() {
         <div class="form-row">
           <div class="form-group">
             <label>Kunde *</label>
-            <select id="einl-kunde" onchange="einlKundeChange()">
+            <select id="einl-kunde" onchange="setLastKunde(this.value);einlKundeChange()">
               ${kunden.map(k => `<option value="${k.id}" data-prefix="${k.nummern_prefix || ''}" data-format="${k.nummern_format || ''}">${k.name} (${k.kuerzel || ''})</option>`).join('')}
             </select>
           </div>
@@ -332,12 +341,7 @@ async function pgEinlagerung() {
       </div>
     </div>`;
   
-  // Letzten Kunden aus localStorage vorbelegen
-  const lastKunde = localStorage.getItem('einl_last_kunde');
-  if (lastKunde) {
-    const sel = document.getElementById('einl-kunde');
-    if (sel && [...sel.options].find(o => o.value === lastKunde)) sel.value = lastKunde;
-  }
+  preSelectKunde('einl-kunde');
   einlKundeChange();
   loadAuftraege();
 }
@@ -484,7 +488,7 @@ function generateQRInElement(elementId, url) {
 
 async function einlKundeChange() {
   const sel = document.getElementById('einl-kunde');
-  localStorage.setItem('einl_last_kunde', sel.value);
+  setLastKunde(sel.value);
   const opt = sel.options[sel.selectedIndex];
   const hint = document.getElementById('einl-format-hint');
   const format = opt.dataset.format;
@@ -935,7 +939,7 @@ async function pgPickliste() {
         <div class="picklist-item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'already-out' : ''}" data-nr="${item.paletten_nr}">
           <div class="check" ${item.bereits_ausgelagert ? 'style="background:#fee;color:#c00;pointer-events:none"' : `onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')"`}>${item.bereits_ausgelagert ? '✗' : (item.abgehakt ? '✓' : '')}</div>
           <div class="nr">${item.paletten_nr}</div>
-          <div class="platz">${item.bereits_ausgelagert ? '<span style="color:var(--danger);font-size:11px">Bereits ausgelagert</span>' : (item.aktueller_platz || item.lagerplatz || '?')}</div>
+          <div class="platz">${item.bereits_ausgelagert ? '<span style="color:var(--danger);font-size:11px">Bereits ausgelagert</span>' : (item.lagerplatz || '?')}</div>
           <div class="info">Pos. ${item.lfd_nummer}</div>
         </div>
       `).join('')}
@@ -947,7 +951,7 @@ async function pgPickliste() {
           ${aktuell.map(item => `<tr style="${item.abgehakt ? 'background:#e8f8f0' : ''} ${item.bereits_ausgelagert ? 'opacity:0.5;background:#fee' : ''}">
             <td>${item.lfd_nummer}</td>
             <td><strong>${item.paletten_nr}</strong></td>
-            <td>${item.bereits_ausgelagert ? '<span style="color:var(--danger)">Bereits ausgelagert</span>' : (item.aktueller_platz || item.lagerplatz || '?')}</td>
+            <td>${item.bereits_ausgelagert ? '<span style="color:var(--danger)">Bereits ausgelagert</span>' : (item.lagerplatz || '?')}</td>
             <td>${item.bereits_ausgelagert ? '<span class="badge badge-danger">Ausgelagert</span>' : (item.abgehakt ? '<span class="badge badge-success">Gepickt</span>' : '<span class="badge badge-warning">Offen</span>')}</td>
           </tr>`).join('')}
         </tbody></table></div>
@@ -1411,11 +1415,11 @@ async function weBulkUmlagern() {
   const platz = document.getElementById('we-bulk-platz')?.value?.trim();
   if (!platz) { toast('Bitte Gang/Block-Platz eingeben', 'error'); return; }
 
-  const nummern = checked.map(cb => cb.dataset.nr);
-  if (!confirm(`${nummern.length} Paletten nach "${platz}" (Gang/Block) umlagern?`)) return;
+  const zuweisungen = checked.map(cb => ({ nr: cb.dataset.nr, platz, palette_id: parseInt(cb.dataset.id) }));
+  if (!confirm(`${zuweisungen.length} Paletten nach "${platz}" (Gang/Block) umlagern?`)) return;
 
   try {
-    const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { paletten_nummern: nummern, nach_platz: platz } });
+    const data = await api('/api/umlagerung/bulk', { method: 'POST', body: { zuweisungen } });
     toast(data.message, 'success');
     if (data.errors && data.errors.length > 0) toast(`Fehler: ${data.errors.join(', ')}`, 'error');
     pgUmlagerung();
@@ -1522,27 +1526,62 @@ async function loadRegal(regal) {
   const plaetze = await api(`/api/lagerplaetze/plan/regal/${encodeURIComponent(regal)}`);
   const grid = document.getElementById('lp-grid');
 
-  const hauptPlaetze = plaetze.filter(p => !p.unter_position);
-  const abPlaetze = plaetze.filter(p => p.unter_position);
-  const platzInfo = abPlaetze.length > 0 ? `${hauptPlaetze.length} Plätze + ${abPlaetze.length} Zusatz (a/b)` : `${hauptPlaetze.length} Plätze`;
-  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${platzInfo}</h3><span style="font-size:11px;color:var(--text-muted)">Klick = Details · Shift+Klick = Auswählen zum Umlagern</span></div>
-    <div class="lagerplan-grid">
-      ${plaetze.map(p => {
-        let cls = 'frei';
-        let label = p.position;
-        const isSelected = p.paletten_nr && lpSelectedPaletten.has(p.paletten_nr);
-        const count = p.pal_count || (p.paletten_nr ? 1 : 0);
-        if (isSelected) { cls = 'belegt-selected'; label = '✓'; }
-        else if (p.paletten_nr && count > 1) { cls = 'belegt-nr'; label = `${count}×`; }
-        else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr; }
-        else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
-        else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
-        const hoehe = p.max_hoehe_cm ? `<span class="lp-hoehe">${p.max_hoehe_cm}</span>` : '';
-        const titleCount = count > 1 ? ` (${count} Paletten)` : '';
-        return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}${titleCount}${p.max_hoehe_cm ? ' (max ' + p.max_hoehe_cm + 'cm)' : ''}">${label}${hoehe}</div>`;
-      }).join('')}
-    </div>`;
+  const isGangBlock = plaetze.length > 0 && (plaetze[0].typ === 'Gang' || plaetze[0].typ === 'Block');
 
+  if (isGangBlock && plaetze.length === 1 && plaetze[0].pal_count > 0) {
+    const detail = await api(`/api/lagerplaetze/${plaetze[0].id}`);
+    const allePal = detail.alle_paletten || [];
+    grid.innerHTML = `<div class="card-header"><h3>${regal} — ${allePal.length} Paletten</h3><span style="font-size:11px;color:var(--text-muted)">Typ: ${plaetze[0].typ} (Mehrfachbelegung)</span></div>
+      <div class="table-wrap" style="max-height:600px;overflow-y:auto"><table><thead><tr><th style="width:30px"><input type="checkbox" onchange="lpGangSelectAll(this.checked)"></th><th>Pal.-Nr.</th><th>Typ</th><th>Artikel</th><th>Charge</th><th>Kunde</th><th>Eingelagert</th><th></th></tr></thead><tbody>
+        ${allePal.map(pal => `<tr>
+          <td><input type="checkbox" class="lp-gang-cb" data-nr="${pal.paletten_nr}" data-id="${pal.palette_id}" ${lpSelectedPaletten.has(pal.paletten_nr) ? 'checked' : ''} onchange="lpGangCheckChanged(this,'${pal.paletten_nr}')"></td>
+          <td><strong>${pal.paletten_nr}</strong></td>
+          <td><span class="badge badge-${(pal.nummern_typ||'').toLowerCase() === 'eb' ? 'eb' : 'kw'}">${pal.nummern_typ || '—'}</span></td>
+          <td>${pal.artikel_nr || '—'}</td>
+          <td>${pal.chargen_nr || '—'}</td>
+          <td>${pal.kunde_name || '—'}</td>
+          <td>${pal.eingelagert_am ? new Date(pal.eingelagert_am).toLocaleString('de-DE') : '—'}</td>
+          <td><button class="btn btn-sm btn-secondary" onclick="editPalette(${pal.palette_id})">✎</button></td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
+  } else {
+    const hauptPlaetze = plaetze.filter(p => !p.unter_position);
+    const abPlaetze = plaetze.filter(p => p.unter_position);
+    const platzInfo = abPlaetze.length > 0 ? `${hauptPlaetze.length} Plätze + ${abPlaetze.length} Zusatz (a/b)` : `${hauptPlaetze.length} Plätze`;
+    grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${platzInfo}</h3><span style="font-size:11px;color:var(--text-muted)">Klick = Details · Shift+Klick = Auswählen zum Umlagern</span></div>
+      <div class="lagerplan-grid">
+        ${plaetze.map(p => {
+          let cls = 'frei';
+          let label = p.position;
+          const isSelected = p.paletten_nr && lpSelectedPaletten.has(p.paletten_nr);
+          const count = p.pal_count || (p.paletten_nr ? 1 : 0);
+          if (isSelected) { cls = 'belegt-selected'; label = '✓'; }
+          else if (p.paletten_nr && count > 1) { cls = 'belegt-nr'; label = `${count}×`; }
+          else if (p.paletten_nr) { cls = 'belegt-nr'; label = p.paletten_nr; }
+          else if (p.belegt && p.bemerkung?.includes('Nicht nutzbar')) { cls = 'belegt-x'; label = '×'; }
+          else if (p.belegt) { cls = 'belegt-sonstige'; label = p.position; }
+          const hoehe = p.max_hoehe_cm ? `<span class="lp-hoehe">${p.max_hoehe_cm}</span>` : '';
+          const titleCount = count > 1 ? ` (${count} Paletten)` : '';
+          return `<div class="lagerplan-cell ${cls}" onclick="lpCellClick(event, ${p.id}, '${p.paletten_nr || ''}')" title="${p.bezeichnung}${p.paletten_nr ? ' — ' + p.paletten_nr : ''}${titleCount}${p.max_hoehe_cm ? ' (max ' + p.max_hoehe_cm + 'cm)' : ''}">${label}${hoehe}</div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  lpUpdateToolbar();
+}
+
+function lpGangSelectAll(checked) {
+  document.querySelectorAll('.lp-gang-cb').forEach(cb => {
+    cb.checked = checked;
+    if (checked) lpSelectedPaletten.add(cb.dataset.nr);
+    else lpSelectedPaletten.delete(cb.dataset.nr);
+  });
+  lpUpdateToolbar();
+}
+
+function lpGangCheckChanged(cb, nr) {
+  if (cb.checked) lpSelectedPaletten.add(nr);
+  else lpSelectedPaletten.delete(nr);
   lpUpdateToolbar();
 }
 
@@ -1664,7 +1703,7 @@ async function pgBewegungen() {
     <div class="card">
       <div class="form-row" style="margin-bottom:8px">
         <div class="form-group"><label>Kunde</label>
-          <select id="bew-kunde">
+          <select id="bew-kunde" onchange="if(this.value)setLastKunde(this.value)">
             <option value="">Alle Kunden</option>
             ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
           </select>
@@ -1680,6 +1719,7 @@ async function pgBewegungen() {
       </div>
     </div>
     <div id="bew-results"></div>`;
+  preSelectKunde('bew-kunde');
   loadBewegungen();
 }
 
@@ -1733,7 +1773,7 @@ async function pgKontingent() {
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <label style="font-size:13px;font-weight:600">Kunde:</label>
-        <select id="kont-kunde" onchange="loadKontingent(this.value)" style="padding:6px 12px;font-size:13px;border-radius:6px;border:1px solid var(--border)">
+        <select id="kont-kunde" onchange="setLastKunde(this.value);loadKontingent(this.value)" style="padding:6px 12px;font-size:13px;border-radius:6px;border:1px solid var(--border)">
           ${kunden.map(k => `<option value="${k.id}">${k.name} — Kontingent: ${k.kontingent_plaetze || 0} Plätze</option>`).join('')}
         </select>
         <button class="btn btn-sm btn-secondary" onclick="editKontingentPlaetze()">Kontingent anpassen</button>
@@ -1741,7 +1781,9 @@ async function pgKontingent() {
     </div>
     <div id="kont-content"></div>`;
 
-  if (kunden.length) loadKontingent(kunden[0].id);
+  preSelectKunde('kont-kunde');
+  const kontKundeId = document.getElementById('kont-kunde')?.value || (kunden.length ? kunden[0].id : null);
+  if (kontKundeId) loadKontingent(kontKundeId);
 }
 
 async function loadKontingent(kundeId) {
@@ -1827,7 +1869,7 @@ async function pgBerichte() {
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Erstellt ein PDF mit allen Bewegungen des gewählten Monats.</p>
       <div class="form-row">
         <div class="form-group"><label>Kunde</label>
-          <select id="ber-kunde" onchange="localStorage.setItem('bericht_kunde_id',this.value)">
+          <select id="ber-kunde" onchange="setLastKunde(this.value)">
             ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
           </select>
         </div>
@@ -1840,9 +1882,7 @@ async function pgBerichte() {
       </div>
     </div>`;
   
-  // Letzten Kunden vorbelegen
-  const lastKunde = localStorage.getItem('bericht_kunde_id');
-  if (lastKunde) { const sel = document.getElementById('ber-kunde'); if (sel) sel.value = lastKunde; }
+  preSelectKunde('ber-kunde');
 }
 
 function genMonatsbericht() {
@@ -1902,16 +1942,15 @@ async function showKundeDetail(id) {
       </tbody></table></div>
     </div>` : ''}
     
-    ${kontingent ? `
     <div class="card">
-      <div class="card-header"><h3>Kontingent</h3></div>
-      <table style="width:100%;font-size:13px">
+      <div class="card-header"><h3>Kontingent</h3><button class="btn btn-sm btn-secondary" onclick="editKundeKontingent(${kunde.id})">Kontingent anpassen</button></div>
+      ${kontingent ? `<table style="width:100%;font-size:13px">
         <tr><td>Monat</td><td>${kontingent.monat || '—'}</td></tr>
         <tr><td>Stellplätze</td><td>${kontingent.kontingent_plaetze}</td></tr>
         <tr><td>Lagerbestand</td><td>${kontingent.lagerbestand}</td></tr>
         <tr><td>Saldo Überkapazität</td><td style="color:${(kontingent.saldo_ueberkapazitaet || 0) > 0 ? 'var(--danger)' : 'var(--success)'}">${kontingent.saldo_ueberkapazitaet || 0}</td></tr>
-      </table>
-    </div>` : ''}
+      </table>` : '<p style="font-size:13px;color:var(--text-muted)">Kein Kontingent festgelegt. Über "Kontingent anpassen" festlegen.</p>'}
+    </div>
     
     ${muster.length > 0 ? `
     <div class="card">
@@ -1972,7 +2011,7 @@ function editKundeAdresse(id) {
         <div class="form-group"><label>Nr.-Prefix</label><input type="text" id="ka-prefix" placeholder="z.B. EB, KW"></div>
         <div class="form-group"><label>Format</label><input type="text" id="ka-format" placeholder="z.B. 6-stellig"></div>
       </div>
-      <div class="form-group"><label>Kontingent (Stellplätze)</label><input type="number" id="ka-kont" value="0"></div>
+      <div class="form-group"><labelKontingent (Stellplätze)</label><input type="number" id="ka-kont" value="0"></div>
       <div class="form-group"><label>Adresse (für Lieferschein)</label><textarea id="ka-adresse" rows="4" placeholder="Firmenname&#10;Straße Nr.&#10;PLZ Ort&#10;Land" style="font-size:14px"></textarea></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
@@ -2004,6 +2043,39 @@ async function saveKundeDetails(id) {
     toast('Kundendaten gespeichert', 'success');
     document.querySelector('.modal-overlay')?.remove();
     showKundeDetail(id);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function editKundeKontingent(kundeId) {
+  const data = await api(`/api/kunden/${kundeId}`);
+  const k = data.kunde;
+  const monat = new Date().toISOString().substring(0, 7);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Kontingent anpassen — ${k.name}</h2>
+      <div class="form-group"><label>Stellplätze (Kontingent)</label><input type="number" id="kk-plaetze" value="${k.kontingent_plaetze || 0}"></div>
+      <div class="form-group"><label>Gültig ab Monat</label><input type="month" id="kk-monat" value="${monat}"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveKundeKontingent(${kundeId})">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveKundeKontingent(kundeId) {
+  const plaetze = parseInt(document.getElementById('kk-plaetze').value) || 0;
+  const monat = document.getElementById('kk-monat').value;
+  try {
+    const kData = await api(`/api/kunden/${kundeId}`);
+    await api(`/api/kunden/${kundeId}`, { method: 'PUT', body: { ...kData.kunde, kontingent_plaetze: plaetze } });
+    await api(`/api/kontingent/${kundeId}`, { method: 'POST', body: { monat, kontingent_plaetze: plaetze } });
+    toast('Kontingent gespeichert', 'success');
+    document.querySelector('.modal-overlay')?.remove();
+    showKundeDetail(kundeId);
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -2331,29 +2403,121 @@ function showDokTab(tab) {
 }
 
 // ═══ BENUTZER ════════════════════════════════════════════════════════════════
+const BERECHTIGUNGEN_OPTIONEN = [
+  { key: 'einlagerung', label: 'Einlagerung' },
+  { key: 'auslagerung', label: 'Auslagerung / Pickliste' },
+  { key: 'direktanlieferung', label: 'Direkteinlagerung' },
+  { key: 'umlagerung', label: 'Umlagerung' },
+  { key: 'musterung', label: 'Musterzug' },
+  { key: 'handling', label: 'Handling' },
+  { key: 'lagerplan', label: 'Lagerplan' },
+  { key: 'bewegungen', label: 'Bewegungen' },
+  { key: 'berichte', label: 'Berichte / PDF' },
+  { key: 'kunden', label: 'Kunden' },
+  { key: 'kontingent', label: 'Kontingent' },
+  { key: 'protokoll', label: 'Protokoll' },
+  { key: 'dokumente', label: 'Dokumentenarchiv' },
+  { key: 'benutzer', label: 'Benutzerverwaltung' },
+];
+
+function berechtigungenCheckboxes(prefix, berechtigungen) {
+  const b = typeof berechtigungen === 'string' ? JSON.parse(berechtigungen || '{}') : (berechtigungen || {});
+  return BERECHTIGUNGEN_OPTIONEN.map(opt =>
+    `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" class="${prefix}-ber" data-key="${opt.key}" ${b[opt.key] !== false ? 'checked' : ''}> ${opt.label}
+    </label>`
+  ).join('');
+}
+
+function collectBerechtigungen(prefix) {
+  const result = {};
+  document.querySelectorAll(`.${prefix}-ber`).forEach(cb => { result[cb.dataset.key] = cb.checked; });
+  return result;
+}
+
 async function pgBenutzer() {
   const pc = document.getElementById('page-content');
   const benutzer = await api('/api/benutzer');
+  const aufgaben = await api('/api/aufgaben?alle=1').catch(() => []);
+  const offeneAufgaben = aufgaben.filter(a => a.status === 'offen');
   pc.innerHTML = `
-    <div class="page-header"><h1>Benutzerverwaltung</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuerBenutzer()">+ Neuer Benutzer</button></div></div>
+    <div class="page-header"><h1>Benutzerverwaltung</h1><div class="actions">
+      <button class="btn btn-secondary" onclick="showAufgabeSenden()">Aufgabe senden</button>
+      <button class="btn btn-primary" onclick="showNeuerBenutzer()">+ Neuer Benutzer</button>
+    </div></div>
+    ${offeneAufgaben.length > 0 ? `<div class="card" style="margin-bottom:16px;border-left:4px solid var(--warning)">
+      <div class="card-header"><h3>Offene Aufgaben (${offeneAufgaben.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Von</th><th>An</th><th>Aufgabe</th><th>Details</th><th>Erstellt</th><th></th></tr></thead><tbody>
+        ${offeneAufgaben.map(a => `<tr>
+          <td>${a.von_benutzer}</td><td><strong>${a.an_benutzer}</strong></td>
+          <td>${a.titel}</td><td>${a.details || '—'}</td>
+          <td>${new Date(a.erstellt_am).toLocaleString('de-DE')}</td>
+          <td><button class="btn btn-sm btn-success" onclick="erledigeAufgabe(${a.id})">Erledigt</button></td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>` : ''}
     <div class="card">
-      <div class="table-wrap"><table><thead><tr><th>Benutzername</th><th>Vollname</th><th>Rolle</th><th>Status</th><th>Erstellt</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>Benutzername</th><th>Vollname</th><th>Rolle</th><th>Status</th><th>Erstellt</th><th></th></tr></thead><tbody>
         ${benutzer.map(b => `<tr>
           <td><strong>${b.benutzername}</strong></td>
           <td>${b.vollname || '—'}</td>
           <td><span class="badge ${b.rolle === 'Administrator' ? 'badge-danger' : b.rolle === 'Staplerfahrer' ? 'badge-warning' : 'badge-info'}">${b.rolle || '—'}</span></td>
           <td>${b.aktiv ? '<span class="badge badge-success">Aktiv</span>' : '<span class="badge badge-danger">Inaktiv</span>'}</td>
           <td>${b.erstellt_am ? new Date(b.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="showBenutzerBearbeiten(${b.id})">Bearbeiten</button>
+            <button class="btn btn-sm btn-secondary" onclick="showAufgabeSenden('${b.benutzername}')">Aufgabe</button>
+          </td>
         </tr>`).join('')}
       </tbody></table></div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <h3 style="margin-bottom:12px">Protokollierung</h3>
-      <p style="font-size:13px;color:var(--text-muted)">
-        <strong>Staplerfahrer:</strong> Wird nur protokolliert, wenn die Aktion über QR-Code (Staplerauftrag) erfolgt.<br>
-        <strong>Andere Benutzer:</strong> Der jeweils eingeloggte Benutzer wird bei allen Aktionen protokolliert.
-      </p>
     </div>`;
+}
+
+async function erledigeAufgabe(id) {
+  try {
+    await api(`/api/aufgaben/${id}/erledigt`, { method: 'PUT' });
+    toast('Aufgabe als erledigt markiert', 'success');
+    pgBenutzer();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function showAufgabeSenden(vorausgewaehlterBenutzer) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Aufgabe an Benutzer senden</h2>
+      <div class="form-group"><label>Empfänger *</label><input type="text" id="auf-an" value="${vorausgewaehlterBenutzer || ''}" placeholder="Benutzername"></div>
+      <div class="form-group"><label>Aufgabe / Titel *</label><input type="text" id="auf-titel" placeholder="z.B. Palette 123 auf P41 umlagern"></div>
+      <div class="form-group"><label>Details</label><textarea id="auf-details" rows="3" placeholder="Weitere Informationen..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Paletten-Nr.</label><input type="text" id="auf-pal" placeholder="Optional"></div>
+        <div class="form-group"><label>Lagerplatz</label><input type="text" id="auf-platz" placeholder="Optional"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="sendeAufgabe()">Senden</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function sendeAufgabe() {
+  const an = document.getElementById('auf-an').value.trim();
+  const titel = document.getElementById('auf-titel').value.trim();
+  if (!an || !titel) { toast('Empfänger und Titel erforderlich', 'error'); return; }
+  try {
+    await api('/api/aufgaben', { method: 'POST', body: {
+      an_benutzer: an, titel,
+      details: document.getElementById('auf-details').value.trim() || null,
+      paletten_nummern: document.getElementById('auf-pal').value.trim() || null,
+      lagerplatz: document.getElementById('auf-platz').value.trim() || null
+    }});
+    document.querySelector('.modal-overlay')?.remove();
+    toast('Aufgabe gesendet', 'success');
+    pgBenutzer();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 function showNeuerBenutzer() {
@@ -2361,7 +2525,7 @@ function showNeuerBenutzer() {
   overlay.className = 'modal-overlay';
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal" style="max-width:520px">
       <h2>Neuer Benutzer</h2>
       <div class="form-group"><label>Benutzername *</label><input type="text" id="nb-user" placeholder="z.B. martin"></div>
       <div class="form-group"><label>Passwort *</label><input type="password" id="nb-pass" placeholder="Passwort"></div>
@@ -2373,6 +2537,10 @@ function showNeuerBenutzer() {
           <option value="Staplerfahrer">Staplerfahrer</option>
           <option value="Lager">Lager</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Berechtigungen</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">${berechtigungenCheckboxes('nb', {})}</div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
@@ -2391,10 +2559,65 @@ async function saveNeuerBenutzer() {
       benutzername: user,
       passwort: pass,
       vollname: document.getElementById('nb-name').value.trim() || user,
-      rolle: document.getElementById('nb-rolle').value
+      rolle: document.getElementById('nb-rolle').value,
+      berechtigungen: collectBerechtigungen('nb')
     }});
     document.querySelector('.modal-overlay')?.remove();
     toast('Benutzer erstellt', 'success');
+    pgBenutzer();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function showBenutzerBearbeiten(id) {
+  const b = await api(`/api/benutzer/${id}`);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  const berechtigungen = typeof b.berechtigungen === 'string' ? JSON.parse(b.berechtigungen || '{}') : (b.berechtigungen || {});
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:520px">
+      <h2>Benutzer bearbeiten — ${b.benutzername}</h2>
+      <div class="form-group"><label>Vollname</label><input type="text" id="eb-name" value="${b.vollname || ''}"></div>
+      <div class="form-group"><label>Neues Passwort (leer = nicht ändern)</label><input type="password" id="eb-pass" placeholder="Nur ausfüllen wenn ändern"></div>
+      <div class="form-group"><label>Rolle</label>
+        <select id="eb-rolle">
+          <option value="Mitarbeiter" ${b.rolle === 'Mitarbeiter' ? 'selected' : ''}>Mitarbeiter</option>
+          <option value="Administrator" ${b.rolle === 'Administrator' ? 'selected' : ''}>Administrator</option>
+          <option value="Staplerfahrer" ${b.rolle === 'Staplerfahrer' ? 'selected' : ''}>Staplerfahrer</option>
+          <option value="Lager" ${b.rolle === 'Lager' ? 'selected' : ''}>Lager</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="eb-aktiv">
+          <option value="1" ${b.aktiv ? 'selected' : ''}>Aktiv</option>
+          <option value="0" ${!b.aktiv ? 'selected' : ''}>Inaktiv</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Berechtigungen</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">${berechtigungenCheckboxes('eb', berechtigungen)}</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveBenutzerBearbeiten(${id})">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveBenutzerBearbeiten(id) {
+  const body = {
+    vollname: document.getElementById('eb-name').value.trim(),
+    rolle: document.getElementById('eb-rolle').value,
+    aktiv: document.getElementById('eb-aktiv').value === '1',
+    berechtigungen: collectBerechtigungen('eb')
+  };
+  const pass = document.getElementById('eb-pass').value;
+  if (pass) body.passwort = pass;
+  try {
+    await api(`/api/benutzer/${id}`, { method: 'PUT', body });
+    document.querySelector('.modal-overlay')?.remove();
+    toast('Benutzer aktualisiert', 'success');
     pgBenutzer();
   } catch (e) { toast(e.message, 'error'); }
 }

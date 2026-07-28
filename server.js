@@ -65,6 +65,7 @@ app.use('/api/pickliste', require('./routes/pickliste'));
 app.use('/api/umlagerung', require('./routes/umlagerung'));
 app.use('/api/auftraege', require('./routes/auftraege'));
 app.use('/api/direktanlieferung', require('./routes/direktanlieferung'));
+app.use('/api/aufgaben', require('./routes/aufgaben'));
 
 // Staplerfahrer-Seite (public, kein Login)
 app.get('/stapler/:token', (req, res) => {
