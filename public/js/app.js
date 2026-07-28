@@ -1927,7 +1927,7 @@ function genMonatsbericht() {
 // ═══ KUNDEN ══════════════════════════════════════════════════════════════════
 async function pgKunden(showInactive) {
   const pc = document.getElementById('page-content');
-  const kunden = await api(`/api/kunden${showInactive ? '?alle=1' : ''}`);
+  const kunden = await api('/api/kunden?alle=1');
   const aktive = kunden.filter(k => k.aktiv !== 0);
   const inaktive = kunden.filter(k => k.aktiv === 0);
   

@@ -19,11 +19,17 @@ router.post('/', (req, res) => {
       WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
     `).get(paletten_nr, parseInt(kunde_id));
   } else {
-    palette = db.prepare(`
-      SELECT p.*, l.id as platz_id FROM paletten p
+    const allMatches = db.prepare(`
+      SELECT p.*, l.id as platz_id, k.name as kunde_name FROM paletten p
       LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      LEFT JOIN kunden k ON p.kunde_id = k.id
       WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
-    `).get(paletten_nr);
+    `).all(paletten_nr);
+    if (allMatches.length > 1) {
+      const kundenInfo = allMatches.map(m => m.kunde_name || `Kunde #${m.kunde_id}`).join(', ');
+      return res.status(400).json({ error: `Palette "${paletten_nr}" existiert bei mehreren Kunden (${kundenInfo}). Bitte Kunde auswählen.` });
+    }
+    palette = allMatches[0] || null;
   }
   
   if (!palette) return res.status(404).json({ error: `Palette "${paletten_nr}" nicht gefunden oder bereits ausgelagert` });
@@ -61,7 +67,9 @@ router.post('/abruf', (req, res) => {
     if (kunde_id) {
       pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr, parseInt(kunde_id));
     } else {
-      pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
+      const allM = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr);
+      if (allM.length > 1) { results.fehler.push({ nr, grund: 'Mehrere Kunden — Bitte Kunde auswählen' }); continue; }
+      pal = allM[0] || null;
     }
     if (!pal) { results.fehler.push({ nr, grund: 'Nicht gefunden' }); continue; }
     
