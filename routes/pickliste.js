@@ -191,6 +191,7 @@ router.post('/ausfuehren', (req, res) => {
   const fehler = [];
   const usedPalIds = new Set();
   
+  const kundenBewegungen = {};
   for (const nr of paletten_nummern) {
     const allPal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr);
     const pal = allPal.find(p => !usedPalIds.has(p.id)) || null;
@@ -202,12 +203,14 @@ router.post('/ausfuehren', (req, res) => {
       const remaining = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(pal.platz_id, pal.id);
       if (remaining.c === 0) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
     }
+    const kid = pal.kunde_id || 1;
+    if (!kundenBewegungen[kid]) kundenBewegungen[kid] = [];
+    kundenBewegungen[kid].push(nr);
     ausgelagert++;
   }
   
-  // Auslagerung als Bewegung buchen
-  if (ausgelagert > 0) {
-    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?)").run(1, heute, ausgelagert, paletten_nummern.join(', '), abruf_id || null, benutzer, heute.substring(0, 7));
+  for (const [kid, nummern] of Object.entries(kundenBewegungen)) {
+    db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?)").run(parseInt(kid), heute, nummern.length, nummern.join(', '), abruf_id || null, benutzer, heute.substring(0, 7));
   }
   
   // Protokoll (mit Zeitstempel + Benutzer)
@@ -250,6 +253,7 @@ router.post('/abschliessen', (req, res) => {
   if (gepickt.length === 0) return res.status(400).json({ error: 'Keine gepickten Paletten vorhanden' });
 
   let ausgelagert = 0;
+  const kundenPick = {};
   for (const item of gepickt) {
     if (!item.pal_id) continue;
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, item.pal_id);
@@ -257,13 +261,15 @@ router.post('/abschliessen', (req, res) => {
       const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(item.lagerplatz_id, item.pal_id);
       if (!andere || andere.c === 0) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(item.lagerplatz_id);
     }
+    const kid = item.kunde_id || 1;
+    if (!kundenPick[kid]) kundenPick[kid] = [];
+    kundenPick[kid].push(item.paletten_nr);
     ausgelagert++;
   }
 
-  // Bewegung buchen
-  if (ausgelagert > 0) {
+  for (const [kid, nummern] of Object.entries(kundenPick)) {
     db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat, bemerkung) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?, ?)").run(
-      gepickt[0].kunde_id || 1, heute, ausgelagert, gepickt.map(i => i.paletten_nr).join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7), `Pickliste: ${ausgelagert} Pal. ausgelagert`
+      parseInt(kid), heute, nummern.length, nummern.join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7), `Pickliste: ${nummern.length} Pal. ausgelagert`
     );
   }
 

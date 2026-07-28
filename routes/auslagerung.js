@@ -46,6 +46,7 @@ router.post('/abruf', (req, res) => {
   const jetzt = new Date().toISOString();
   const results = { ok: [], fehler: [] };
   
+  const kundenAbruf = {};
   for (const nr of paletten_nummern) {
     const pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
     if (!pal) { results.fehler.push({ nr, grund: 'Nicht gefunden' }); continue; }
@@ -53,10 +54,13 @@ router.post('/abruf', (req, res) => {
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, pal.id);
     if (pal.platz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
     results.ok.push({ nr, platz: pal.lagerplatz_bezeichnung });
+    const kid = pal.kunde_id || 1;
+    if (!kundenAbruf[kid]) kundenAbruf[kid] = [];
+    kundenAbruf[kid].push(nr);
   }
   
-  if (results.ok.length > 0) {
-    db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(1, heute, 'Auslagerung', results.ok.length, results.ok.map(r => r.nr).join(', '), abruf_id || null, benutzer, heute.substring(0, 7));
+  for (const [kid, nummern] of Object.entries(kundenAbruf)) {
+    db.prepare('INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(parseInt(kid), heute, 'Auslagerung', nummern.length, nummern.join(', '), abruf_id || null, benutzer, heute.substring(0, 7));
   }
   
   // Protokoll
