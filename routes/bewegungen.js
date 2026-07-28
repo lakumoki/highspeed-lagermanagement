@@ -26,14 +26,14 @@ router.get('/', (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, parseInt(limit), offset);
   
-  // Zusammenfassung
+  // Zusammenfassung (ohne Korrekturen)
   const zusammenfassung = db.prepare(`
     SELECT 
       typ,
       COUNT(*) as anzahl_eintraege,
       SUM(anzahl) as summe
     FROM bewegungen b
-    ${where}
+    ${where} AND (b.korrektur IS NULL OR b.korrektur = 0)
     GROUP BY typ
   `).all(...params);
   
@@ -59,7 +59,7 @@ router.get('/monatsbericht', (req, res) => {
       GROUP_CONCAT(paletten_nummern, ', ') as paletten_nummern,
       GROUP_CONCAT(bemerkung, ' | ') as bemerkungen
     FROM bewegungen
-    WHERE kunde_id = ? AND datum >= ? AND datum <= ?
+    WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND (korrektur IS NULL OR korrektur = 0)
     GROUP BY datum
     ORDER BY datum
   `).all(kid, von, bis);
@@ -71,7 +71,7 @@ router.get('/monatsbericht', (req, res) => {
       SUM(CASE WHEN typ = 'Auslagerung' THEN anzahl ELSE 0 END) as auslagerungen,
       SUM(CASE WHEN typ = 'Extra Handling' THEN anzahl ELSE 0 END) as extra_handling
     FROM bewegungen
-    WHERE kunde_id = ? AND datum >= ? AND datum <= ?
+    WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND (korrektur IS NULL OR korrektur = 0)
   `).get(kid, von, bis);
   
   // Musterzüge im Zeitraum

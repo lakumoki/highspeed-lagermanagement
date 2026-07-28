@@ -24,8 +24,8 @@ router.get('/', (req, res) => {
     const letztes = db.prepare("SELECT * FROM kontingent WHERE kunde_id = 1 ORDER BY id DESC LIMIT 1").get();
     const kp = letztes?.kontingent_plaetze || 642;
     const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
-    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Einlagerung'").get(monatStart);
-    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Auslagerung'").get(monatStart);
+    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Einlagerung' AND (korrektur IS NULL OR korrektur = 0)").get(monatStart);
+    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = 1 AND datum >= ? AND typ = 'Auslagerung' AND (korrektur IS NULL OR korrektur = 0)").get(monatStart);
     
     kontingent = {
       monat: aktuellerMonat,

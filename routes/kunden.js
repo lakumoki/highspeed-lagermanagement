@@ -42,9 +42,9 @@ router.get('/:id', (req, res) => {
   if (!kontingent) {
     const letztes = db.prepare("SELECT * FROM kontingent WHERE kunde_id = ? ORDER BY id DESC LIMIT 1").get(kid);
     const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
-    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Einlagerung'").get(kid, monatStart);
-    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Auslagerung'").get(kid, monatStart);
-    const extra = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Extra Handling'").get(kid, monatStart);
+    const einl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Einlagerung' AND (korrektur IS NULL OR korrektur = 0)").get(kid, monatStart);
+    const ausl = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Auslagerung' AND (korrektur IS NULL OR korrektur = 0)").get(kid, monatStart);
+    const extra = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND typ = 'Extra Handling' AND (korrektur IS NULL OR korrektur = 0)").get(kid, monatStart);
     
     kontingent = {
       monat: aktuellerMonat,
@@ -63,7 +63,7 @@ router.get('/:id', (req, res) => {
   
   // Bewegungen aktueller Monat (echtes Datum, nicht importierter Monat)
   const monatStart = heute.toISOString().split('T')[0].substring(0, 8) + '01';
-  const monatsStats = db.prepare("SELECT typ, SUM(anzahl) as summe FROM bewegungen WHERE kunde_id = ? AND datum >= ? GROUP BY typ").all(kid, monatStart);
+  const monatsStats = db.prepare("SELECT typ, SUM(anzahl) as summe FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND (korrektur IS NULL OR korrektur = 0) GROUP BY typ").all(kid, monatStart);
   
   res.json({ kunde, bewegungen, muster, kontingent, monatsStats });
 });

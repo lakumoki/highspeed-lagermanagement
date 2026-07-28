@@ -270,7 +270,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   
   const bewegungen = db.prepare(`
     SELECT datum, typ, anzahl, paletten_nummern, handling_art, bemerkung, direktanlieferung_id
-    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ?
+    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND (korrektur IS NULL OR korrektur = 0)
     ORDER BY datum, id
   `).all(kid, von, bis);
 
@@ -285,14 +285,15 @@ router.get('/monatsbericht-pdf', (req, res) => {
   const storedPeak = db.prepare("SELECT max_bestand FROM monats_peak WHERE kunde_id = ? AND monat = ?").get(kid, berichtsMonat);
 
   // Fallback: Simulation aus Bewegungen (für Monate ohne gespeicherten Peak)
-  const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
-  const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
+  const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung' AND (korrektur IS NULL OR korrektur = 0) AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
+  const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung' AND (korrektur IS NULL OR korrektur = 0) AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
   const bestandAnfang = gesamtBestand - einlSeitVon.s + auslSeitVon.s;
 
   const tagesBewNetto = db.prepare(`
     SELECT datum, typ, SUM(anzahl) as summe 
     FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? 
       AND typ IN ('Einlagerung','Auslagerung')
+      AND (korrektur IS NULL OR korrektur = 0)
       AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))
     GROUP BY datum, typ ORDER BY datum
   `).all(kid, von, bis);

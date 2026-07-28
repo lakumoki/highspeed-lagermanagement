@@ -35,7 +35,7 @@ router.post('/:kunde_id', (req, res) => {
   const saldo = Math.max(0, (lagerbestand?.c || 0) - (kontingent_plaetze || 0));
   
   // Bewegungen des Monats
-  const bewMonat = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND monat = ?").get(kid, monat);
+  const bewMonat = db.prepare("SELECT SUM(anzahl) as s FROM bewegungen WHERE kunde_id = ? AND monat = ? AND (korrektur IS NULL OR korrektur = 0)").get(kid, monat);
   
   const existing = db.prepare('SELECT id FROM kontingent WHERE kunde_id = ? AND monat = ?').get(kid, monat);
   if (existing) {
