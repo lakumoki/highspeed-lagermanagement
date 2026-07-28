@@ -66,7 +66,54 @@ async function doLogin() {
 }
 
 // ─── APP SHELL ───────────────────────────────────────────────────────────────
+function hatBerechtigung(key) {
+  if (!currentUser) return false;
+  if (currentUser.rolle === 'Administrator') return true;
+  const b = currentUser.berechtigungen || {};
+  return b[key] !== false;
+}
+
 function renderApp() {
+  const isAdmin = currentUser.rolle === 'Administrator';
+  const perm = (key) => isAdmin || (currentUser.berechtigungen || {})[key] !== false;
+
+  const navItems = [
+    { section: 'Übersicht' },
+    { page: 'dashboard', icon: '◉', label: 'Dashboard' },
+    { page: 'suche', icon: '⌕', label: 'Suche' },
+    { section: 'Lagerverwaltung' },
+    { page: 'direktanlieferung', icon: '⬇', label: 'Direkteinlagerung', perm: 'direktanlieferung' },
+    { page: 'pickliste', icon: '☑', label: 'Abruf / Pickliste', perm: 'auslagerung' },
+    { page: 'musterung', icon: '◈', label: 'Musterzug', perm: 'musterung' },
+    { page: 'handling', icon: '⚙', label: 'Handling', perm: 'handling' },
+    { page: 'umlagerung', icon: '⇄', label: 'Umlagerung', perm: 'umlagerung' },
+    { page: 'einlagerung', icon: '↓', label: 'Einlagerung', perm: 'einlagerung' },
+    { page: 'auslagerung', icon: '↑', label: 'Direktauslagerung', perm: 'auslagerung' },
+    { page: 'lagerplan', icon: '▦', label: 'Lagerplan', perm: 'lagerplan' },
+    { section: 'Abrechnung' },
+    { page: 'bewegungen', icon: '⇄', label: 'Bewegungen', perm: 'bewegungen' },
+    { page: 'kontingent', icon: '◧', label: 'Kontingent', perm: 'kontingent' },
+    { page: 'berichte', icon: '⊞', label: 'Berichte/PDF', perm: 'berichte' },
+    { section: 'System' },
+    { page: 'kunden', icon: '⊕', label: 'Kunden', perm: 'kunden' },
+    { page: 'protokoll', icon: '⊙', label: 'Protokoll', perm: 'protokoll' },
+    { page: 'dokumente', icon: '▤', label: 'Dokumentenarchiv', perm: 'dokumente' },
+    { page: 'benutzer', icon: '⊕', label: 'Benutzer', perm: 'benutzer' },
+  ];
+
+  let navHtml = '';
+  let lastWasSection = false;
+  for (const item of navItems) {
+    if (item.section) {
+      navHtml += `<div class="nav-section">${item.section}</div>`;
+      lastWasSection = true;
+      continue;
+    }
+    if (item.perm && !perm(item.perm)) continue;
+    navHtml += `<a href="#" data-page="${item.page}"${item.page === 'dashboard' ? ' class="active"' : ''}><span class="icon">${item.icon}</span><span>${item.label}</span></a>`;
+    lastWasSection = false;
+  }
+
   app.innerHTML = `
     <div class="layout">
       <aside class="sidebar">
@@ -74,34 +121,9 @@ function renderApp() {
           <h2>HIGHSPEED Logistik</h2>
           <small>Lagermanagement</small>
         </div>
-        <nav>
-          <div class="nav-section">Übersicht</div>
-          <a href="#" data-page="dashboard" class="active"><span class="icon">◉</span><span>Dashboard</span></a>
-          <a href="#" data-page="suche"><span class="icon">⌕</span><span>Suche</span></a>
-          
-          <div class="nav-section">Lagerverwaltung</div>
-          <a href="#" data-page="direktanlieferung"><span class="icon">⬇</span><span>Direkteinlagerung</span></a>
-          <a href="#" data-page="pickliste"><span class="icon">☑</span><span>Abruf / Pickliste</span></a>
-          <a href="#" data-page="musterung"><span class="icon">◈</span><span>Musterzug</span></a>
-          <a href="#" data-page="handling"><span class="icon">⚙</span><span>Handling</span></a>
-          <a href="#" data-page="umlagerung"><span class="icon">⇄</span><span>Umlagerung</span></a>
-          <a href="#" data-page="einlagerung"><span class="icon">↓</span><span>Einlagerung</span></a>
-          <a href="#" data-page="auslagerung"><span class="icon">↑</span><span>Direktauslagerung</span></a>
-          <a href="#" data-page="lagerplan"><span class="icon">▦</span><span>Lagerplan</span></a>
-          
-          <div class="nav-section">Abrechnung</div>
-          <a href="#" data-page="bewegungen"><span class="icon">⇄</span><span>Bewegungen</span></a>
-          <a href="#" data-page="kontingent"><span class="icon">◧</span><span>Kontingent</span></a>
-          <a href="#" data-page="berichte"><span class="icon">⊞</span><span>Berichte/PDF</span></a>
-          
-          <div class="nav-section">System</div>
-          <a href="#" data-page="kunden"><span class="icon">⊕</span><span>Kunden</span></a>
-          <a href="#" data-page="protokoll"><span class="icon">⊙</span><span>Protokoll</span></a>
-          <a href="#" data-page="dokumente"><span class="icon">▤</span><span>Dokumentenarchiv</span></a>
-          <a href="#" data-page="benutzer"><span class="icon">⊕</span><span>Benutzer</span></a>
-        </nav>
+        <nav>${navHtml}</nav>
         <div class="sidebar-footer">
-          <div class="user-name">${currentUser.vollname}</div>
+          <div class="user-name">${currentUser.vollname} <span style="font-size:10px;opacity:0.6">(${currentUser.rolle})</span></div>
           <button onclick="doLogout()">Abmelden</button>
         </div>
       </aside>
@@ -112,9 +134,37 @@ function renderApp() {
     a.addEventListener('click', e => { e.preventDefault(); navigate(a.dataset.page); });
   });
   navigate('dashboard');
+  checkOffeneAufgaben();
 }
 
+async function checkOffeneAufgaben() {
+  try {
+    const aufgaben = await api('/api/aufgaben');
+    if (aufgaben.length > 0) {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'background:var(--danger);color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:6px';
+      badge.textContent = aufgaben.length;
+      const dashLink = document.querySelector('.sidebar a[data-page="dashboard"] span:last-child');
+      if (dashLink && !dashLink.querySelector('span')) dashLink.appendChild(badge);
+    }
+  } catch {}
+}
+
+const PAGE_PERM_MAP = {
+  direktanlieferung: 'direktanlieferung', einlagerung: 'einlagerung',
+  auslagerung: 'auslagerung', pickliste: 'auslagerung',
+  musterung: 'musterung', handling: 'handling', umlagerung: 'umlagerung',
+  lagerplan: 'lagerplan', bewegungen: 'bewegungen', kontingent: 'kontingent',
+  berichte: 'berichte', kunden: 'kunden', protokoll: 'protokoll',
+  dokumente: 'dokumente', benutzer: 'benutzer'
+};
+
 function navigate(page) {
+  const permKey = PAGE_PERM_MAP[page];
+  if (permKey && !hatBerechtigung(permKey)) {
+    toast('Keine Berechtigung für diesen Bereich', 'error');
+    return;
+  }
   currentPage = page;
   document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
   document.querySelector(`.sidebar a[data-page="${page}"]`)?.classList.add('active');
@@ -159,12 +209,46 @@ async function pgDashboard() {
       </div>
     </div>
     
+    <div id="dashboard-aufgaben"></div>
+    
     <div class="card">
       <div class="card-header"><h3>Bereiche</h3></div>
       <div class="table-wrap"><table><thead><tr><th>Bereich</th><th>Gesamt</th><th>Belegt</th><th>Frei</th><th>%</th></tr></thead><tbody>
         ${d.bereiche.map(b => `<tr><td>${b.bereich}</td><td>${b.gesamt}</td><td>${b.belegt}</td><td>${b.gesamt - b.belegt}</td><td>${Math.round(b.belegt / b.gesamt * 100)}%</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
+  
+  loadDashboardAufgaben();
+}
+
+async function loadDashboardAufgaben() {
+  const el = document.getElementById('dashboard-aufgaben');
+  if (!el) return;
+  try {
+    const aufgaben = await api('/api/aufgaben');
+    if (aufgaben.length === 0) return;
+    el.innerHTML = `
+      <div class="card" style="border-left:4px solid var(--warning);margin-bottom:16px">
+        <div class="card-header"><h3 style="color:var(--warning)">Offene Aufgaben (${aufgaben.length})</h3></div>
+        ${aufgaben.map(a => `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eee">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px">${a.titel}</div>
+              ${a.details ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${a.details}</div>` : ''}
+              ${a.paletten_nummern ? `<div style="font-size:11px;font-family:monospace;margin-top:4px;color:var(--info)">Paletten: ${a.paletten_nummern}</div>` : ''}
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Von: ${a.von_benutzer} · ${new Date(a.erstellt_am).toLocaleString('de-DE')}</div>
+            </div>
+            <button class="btn btn-sm btn-success" onclick="erledigeAufgabe(${a.id})">Erledigt</button>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch {}
+}
+
+async function erledigeAufgabe(id) {
+  await api(`/api/aufgaben/${id}/erledigt`, { method: 'PUT' });
+  toast('Aufgabe erledigt', 'success');
+  loadDashboardAufgaben();
 }
 
 // ═══ SUCHE ═══════════════════════════════════════════════════════════════════
@@ -928,7 +1012,10 @@ async function pgPickliste() {
   const selectedKunde = window._pickKundeId || getLastKunde() || '';
   
   pc.innerHTML = `
-    <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button></div></div>
+    <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions">
+      <button class="btn btn-secondary" onclick="showAbrufSenden()">Abruf senden</button>
+      <button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button>
+    </div></div>
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <div class="form-group" style="margin:0;min-width:200px">
@@ -1011,6 +1098,67 @@ async function loadPicklisteContent(kundeId) {
         </tbody></table></div>
       </div>`}
     </div>`;
+}
+
+async function showAbrufSenden() {
+  const benutzer = await api('/api/benutzer');
+  const kunden = await api('/api/kunden');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:600px">
+      <h2>Abruf an Benutzer senden</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Sende eine Abruf-Liste an einen Benutzer. Die Aufgabe erscheint auf dessen Dashboard.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Empfänger</label>
+          <select id="as-empfaenger">
+            ${benutzer.filter(b => b.aktiv !== 0).map(b => `<option value="${b.benutzername}">${b.vollname || b.benutzername}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Kunde</label>
+          <select id="as-kunde" onchange="setLastKunde(this.value)">
+            ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Abruf-ID / Titel</label><input type="text" id="as-titel" placeholder="z.B. Abruf 2026/150"></div>
+      <div class="form-group"><label>Paletten-Nummern (eine pro Zeile)</label>
+        <textarea id="as-nummern" rows="8" placeholder="645524&#10;645525&#10;645526" style="font-family:monospace"></textarea>
+      </div>
+      <div class="form-group"><label>Bemerkung (optional)</label><input type="text" id="as-details" placeholder="z.B. Dringend bis 14 Uhr"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="doAbrufSenden()">Senden</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  preSelectKunde('as-kunde');
+}
+
+async function doAbrufSenden() {
+  const empfaenger = document.getElementById('as-empfaenger').value;
+  const titel = document.getElementById('as-titel').value.trim();
+  const nummern = document.getElementById('as-nummern').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const details = document.getElementById('as-details').value.trim();
+  const kundeSel = document.getElementById('as-kunde');
+  const kundeName = kundeSel.selectedOptions[0]?.textContent || '';
+
+  if (!empfaenger) { toast('Bitte Empfänger auswählen', 'error'); return; }
+  if (!titel) { toast('Bitte Titel/Abruf-ID eingeben', 'error'); return; }
+  if (nummern.length === 0) { toast('Bitte Paletten-Nummern eingeben', 'error'); return; }
+
+  try {
+    await api('/api/aufgaben', { method: 'POST', body: {
+      an_benutzer: empfaenger,
+      typ: 'Abruf',
+      titel: `${titel} — ${kundeName}`,
+      details: details || null,
+      paletten_nummern: nummern.join(', ')
+    }});
+    document.querySelector('.modal-overlay')?.remove();
+    toast(`Abruf an ${empfaenger} gesendet (${nummern.length} Paletten)`, 'success');
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 function showPickTab(tab) {

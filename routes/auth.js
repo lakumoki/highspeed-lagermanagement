@@ -10,7 +10,9 @@ router.post('/login', (req, res) => {
   if (!user) return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
   if (!bcrypt.compareSync(passwort, user.passwort)) return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
   
-  req.session.user = { id: user.id, benutzername: user.benutzername, vollname: user.vollname, rolle: user.rolle };
+  let berechtigungen = {};
+  try { berechtigungen = JSON.parse(user.berechtigungen || '{}'); } catch {}
+  req.session.user = { id: user.id, benutzername: user.benutzername, vollname: user.vollname, rolle: user.rolle, berechtigungen };
   res.json({ ok: true, user: req.session.user });
 });
 
