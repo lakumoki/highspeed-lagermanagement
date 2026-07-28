@@ -207,8 +207,9 @@ router.post('/abhaken', (req, res) => {
 
 // Abruf komplett ausführen: Auslagern (kein Handling hier — das ist ein eigener Prozess via Musterzug)
 router.post('/ausfuehren', (req, res) => {
-  const { paletten_nummern, abruf_id } = req.body;
+  let { paletten_nummern, abruf_id } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern)) return res.status(400).json({ error: 'Palettennummern erforderlich' });
+  paletten_nummern = [...new Set(paletten_nummern)];
   
   const heute = new Date().toISOString().split('T')[0];
   const jetzt = new Date().toISOString();
@@ -318,8 +319,13 @@ router.post('/abschliessen', (req, res) => {
 
   let ausgelagert = 0;
   const kundenPick = {};
+  const processedPalIds = new Set();
+  const verarbeitet = [];
   for (const item of gepickt) {
     if (!item.pal_id) continue;
+    if (processedPalIds.has(item.pal_id)) continue;
+    processedPalIds.add(item.pal_id);
+
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, item.pal_id);
     if (item.lagerplatz_id) {
       const andere = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(item.lagerplatz_id, item.pal_id);
@@ -328,30 +334,34 @@ router.post('/abschliessen', (req, res) => {
     const kid = item.kunde_id || 1;
     if (!kundenPick[kid]) kundenPick[kid] = [];
     kundenPick[kid].push(item.paletten_nr);
+    verarbeitet.push(item);
     ausgelagert++;
   }
 
+  const abrufId = gepickt[0].abruf_id || null;
   for (const [kid, nummern] of Object.entries(kundenPick)) {
     db.prepare("INSERT INTO bewegungen (kunde_id, datum, typ, anzahl, paletten_nummern, abruf_id, benutzer, monat, bemerkung) VALUES (?, ?, 'Auslagerung', ?, ?, ?, ?, ?, ?)").run(
-      parseInt(kid), heute, nummern.length, nummern.join(', '), gepickt[0].abruf_id || null, benutzer, heute.substring(0, 7), `Pickliste: ${nummern.length} Pal. ausgelagert`
+      parseInt(kid), heute, nummern.length, nummern.join(', '), abrufId, benutzer, heute.substring(0, 7), `Pickliste: ${nummern.length} Pal. ausgelagert`
     );
   }
 
-  // Lieferscheine archivieren (je LKW)
-  const lkwAnzahl = Math.ceil(gepickt.length / lkw_kapazitaet);
-  const belegBase = `LS-${heute.replace(/-/g, '')}-${gepickt[0].abruf_id || 'M'}`;
+  // Lieferscheine archivieren (je LKW) — korrekt pro Kunde
+  const lsKundeId = kunde_id ? parseInt(kunde_id) : (verarbeitet[0]?.kunde_id || 1);
+  const lsKundeName = verarbeitet[0]?.kunde_name || '—';
+  const lkwAnzahl = Math.ceil(verarbeitet.length / lkw_kapazitaet);
+  const belegBase = `LS-${heute.replace(/-/g, '')}-${abrufId || 'M'}`;
   const lieferscheinIds = [];
 
   for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
-    const chunk = gepickt.slice(lkw * lkw_kapazitaet, (lkw + 1) * lkw_kapazitaet);
+    const chunk = verarbeitet.slice(lkw * lkw_kapazitaet, (lkw + 1) * lkw_kapazitaet);
     const belegNr = lkwAnzahl > 1 ? `${belegBase}-LKW${lkw + 1}` : belegBase;
     const details = JSON.stringify(chunk.map(i => ({
       nr: i.paletten_nr, platz: i.lagerplatz_bezeichnung || '?', artikel: i.artikel_nr || '', charge: i.chargen_nr || '', kunde: i.kunde_name || ''
     })));
 
     const ins = db.prepare("INSERT INTO lieferscheine (beleg_nr, kunde_id, kunde_name, lkw_nr, lkw_gesamt, paletten_nummern, paletten_details, anzahl, abruf_id, benutzer, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
-      belegNr, gepickt[0].kunde_id || 1, gepickt[0].kunde_name || '—', lkw + 1, lkwAnzahl,
-      chunk.map(i => i.paletten_nr).join(', '), details, chunk.length, gepickt[0].abruf_id || null, benutzer, jetzt
+      belegNr, lsKundeId, lsKundeName, lkw + 1, lkwAnzahl,
+      chunk.map(i => i.paletten_nr).join(', '), details, chunk.length, abrufId, benutzer, jetzt
     );
     lieferscheinIds.push(ins.lastInsertRowid);
   }
@@ -359,7 +369,7 @@ router.post('/abschliessen', (req, res) => {
   // Protokoll
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
     'Pickliste abgeschlossen',
-    `${ausgelagert} Paletten ausgelagert | ${lkwAnzahl} Lieferschein(e) (${belegBase}) | Nummern: ${gepickt.map(i => i.paletten_nr).join(', ')}`,
+    `${ausgelagert} Paletten ausgelagert | ${lkwAnzahl} Lieferschein(e) (${belegBase}) | Kunde: ${lsKundeName} | Nummern: ${verarbeitet.map(i => i.paletten_nr).join(', ')}`,
     benutzer, jetzt
   );
 
