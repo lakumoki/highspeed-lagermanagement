@@ -4,18 +4,27 @@ const db = require('../database/init');
 
 // Auslagerung durchführen
 router.post('/', (req, res) => {
-  const { paletten_nr, bemerkung } = req.body;
+  const { paletten_nr, bemerkung, kunde_id } = req.body;
   if (!paletten_nr) return res.status(400).json({ error: 'Palettennummer erforderlich' });
   
   const benutzer = req.session?.user?.benutzername || 'System';
   const heute = new Date().toISOString().split('T')[0];
   const jetzt = new Date().toISOString();
   
-  const palette = db.prepare(`
-    SELECT p.*, l.id as platz_id FROM paletten p
-    LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-    WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
-  `).get(paletten_nr);
+  let palette;
+  if (kunde_id) {
+    palette = db.prepare(`
+      SELECT p.*, l.id as platz_id FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+    `).get(paletten_nr, parseInt(kunde_id));
+  } else {
+    palette = db.prepare(`
+      SELECT p.*, l.id as platz_id FROM paletten p
+      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+      WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+    `).get(paletten_nr);
+  }
   
   if (!palette) return res.status(404).json({ error: `Palette "${paletten_nr}" nicht gefunden oder bereits ausgelagert` });
   
@@ -38,7 +47,7 @@ router.post('/', (req, res) => {
 
 // Massenauslagerung (Abruf)
 router.post('/abruf', (req, res) => {
-  const { paletten_nummern, abruf_id, bemerkung } = req.body;
+  const { paletten_nummern, abruf_id, bemerkung, kunde_id } = req.body;
   if (!paletten_nummern || !Array.isArray(paletten_nummern)) return res.status(400).json({ error: 'Array mit Palettennummern erforderlich' });
   
   const benutzer = req.session?.user?.benutzername || 'System';
@@ -48,7 +57,12 @@ router.post('/abruf', (req, res) => {
   
   const kundenAbruf = {};
   for (const nr of paletten_nummern) {
-    const pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
+    let pal;
+    if (kunde_id) {
+      pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr, parseInt(kunde_id));
+    } else {
+      pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
+    }
     if (!pal) { results.fehler.push({ nr, grund: 'Nicht gefunden' }); continue; }
     
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, pal.id);

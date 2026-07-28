@@ -191,9 +191,22 @@ router.post('/ausfuehren', (req, res) => {
   const fehler = [];
   const usedPalIds = new Set();
   
+  // kunde_id aus abrufliste holen, um die richtige Palette zu finden
+  const abrufKunden = {};
+  if (abruf_id) {
+    const abrufItems = db.prepare("SELECT paletten_nr, kunde_id FROM abrufliste WHERE abruf_id = ?").all(abruf_id);
+    for (const ai of abrufItems) { if (ai.kunde_id) abrufKunden[ai.paletten_nr] = ai.kunde_id; }
+  }
+
   const kundenBewegungen = {};
   for (const nr of paletten_nummern) {
-    const allPal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr);
+    const kid = abrufKunden[nr];
+    let allPal;
+    if (kid) {
+      allPal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr, kid);
+    } else {
+      allPal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr);
+    }
     const pal = allPal.find(p => !usedPalIds.has(p.id)) || null;
     if (!pal) { fehler.push(nr); continue; }
     usedPalIds.add(pal.id);
@@ -203,9 +216,9 @@ router.post('/ausfuehren', (req, res) => {
       const remaining = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(pal.platz_id, pal.id);
       if (remaining.c === 0) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
     }
-    const kid = pal.kunde_id || 1;
-    if (!kundenBewegungen[kid]) kundenBewegungen[kid] = [];
-    kundenBewegungen[kid].push(nr);
+    const bewKid = pal.kunde_id || 1;
+    if (!kundenBewegungen[bewKid]) kundenBewegungen[bewKid] = [];
+    kundenBewegungen[bewKid].push(nr);
     ausgelagert++;
   }
   
@@ -244,9 +257,9 @@ router.post('/abschliessen', (req, res) => {
     SELECT a.*, p.id as pal_id, p.kunde_id, p.lagerplatz_id, p.lagerplatz_bezeichnung, p.artikel_nr, p.chargen_nr, k.name as kunde_name 
     FROM abrufliste a 
     LEFT JOIN paletten p ON p.id = (
-      SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
+      SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND (a.kunde_id IS NULL OR p2.kunde_id = a.kunde_id) AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
     )
-    LEFT JOIN kunden k ON p.kunde_id = k.id 
+    LEFT JOIN kunden k ON COALESCE(p.kunde_id, a.kunde_id) = k.id 
     WHERE a.abgehakt = 1
   `).all();
 

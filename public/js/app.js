@@ -809,13 +809,20 @@ async function loadDirekteinlagerungen() {
 }
 
 // ═══ AUSLAGERUNG ═════════════════════════════════════════════════════════════
-function pgAuslagerung() {
+async function pgAuslagerung() {
   const pc = document.getElementById('page-content');
+  const kunden = await api('/api/kunden');
   pc.innerHTML = `
     <div class="page-header"><h1>Direktauslagerung</h1><p style="font-size:12px;color:var(--text-muted)">Verladung auf Fremd-LKW</p></div>
     <div class="card">
       <h3 style="margin-bottom:16px">Auslagerung</h3>
       <div class="form-row">
+        <div class="form-group"><label>Kunde</label>
+          <select id="ausl-kunde" onchange="setLastKunde(this.value)">
+            <option value="">— Alle Kunden —</option>
+            ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
+          </select>
+        </div>
         <div class="form-group" style="flex:2">
           <label>Paletten-Nr. (mehrere Nummern per Zeilenumbruch möglich)</label>
           <textarea id="ausl-nr" rows="3" placeholder="EB- oder KW-Nummern einfügen (eine pro Zeile)" style="width:100%;padding:10px;font-size:14px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
@@ -839,6 +846,7 @@ function pgAuslagerung() {
       <button class="btn btn-primary" onclick="doAuslagern()">Auslagern + Beleg</button>
       <div id="ausl-result" style="margin-top:16px"></div>
     </div>`;
+  preSelectKunde('ausl-kunde');
 }
 
 async function doAuslagern() {
@@ -849,11 +857,12 @@ async function doAuslagern() {
   if (nummern.length === 0) { toast('Keine gültigen Nummern', 'error'); return; }
   
   const bemerkung = document.getElementById('ausl-bem').value.trim();
+  const kunde_id = document.getElementById('ausl-kunde')?.value || '';
   
   if (nummern.length === 1) {
     if (!confirm(`Palette "${nummern[0]}" wirklich auslagern?`)) return;
     try {
-      const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nummern[0], bemerkung } });
+      const data = await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nummern[0], bemerkung, kunde_id: kunde_id || undefined } });
       document.getElementById('ausl-result').innerHTML = `
         <div style="background:var(--success-bg, #d4edda);border:1px solid var(--success, #28a745);padding:14px 18px;border-radius:8px">
           <strong style="color:var(--success, #28a745)">✓ Auslagerung erfolgreich</strong>
@@ -869,7 +878,7 @@ async function doAuslagern() {
     let fehler = [];
     for (const nr of nummern) {
       try {
-        await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung } });
+        await api('/api/auslagerung', { method: 'POST', body: { paletten_nr: nr, bemerkung, kunde_id: kunde_id || undefined } });
         erfolg.push(nr);
       } catch (e) {
         fehler.push({ nr, msg: e.message });
