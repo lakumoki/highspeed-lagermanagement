@@ -27,12 +27,17 @@ router.post('/', (req, res) => {
   if (kundeId) {
     const kundeConf = db.prepare('SELECT nummern_format FROM kunden WHERE id = ?').get(kundeId);
     if (kundeConf?.nummern_format) {
+      let expectedLen = 0;
       const stelligMatch = kundeConf.nummern_format.match(/(\d+)-stellig/i);
       if (stelligMatch) {
-        const expectedLen = parseInt(stelligMatch[1]);
+        expectedLen = parseInt(stelligMatch[1]);
+      } else if (/^0+$/.test(kundeConf.nummern_format)) {
+        expectedLen = kundeConf.nummern_format.length;
+      }
+      if (expectedLen > 0) {
         const numericPart = nr.replace(/^[A-Za-z]+/, '');
-        if (numericPart.length !== expectedLen) {
-          return res.status(400).json({ error: `Palettennummer muss ${expectedLen}-stellig sein (Kunden-Format: ${kundeConf.nummern_format}). Eingabe: "${nr}"` });
+        if (numericPart.length < expectedLen) {
+          return res.status(400).json({ error: `Palettennummer muss mindestens ${expectedLen}-stellig sein (Kunden-Format: ${kundeConf.nummern_format}). Eingabe: "${nr}" (${numericPart.length}-stellig)` });
         }
       }
     }

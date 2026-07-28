@@ -20,14 +20,17 @@ router.post('/erstellen', (req, res) => {
   const items = [];
   const insert = db.prepare("INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, artikel_nr, chargen_nr, status, abgehakt, datum, kunde_id, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?)");
 
+  const usedPaletteIds = new Set();
   for (let i = 0; i < paletten_nummern.length; i++) {
     const nr = paletten_nummern[i];
-    const pal = db.prepare(`
+    const allMatches = db.prepare(`
       SELECT p.*, l.bezeichnung as platz, l.regal, l.position, l.bereich
       FROM paletten p
       LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
       WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
-    `).get(nr);
+    `).all(nr);
+    const pal = allMatches.find(p => !usedPaletteIds.has(p.id)) || allMatches[0] || null;
+    if (pal) usedPaletteIds.add(pal.id);
 
     const lkwNr = Math.ceil((i + 1) / lkwKap);
     const lkwLabel = `LKW ${lkwNr}`;
@@ -169,13 +172,19 @@ router.post('/ausfuehren', (req, res) => {
   const benutzer = req.session?.user?.benutzername || 'System';
   let ausgelagert = 0;
   const fehler = [];
+  const usedPalIds = new Set();
   
   for (const nr of paletten_nummern) {
-    const pal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").get(nr);
+    const allPal = db.prepare("SELECT p.*, l.id as platz_id FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0").all(nr);
+    const pal = allPal.find(p => !usedPalIds.has(p.id)) || null;
     if (!pal) { fehler.push(nr); continue; }
+    usedPalIds.add(pal.id);
     
     db.prepare("UPDATE paletten SET ausgelagert = 1, ausgelagert_am = ?, ausgelagert_von = ? WHERE id = ?").run(jetzt, benutzer, pal.id);
-    if (pal.platz_id) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
+    if (pal.platz_id) {
+      const remaining = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE lagerplatz_id = ? AND id != ? AND ausgelagert = 0 AND geloescht = 0").get(pal.platz_id, pal.id);
+      if (remaining.c === 0) db.prepare('UPDATE lagerplaetze SET belegt = 0 WHERE id = ?').run(pal.platz_id);
+    }
     ausgelagert++;
   }
   
@@ -286,17 +295,17 @@ router.get('/lieferschein/:id', (req, res) => {
 
   const paletten = JSON.parse(ls.paletten_details || '[]');
   const kunde = ls.kunde_id ? db.prepare('SELECT name, adresse FROM kunden WHERE id = ?').get(ls.kunde_id) : null;
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${ls.beleg_nr}.pdf"`);
   doc.pipe(res);
 
-  // Logo (rechts oben)
   const path = require('path');
   const logoPath = path.join(__dirname, '..', 'public', 'img', 'logo-highspeed.png');
-  try { const fs = require('fs'); if (fs.existsSync(logoPath)) doc.image(logoPath, 440, 25, { height: 28 }); } catch(e) {}
+  const hasLogo = require('fs').existsSync(logoPath);
 
-  // Absender
+  try { if (hasLogo) doc.image(logoPath, 440, 25, { height: 28 }); } catch(e) {}
+
   const absY = 30;
   doc.fontSize(11).font('Helvetica-Bold').text('HIGHSPEED', 40, absY);
   doc.fontSize(8).font('Helvetica');
@@ -367,12 +376,20 @@ router.get('/lieferschein/:id', (req, res) => {
   doc.text('Sendung vollständig und in einwandfreiem Zustand erhalten.', 40, y);
   y += 20;
 
-  doc.text('Datum: _______________', 40, y);
-  doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
+  doc.text('Datum:', 40, y);
+  doc.moveTo(40, y + 30).lineTo(200, y + 30).stroke();
   doc.text('Unterschrift Empfänger:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-  doc.fontSize(7).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
+  const lsGenDatum = new Date().toLocaleString('de-DE');
+  const lsPages = doc.bufferedPageRange();
+  const lsTotalPages = lsPages.count;
+  for (let i = 0; i < lsTotalPages; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${lsGenDatum} · Seite ${i + 1}/${lsTotalPages}`, 40, 775, { align: 'center', width: 515 });
+    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
+  }
   doc.end();
 });
 

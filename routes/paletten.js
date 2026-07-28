@@ -32,12 +32,12 @@ router.get('/suche', (req, res) => {
     `).all(term);
   } else if (typ === 'lagerplatz') {
     results = db.prepare(`
-      SELECT l.*, p.paletten_nr, p.nummern_typ, p.artikel_nr, p.chargen_nr, k.name as kunde_name, p.ausgelagert
-      FROM lagerplaetze l
-      LEFT JOIN paletten p ON p.lagerplatz_id = l.id AND p.geloescht = 0
+      SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
+      FROM paletten p
+      JOIN lagerplaetze l ON p.lagerplatz_id = l.id
       LEFT JOIN kunden k ON p.kunde_id = k.id
-      WHERE l.bezeichnung LIKE ?
-      ORDER BY l.bezeichnung
+      WHERE p.geloescht = 0 AND l.bezeichnung LIKE ?
+      ORDER BY p.ausgelagert, l.bezeichnung, p.paletten_nr
     `).all(term);
   } else if (typ === 'kunde') {
     results = db.prepare(`
@@ -50,15 +50,16 @@ router.get('/suche', (req, res) => {
       ORDER BY p.ausgelagert, p.lagerplatz_bezeichnung, p.paletten_nr
     `).all(term);
   } else {
+    // Erst in Paletten suchen, dann auch in Lagerplätzen
     results = db.prepare(`
       SELECT p.*, l.bezeichnung as platz, k.name as kunde_name
       FROM paletten p
       LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
       LEFT JOIN kunden k ON p.kunde_id = k.id
       WHERE p.geloescht = 0
-        AND (p.paletten_nr LIKE ? OR p.artikel_nr LIKE ? OR p.chargen_nr LIKE ?)
+        AND (p.paletten_nr LIKE ? OR p.artikel_nr LIKE ? OR p.chargen_nr LIKE ? OR l.bezeichnung LIKE ?)
       ORDER BY p.ausgelagert, p.paletten_nr
-    `).all(term, term, term);
+    `).all(term, term, term, term);
   }
   
   res.json(results);

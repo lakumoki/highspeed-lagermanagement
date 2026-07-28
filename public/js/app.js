@@ -88,6 +88,7 @@ function renderApp() {
           <a href="#" data-page="kunden"><span class="icon">⊕</span><span>Kunden</span></a>
           <a href="#" data-page="protokoll"><span class="icon">⊙</span><span>Protokoll</span></a>
           <a href="#" data-page="dokumente"><span class="icon">▤</span><span>Dokumentenarchiv</span></a>
+          <a href="#" data-page="benutzer"><span class="icon">⊕</span><span>Benutzer</span></a>
         </nav>
         <div class="sidebar-footer">
           <div class="user-name">${currentUser.vollname}</div>
@@ -118,7 +119,7 @@ async function doLogout() {
 }
 
 // ─── PAGES ───────────────────────────────────────────────────────────────────
-const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirekteinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, handling: pgHandling, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente };
+const pages = { dashboard: pgDashboard, suche: pgSuche, einlagerung: pgEinlagerung, direktanlieferung: pgDirekteinlagerung, auslagerung: pgAuslagerung, pickliste: pgPickliste, musterung: pgMusterung, handling: pgHandling, umlagerung: pgUmlagerung, lagerplan: pgLagerplan, bewegungen: pgBewegungen, kontingent: pgKontingent, berichte: pgBerichte, kunden: pgKunden, protokoll: pgProtokoll, dokumente: pgDokumente, benutzer: pgBenutzer };
 
 // ═══ DASHBOARD ═══════════════════════════════════════════════════════════════
 async function pgDashboard() {
@@ -1235,10 +1236,12 @@ async function pgHandling() {
       <div class="form-row">
         <div class="form-group"><label>Anzahl Handlings pro Palette *</label><input type="number" id="hdl-menge" value="1" min="1" max="20" oninput="document.getElementById('hdl-info').textContent='→ '+(parseInt(this.value||1)+2)+' Bewegungen pro Palette'"></div>
         <div class="form-group"><label>Art des Handlings *</label>
-          <select id="hdl-art">
+          <select id="hdl-art" onchange="localStorage.setItem('hdl_last_art',this.value)">
             <option value="Umetikettierung">Umetikettierung</option>
             <option value="Neue EB-Nummer">Neue EB-Nummer anbringen</option>
             <option value="Neuverpackung">Neuverpackung</option>
+            <option value="Sortierung">Sortierung</option>
+            <option value="Kommissionierung">Kommissionierung</option>
             <option value="Sonstiges">Sonstiges</option>
           </select>
         </div>
@@ -1247,6 +1250,8 @@ async function pgHandling() {
       <div style="margin-bottom:14px;font-size:13px;color:var(--primary)" id="hdl-info">→ 3 Bewegungen pro Palette</div>
       <button class="btn btn-primary" onclick="doHandling()">Handling buchen + Beleg</button>
     </div>`;
+  const lastArt = localStorage.getItem('hdl_last_art');
+  if (lastArt) { const sel = document.getElementById('hdl-art'); if (sel && [...sel.options].find(o => o.value === lastArt)) sel.value = lastArt; }
 }
 
 async function doHandling() {
@@ -1304,7 +1309,7 @@ async function pgUmlagerung() {
         <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:600;color:#e67e22">Bulk → Block/Gang:</span>
           ${['BlockE','BlockF'].map(b => `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:4px 12px;font-size:12px;border-radius:4px;cursor:pointer">${b}</button>`).join('')}
-          ${['XA','XB','XC','XD','P1','P21','P31','P41'].map(g => `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer">${g}</button>`).join('')}
+          ${['XA','XB','XC','XD','XE1','XE2','XF1','XF2','P1','P21','P22','P23','P24','P31','P32','P33','P34','P41','P42','P43','P44'].map(g => `<button class="btn btn-sm" onclick="document.getElementById('we-bulk-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer">${g}</button>`).join('')}
           <input type="text" id="we-bulk-platz" placeholder="Gang/Block..." style="width:110px;padding:5px 8px;font-size:13px">
           <button class="btn btn-sm btn-primary" onclick="weBulkUmlagern()">Bulk umlagern</button>
         </div>
@@ -1517,7 +1522,10 @@ async function loadRegal(regal) {
   const plaetze = await api(`/api/lagerplaetze/plan/regal/${encodeURIComponent(regal)}`);
   const grid = document.getElementById('lp-grid');
 
-  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${plaetze.length} Plätze</h3><span style="font-size:11px;color:var(--text-muted)">Klick = Details · Shift+Klick = Auswählen zum Umlagern</span></div>
+  const hauptPlaetze = plaetze.filter(p => !p.unter_position);
+  const abPlaetze = plaetze.filter(p => p.unter_position);
+  const platzInfo = abPlaetze.length > 0 ? `${hauptPlaetze.length} Plätze + ${abPlaetze.length} Zusatz (a/b)` : `${hauptPlaetze.length} Plätze`;
+  grid.innerHTML = `<div class="card-header"><h3>Regal ${regal} — ${platzInfo}</h3><span style="font-size:11px;color:var(--text-muted)">Klick = Details · Shift+Klick = Auswählen zum Umlagern</span></div>
     <div class="lagerplan-grid">
       ${plaetze.map(p => {
         let cls = 'frei';
@@ -1566,7 +1574,7 @@ function lpUpdateToolbar() {
       `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${b}'" style="background:#e67e22;color:#fff;padding:2px 10px;font-size:11px;border-radius:4px">${b}</button>`
     ).join('');
     html += `<span style="font-size:11px;color:#aaa;margin-left:8px">Gänge:</span>`;
-    html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2'].map(g =>
+    html += ['XA','XB','XC','XD','XE1','XE2','XF1','XF2','P1','P21','P31','P41'].map(g =>
       `<button class="btn btn-sm" onclick="document.getElementById('lp-umlagern-platz').value='${g}'" style="background:#6c757d;color:#fff;padding:2px 8px;font-size:11px;border-radius:4px">${g}</button>`
     ).join('');
     html += '</div>';
@@ -1596,11 +1604,12 @@ async function lpBulkUmlagern() {
 async function showPlatzDetail(id) {
   const p = await api(`/api/lagerplaetze/${id}`);
   const isGesperrt = p.belegt && p.bemerkung?.includes('Nicht nutzbar');
+  const allePal = p.alle_paletten || (p.paletten_nr ? [p] : []);
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal" style="${allePal.length > 5 ? 'max-height:85vh;overflow-y:auto' : ''}">
       <h2>Lagerplatz ${p.bezeichnung}</h2>
       <table style="width:100%;font-size:13px">
         <tr><td style="color:var(--text-muted)">Bereich</td><td>${p.bereich}</td></tr>
@@ -1609,20 +1618,27 @@ async function showPlatzDetail(id) {
         <tr><td style="color:var(--text-muted)">Typ</td><td>${p.typ}</td></tr>
         <tr><td style="color:var(--text-muted)">Stapelbar</td><td>${p.stapelbar ? 'Ja (.a/.b)' : 'Nein'}</td></tr>
         <tr><td style="color:var(--text-muted)">Status</td><td>${isGesperrt ? '<span class="badge badge-warning">Gesperrt (×)</span>' : (p.belegt ? '<span class="badge badge-danger">Belegt</span>' : '<span class="badge badge-success">Frei</span>')}</td></tr>
-        ${p.paletten_nr ? `
+        ${allePal.length === 1 ? `
         <tr><td colspan="2" style="padding-top:12px"><strong>Palette</strong></td></tr>
-        <tr><td style="color:var(--text-muted)">Paletten-Nr.</td><td><strong>${p.paletten_nr}</strong> <span class="badge badge-${p.nummern_typ === 'EB' ? 'eb' : 'kw'}">${p.nummern_typ}</span></td></tr>
-        <tr><td style="color:var(--text-muted)">Artikel</td><td>${p.artikel_nr || '—'}</td></tr>
-        <tr><td style="color:var(--text-muted)">Charge</td><td>${p.chargen_nr || '—'}</td></tr>
-        <tr><td style="color:var(--text-muted)">Kunde</td><td>${p.kunde_name || '—'}</td></tr>
-        <tr><td style="color:var(--text-muted)">Eingelagert</td><td>${p.eingelagert_am ? new Date(p.eingelagert_am).toLocaleDateString('de-DE') : '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Paletten-Nr.</td><td><strong>${allePal[0].paletten_nr}</strong> <span class="badge badge-${allePal[0].nummern_typ === 'EB' ? 'eb' : 'kw'}">${allePal[0].nummern_typ}</span></td></tr>
+        <tr><td style="color:var(--text-muted)">Artikel</td><td>${allePal[0].artikel_nr || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Charge</td><td>${allePal[0].chargen_nr || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Kunde</td><td>${allePal[0].kunde_name || '—'}</td></tr>
+        <tr><td style="color:var(--text-muted)">Eingelagert</td><td>${allePal[0].eingelagert_am ? new Date(allePal[0].eingelagert_am).toLocaleDateString('de-DE') : '—'}</td></tr>
         ` : ''}
         ${p.bemerkung ? `<tr><td style="color:var(--text-muted)">Bemerkung</td><td>${p.bemerkung}</td></tr>` : ''}
       </table>
+      ${allePal.length > 1 ? `
+      <div style="margin-top:14px">
+        <strong>${allePal.length} Paletten auf diesem Platz:</strong>
+        <div class="table-wrap" style="max-height:300px;overflow-y:auto;margin-top:8px"><table><thead><tr><th>Pal.-Nr.</th><th>Typ</th><th>Artikel</th><th>Kunde</th><th></th></tr></thead><tbody>
+          ${allePal.map(pal => `<tr><td><strong>${pal.paletten_nr}</strong></td><td>${pal.nummern_typ || '—'}</td><td>${pal.artikel_nr || '—'}</td><td>${pal.kunde_name || '—'}</td><td><button class="btn btn-sm btn-secondary" onclick="this.closest('.modal-overlay').remove();editPalette(${pal.palette_id})">✎</button></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>` : ''}
       <div class="modal-actions">
-        ${p.paletten_nr ? `<button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();editPalette(${p.palette_id})">Bearbeiten</button>` : ''}
-        ${p.paletten_nr ? `<a class="btn btn-secondary" href="/api/berichte/auslagerungsbeleg/${p.paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
-        ${!p.paletten_nr ? `<button class="btn btn-sm ${isGesperrt ? 'btn-success' : 'btn-warning'}" onclick="togglePlatzSperre(${p.id}, ${isGesperrt ? 'false' : 'true'})">${isGesperrt ? 'Entsperren' : 'Sperren (×)'}</button>` : ''}
+        ${allePal.length === 1 ? `<button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove();editPalette(${allePal[0].palette_id})">Bearbeiten</button>` : ''}
+        ${allePal.length === 1 ? `<a class="btn btn-secondary" href="/api/berichte/auslagerungsbeleg/${allePal[0].paletten_nr}" target="_blank">Beleg PDF</a>` : ''}
+        ${allePal.length === 0 ? `<button class="btn btn-sm ${isGesperrt ? 'btn-success' : 'btn-warning'}" onclick="togglePlatzSperre(${p.id}, ${isGesperrt ? 'false' : 'true'})">${isGesperrt ? 'Entsperren' : 'Sperren (×)'}</button>` : ''}
         <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
       </div>
     </div>`;
@@ -1993,7 +2009,7 @@ async function saveKundeDetails(id) {
 
 async function saveNeuerKunde() {
   try {
-    await api('/api/kunden', { method: 'POST', body: { name: document.getElementById('nk-name').value, kuerzel: document.getElementById('nk-kuerzel').value, nummern_prefix: document.getElementById('nk-prefix').value, nummern_format: document.getElementById('nk-format').value, kontingent_plaetze: parseInt(document.getElementById('nk-kont').value) || 0 } });
+    await api('/api/kunden', { method: 'POST', body: { name: document.getElementById('nk-name').value, kuerzel: document.getElementById('nk-kuerzel').value, nummern_prefix: document.getElementById('nk-prefix').value, nummern_format: document.getElementById('nk-format').value, kontingent_plaetze: parseInt(document.getElementById('nk-kont').value) || 0, adresse: document.getElementById('nk-adresse').value.trim() || null } });
     document.querySelector('.modal-overlay')?.remove();
     toast('Kunde angelegt', 'success');
     pgKunden();
@@ -2144,6 +2160,8 @@ async function savePalette(id, force) {
 }
 
 // ═══ DOKUMENTENARCHIV ═════════════════════════════════════════════════════════
+let dokSortCol = null, dokSortDir = 1, dokData = {};
+
 async function pgDokumente() {
   const pc = document.getElementById('page-content');
   const [docs, auftraege] = await Promise.all([
@@ -2151,79 +2169,153 @@ async function pgDokumente() {
     api('/api/auftraege')
   ]);
 
-  // Belege nach Typ filtern
-  const lieferscheine = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('LS-'));
-  const musterbelege = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('MUSTER-'));
-  const handlingbelege = docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('HDL-'));
+  dokData = {
+    ls: docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('LS-')),
+    muster: docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('MUSTER-')),
+    handling: docs.filter(d => d.beleg_nr && d.beleg_nr.startsWith('HDL-')),
+    einl: auftraege
+  };
+  dokSortCol = null;
+  dokSortDir = 1;
 
   pc.innerHTML = `
     <div class="page-header"><h1>Dokumentenarchiv</h1></div>
+    <div class="search-bar" style="margin-bottom:16px">
+      <input type="text" id="dok-search" placeholder="Beleg-Nr., Kunde oder Paletten-Nr. suchen…" oninput="renderDokTabs()">
+    </div>
     <div class="tabs" style="margin-bottom:16px">
       <button class="active" onclick="showDokTab('ls')">Lieferscheine / Auslagerung</button>
       <button onclick="showDokTab('einl')">Einlagerungsbelege</button>
       <button onclick="showDokTab('muster')">Musterbelege</button>
       <button onclick="showDokTab('handling')">Handlingbelege</button>
     </div>
-    <div id="dok-tab-ls" class="card">
-      <div class="card-header"><h3>Lieferscheine / Auslagerungsbelege (${lieferscheine.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${lieferscheine.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
-        lieferscheine.map(d => `<tr>
-          <td><strong>${d.beleg_nr}</strong></td>
-          <td>${d.kunde_name || '—'}</td>
-          <td>${d.anzahl}</td>
-          <td>${d.lkw_gesamt > 1 ? `${d.lkw_nr}/${d.lkw_gesamt}` : '1'}</td>
-          <td>${d.benutzer || '—'}</td>
-          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
-          <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
-        </tr>`).join('')}
-      </tbody></table></div>
-    </div>
-    <div id="dok-tab-einl" class="card" style="display:none">
-      <div class="card-header"><h3>Einlagerungsbelege (${auftraege.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Direkt-ID</th><th>Typ</th><th>Kunde</th><th>Paletten</th><th>LKW</th><th>Status</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${auftraege.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
-        auftraege.map(a => `<tr>
-          <td>${a.id}</td>
-          <td><strong>${a.direkt_id || '—'}</strong></td>
-          <td><span class="badge ${a.typ === 'direktanlieferung' ? 'badge-warning' : 'badge-info'}">${a.typ === 'direktanlieferung' ? 'Direkt' : 'Standard'}</span></td>
-          <td>${a.kunde_name || '—'}</td>
-          <td>${a.gesamt}</td>
-          <td>${a.lkw_nr || '—'}</td>
-          <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : 'badge-info'}">${a.status}</span></td>
-          <td>${a.erstellt_am ? new Date(a.erstellt_am).toLocaleString('de-DE') : '—'}</td>
-          <td><a class="btn btn-sm btn-primary" href="/api/berichte/einlagerungsbeleg/${a.id}" target="_blank">PDF</a></td>
-        </tr>`).join('')}
-      </tbody></table></div>
-    </div>
-    <div id="dok-tab-muster" class="card" style="display:none">
-      <div class="card-header"><h3>Musterbelege (${musterbelege.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${musterbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Musterbelege vorhanden</td></tr>' :
-        musterbelege.map(d => `<tr>
-          <td><strong>${d.beleg_nr}</strong></td>
-          <td>${d.kunde_name || '—'}</td>
-          <td>${d.paletten_nummern || '—'}</td>
-          <td>${d.benutzer || '—'}</td>
-          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
-          <td><a class="btn btn-sm btn-primary" href="/api/musterung/beleg/${d.beleg_nr?.replace('MUSTER-','')}" target="_blank">PDF</a></td>
-        </tr>`).join('')}
-      </tbody></table></div>
-    </div>
-    <div id="dok-tab-handling" class="card" style="display:none">
-      <div class="card-header"><h3>Handlingbelege (${handlingbelege.length})</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Beleg-Nr.</th><th>Kunde</th><th>Paletten</th><th>Benutzer</th><th>Erstellt</th><th>PDF</th></tr></thead><tbody>
-        ${handlingbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Handlingbelege vorhanden</td></tr>' :
-        handlingbelege.map(d => `<tr>
-          <td><strong>${d.beleg_nr}</strong></td>
-          <td>${d.kunde_name || '—'}</td>
-          <td>${d.paletten_nummern || '—'}</td>
-          <td>${d.benutzer || '—'}</td>
-          <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
-          <td><a class="btn btn-sm btn-primary" href="/api/handling/beleg/${d.beleg_nr?.split('-').pop()}" target="_blank">PDF</a></td>
-        </tr>`).join('')}
-      </tbody></table></div>
-    </div>`;
+    <div id="dok-tab-ls" class="card"></div>
+    <div id="dok-tab-einl" class="card" style="display:none"></div>
+    <div id="dok-tab-muster" class="card" style="display:none"></div>
+    <div id="dok-tab-handling" class="card" style="display:none"></div>`;
+  renderDokTabs();
+}
+
+function dokSort(col) {
+  if (dokSortCol === col) dokSortDir *= -1;
+  else { dokSortCol = col; dokSortDir = 1; }
+  renderDokTabs();
+}
+
+function filterDokItems(items) {
+  const q = (document.getElementById('dok-search')?.value || '').trim().toLowerCase();
+  if (!q) return items;
+  return items.filter(d => {
+    const txt = [d.beleg_nr, d.kunde_name, d.paletten_nummern, d.benutzer, d.direkt_id].filter(Boolean).join(' ').toLowerCase();
+    return txt.includes(q);
+  });
+}
+
+function sortDokItems(items) {
+  if (!dokSortCol) return items;
+  return [...items].sort((a, b) => {
+    const va = (a[dokSortCol] || '').toString().toLowerCase();
+    const vb = (b[dokSortCol] || '').toString().toLowerCase();
+    return va.localeCompare(vb, 'de', { numeric: true }) * dokSortDir;
+  });
+}
+
+function renderDokTabs() {
+  const arrow = (col) => dokSortCol === col ? (dokSortDir === 1 ? ' ▲' : ' ▼') : '';
+  const lieferscheine = sortDokItems(filterDokItems(dokData.ls || []));
+  const auftraege = sortDokItems(filterDokItems(dokData.einl || []));
+  const musterbelege = sortDokItems(filterDokItems(dokData.muster || []));
+  const handlingbelege = sortDokItems(filterDokItems(dokData.handling || []));
+
+  document.getElementById('dok-tab-ls').innerHTML = `
+    <div class="card-header"><h3>Lieferscheine / Auslagerungsbelege (${lieferscheine.length})</h3></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th style="cursor:pointer" onclick="dokSort('beleg_nr')">Beleg-Nr.${arrow('beleg_nr')}</th>
+      <th style="cursor:pointer" onclick="dokSort('kunde_name')">Kunde${arrow('kunde_name')}</th>
+      <th style="cursor:pointer" onclick="dokSort('anzahl')">Paletten${arrow('anzahl')}</th>
+      <th>LKW</th>
+      <th style="cursor:pointer" onclick="dokSort('benutzer')">Benutzer${arrow('benutzer')}</th>
+      <th style="cursor:pointer" onclick="dokSort('erstellt_am')">Erstellt${arrow('erstellt_am')}</th>
+      <th>PDF</th>
+    </tr></thead><tbody>
+      ${lieferscheine.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
+      lieferscheine.map(d => `<tr>
+        <td><strong>${d.beleg_nr}</strong></td>
+        <td>${d.kunde_name || '—'}</td>
+        <td>${d.anzahl}</td>
+        <td>${d.lkw_gesamt > 1 ? d.lkw_nr + '/' + d.lkw_gesamt : '1'}</td>
+        <td>${d.benutzer || '—'}</td>
+        <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+        <td><a class="btn btn-sm btn-primary" href="/api/pickliste/lieferschein/${d.id}" target="_blank">PDF</a></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  document.getElementById('dok-tab-einl').innerHTML = `
+    <div class="card-header"><h3>Einlagerungsbelege (${auftraege.length})</h3></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th>ID</th>
+      <th style="cursor:pointer" onclick="dokSort('direkt_id')">Direkt-ID${arrow('direkt_id')}</th>
+      <th>Typ</th>
+      <th style="cursor:pointer" onclick="dokSort('kunde_name')">Kunde${arrow('kunde_name')}</th>
+      <th>Paletten</th><th>LKW</th><th>Status</th>
+      <th style="cursor:pointer" onclick="dokSort('erstellt_am')">Erstellt${arrow('erstellt_am')}</th>
+      <th>PDF</th>
+    </tr></thead><tbody>
+      ${auftraege.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">Keine vorhanden</td></tr>' :
+      auftraege.map(a => `<tr>
+        <td>${a.id}</td>
+        <td><strong>${a.direkt_id || '—'}</strong></td>
+        <td><span class="badge ${a.typ === 'direktanlieferung' ? 'badge-warning' : 'badge-info'}">${a.typ === 'direktanlieferung' ? 'Direkt' : 'Standard'}</span></td>
+        <td>${a.kunde_name || '—'}</td>
+        <td>${a.gesamt}</td>
+        <td>${a.lkw_nr || '—'}</td>
+        <td><span class="badge ${a.status === 'abgeschlossen' ? 'badge-success' : 'badge-info'}">${a.status}</span></td>
+        <td>${a.erstellt_am ? new Date(a.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+        <td><a class="btn btn-sm btn-primary" href="/api/berichte/einlagerungsbeleg/${a.id}" target="_blank">PDF</a></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  document.getElementById('dok-tab-muster').innerHTML = `
+    <div class="card-header"><h3>Musterbelege (${musterbelege.length})</h3></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th style="cursor:pointer" onclick="dokSort('beleg_nr')">Beleg-Nr.${arrow('beleg_nr')}</th>
+      <th style="cursor:pointer" onclick="dokSort('kunde_name')">Kunde${arrow('kunde_name')}</th>
+      <th>Paletten</th>
+      <th style="cursor:pointer" onclick="dokSort('benutzer')">Benutzer${arrow('benutzer')}</th>
+      <th style="cursor:pointer" onclick="dokSort('erstellt_am')">Erstellt${arrow('erstellt_am')}</th>
+      <th>PDF</th>
+    </tr></thead><tbody>
+      ${musterbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Musterbelege vorhanden</td></tr>' :
+      musterbelege.map(d => `<tr>
+        <td><strong>${d.beleg_nr}</strong></td>
+        <td>${d.kunde_name || '—'}</td>
+        <td>${d.paletten_nummern || '—'}</td>
+        <td>${d.benutzer || '—'}</td>
+        <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+        <td><a class="btn btn-sm btn-primary" href="/api/musterung/beleg/${d.beleg_nr?.replace('MUSTER-','')}" target="_blank">PDF</a></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  document.getElementById('dok-tab-handling').innerHTML = `
+    <div class="card-header"><h3>Handlingbelege (${handlingbelege.length})</h3></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th style="cursor:pointer" onclick="dokSort('beleg_nr')">Beleg-Nr.${arrow('beleg_nr')}</th>
+      <th style="cursor:pointer" onclick="dokSort('kunde_name')">Kunde${arrow('kunde_name')}</th>
+      <th>Paletten</th>
+      <th style="cursor:pointer" onclick="dokSort('benutzer')">Benutzer${arrow('benutzer')}</th>
+      <th style="cursor:pointer" onclick="dokSort('erstellt_am')">Erstellt${arrow('erstellt_am')}</th>
+      <th>PDF</th>
+    </tr></thead><tbody>
+      ${handlingbelege.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Keine Handlingbelege vorhanden</td></tr>' :
+      handlingbelege.map(d => `<tr>
+        <td><strong>${d.beleg_nr}</strong></td>
+        <td>${d.kunde_name || '—'}</td>
+        <td>${d.paletten_nummern || '—'}</td>
+        <td>${d.benutzer || '—'}</td>
+        <td>${d.erstellt_am ? new Date(d.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+        <td><a class="btn btn-sm btn-primary" href="/api/handling/beleg/${d.beleg_nr?.split('-').pop()}" target="_blank">PDF</a></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
 }
 
 function showDokTab(tab) {
@@ -2233,6 +2325,78 @@ function showDokTab(tab) {
   document.querySelectorAll('.tabs button').forEach((btn, i) => {
     btn.className = ['ls','einl','muster','handling'][i] === tab ? 'active' : '';
   });
+  dokSortCol = null;
+  dokSortDir = 1;
+  renderDokTabs();
+}
+
+// ═══ BENUTZER ════════════════════════════════════════════════════════════════
+async function pgBenutzer() {
+  const pc = document.getElementById('page-content');
+  const benutzer = await api('/api/benutzer');
+  pc.innerHTML = `
+    <div class="page-header"><h1>Benutzerverwaltung</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuerBenutzer()">+ Neuer Benutzer</button></div></div>
+    <div class="card">
+      <div class="table-wrap"><table><thead><tr><th>Benutzername</th><th>Vollname</th><th>Rolle</th><th>Status</th><th>Erstellt</th></tr></thead><tbody>
+        ${benutzer.map(b => `<tr>
+          <td><strong>${b.benutzername}</strong></td>
+          <td>${b.vollname || '—'}</td>
+          <td><span class="badge ${b.rolle === 'Administrator' ? 'badge-danger' : b.rolle === 'Staplerfahrer' ? 'badge-warning' : 'badge-info'}">${b.rolle || '—'}</span></td>
+          <td>${b.aktiv ? '<span class="badge badge-success">Aktiv</span>' : '<span class="badge badge-danger">Inaktiv</span>'}</td>
+          <td>${b.erstellt_am ? new Date(b.erstellt_am).toLocaleString('de-DE') : '—'}</td>
+        </tr>`).join('')}
+      </tbody></table></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin-bottom:12px">Protokollierung</h3>
+      <p style="font-size:13px;color:var(--text-muted)">
+        <strong>Staplerfahrer:</strong> Wird nur protokolliert, wenn die Aktion über QR-Code (Staplerauftrag) erfolgt.<br>
+        <strong>Andere Benutzer:</strong> Der jeweils eingeloggte Benutzer wird bei allen Aktionen protokolliert.
+      </p>
+    </div>`;
+}
+
+function showNeuerBenutzer() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Neuer Benutzer</h2>
+      <div class="form-group"><label>Benutzername *</label><input type="text" id="nb-user" placeholder="z.B. martin"></div>
+      <div class="form-group"><label>Passwort *</label><input type="password" id="nb-pass" placeholder="Passwort"></div>
+      <div class="form-group"><label>Vollname</label><input type="text" id="nb-name" placeholder="z.B. Martin Klüber"></div>
+      <div class="form-group"><label>Rolle</label>
+        <select id="nb-rolle">
+          <option value="Mitarbeiter">Mitarbeiter</option>
+          <option value="Administrator">Administrator</option>
+          <option value="Staplerfahrer">Staplerfahrer</option>
+          <option value="Lager">Lager</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveNeuerBenutzer()">Erstellen</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveNeuerBenutzer() {
+  const user = document.getElementById('nb-user').value.trim();
+  const pass = document.getElementById('nb-pass').value;
+  if (!user || !pass) { toast('Benutzername und Passwort erforderlich', 'error'); return; }
+  try {
+    await api('/api/benutzer', { method: 'POST', body: {
+      benutzername: user,
+      passwort: pass,
+      vollname: document.getElementById('nb-name').value.trim() || user,
+      rolle: document.getElementById('nb-rolle').value
+    }});
+    document.querySelector('.modal-overlay')?.remove();
+    toast('Benutzer erstellt', 'success');
+    pgBenutzer();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ─── START ───────────────────────────────────────────────────────────────────

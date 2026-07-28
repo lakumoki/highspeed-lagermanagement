@@ -40,6 +40,19 @@ router.get('/:id', (req, res) => {
   `).get(req.params.id);
   
   if (!platz) return res.status(404).json({ error: 'Lagerplatz nicht gefunden' });
+
+  // Gang/Block: alle Paletten auf diesem Platz zurückgeben
+  if (platz.typ === 'Gang' || platz.typ === 'Block') {
+    const allePaletten = db.prepare(`
+      SELECT p.id as palette_id, p.paletten_nr, p.nummern_typ, p.artikel_nr, p.chargen_nr,
+             p.eingelagert_am, p.bemerkung as palette_bemerkung, k.name as kunde_name
+      FROM paletten p
+      LEFT JOIN kunden k ON p.kunde_id = k.id
+      WHERE p.lagerplatz_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+      ORDER BY p.paletten_nr
+    `).all(req.params.id);
+    platz.alle_paletten = allePaletten;
+  }
   res.json(platz);
 });
 

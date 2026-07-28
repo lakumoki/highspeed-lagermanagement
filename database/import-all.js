@@ -473,13 +473,14 @@ if (hoehenSheet) {
   console.log(`  Regalhöhen: ${Object.keys(regalHoehen).length} Regale, ${hCount} Plätze mit max_hoehe_cm`);
 }
 
-// Zwischenlager / Gang-Plätze anlegen (XA, XB, XC, XD, XE1, XE2, XF1, XF2 + Wareneingang)
-const gangPlaetze = ['XA', 'XB', 'XC', 'XD', 'XE1', 'XE2', 'XF1', 'XF2', 'Wareneingang'];
+// Zwischenlager / Gang-Plätze anlegen (XA-XF2, P-Gänge, Wareneingang)
+const gangPlaetze = ['XA', 'XB', 'XC', 'XD', 'XE1', 'XE2', 'XF1', 'XF2', 'Wareneingang',
+  'P1', 'P21', 'P22', 'P23', 'P24', 'P31', 'P32', 'P33', 'P34', 'P41', 'P42', 'P43', 'P44'];
 const insertGang = db.prepare('INSERT OR IGNORE INTO lagerplaetze (bezeichnung, regal, position, unter_position, ebene, ebene_index, bereich, typ, stapelbar, belegt, bemerkung) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
 for (const g of gangPlaetze) {
   insertGang.run(g, g, 0, null, 'EG', 0, 'Gang/Zwischenlager', 'Gang', 1, 0, 'Mehrfachbelegung erlaubt');
 }
-console.log(`  Gang-/Zwischenlagerplätze: ${gangPlaetze.length} (XA-XF2 + Wareneingang)`);
+console.log(`  Gang-/Zwischenlagerplätze: ${gangPlaetze.length} (XA-XF2, P1-P44, Wareneingang)`);
 
 // Block-Sammelplätze anlegen (BlockE, BlockF — Mehrfachbelegung)
 const blockSammel = [

@@ -104,7 +104,9 @@ router.get('/beleg/:lfd', (req, res) => {
   doc.text('Datum: _______________', 40, y);
   doc.text('Unterschrift Empfänger:', 300, y);
 
-  doc.fontSize(7).text('HIGHSPEED · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 790, { align: 'center', width: 515 });
+  const genMuster = new Date().toLocaleString('de-DE');
+  doc.fontSize(7).text(`Generiert am ${genMuster} · Seite 1/1`, 40, 775, { align: 'center', width: 515 });
+  doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
   doc.end();
 });
 

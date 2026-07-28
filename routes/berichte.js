@@ -90,7 +90,8 @@ router.get('/auslagerungsbeleg/:paletten_nr', (req, res) => {
 
   doc.text('Unterschrift Empfänger:', 50, y);
   doc.moveTo(50, y + 30).lineTo(250, y + 30).stroke();
-  doc.text('Datum: _______________', 300, y);
+  doc.text('Datum:', 300, y);
+  doc.moveTo(300, y + 30).lineTo(450, y + 30).stroke();
   
   const genDatumEinzel = new Date().toLocaleString('de-DE');
   doc.fontSize(7).text(`Generiert am ${genDatumEinzel} · Seite 1/1`, 50, 780, { align: 'center', width: 495 });
@@ -225,7 +226,8 @@ router.post('/sammelbeleg', (req, res) => {
     y += 20;
     doc.text('Unterschrift Empfänger:', 40, y);
     doc.moveTo(40, y + 30).lineTo(240, y + 30).stroke();
-    doc.text('Datum: _______________', 300, y);
+    doc.text('Datum:', 300, y);
+    doc.moveTo(300, y + 30).lineTo(450, y + 30).stroke();
 
     const genSammel = new Date().toLocaleString('de-DE');
     doc.fontSize(7).text(`Generiert am ${genSammel} · Seite ${lkw + 1}/${lkwAnzahl}`, 40, 780, { align: 'center', width: 515 });
@@ -253,33 +255,41 @@ router.get('/monatsbericht-pdf', (req, res) => {
   const gesamtBestand = bestand.c;
 
   // Maximale Überbelegung im Zeitraum berechnen:
-  // Startbestand am Monatsbeginn = aktueller Bestand - alle Einlagerungen seit von + alle Auslagerungen seit von
-  const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung'").get(kid, von, bis);
-  const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung'").get(kid, von, bis);
+  // Startbestand = aktueller Bestand - echte Einlagerungen + echte Auslagerungen
+  // (Musterzug/Handling-Roundtrips ausschließen, da die den Netto-Bestand nicht verändern)
+  const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
+  const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
   const bestandAnfang = gesamtBestand - einlSeitVon.s + auslSeitVon.s;
 
-  // Tagesbestand simulieren: Für jeden Tag Einlagerungen addieren, Auslagerungen subtrahieren
-  const tagesBewegungen = db.prepare(`
+  // Tagesbestand simulieren — Musterzug/Handling-Rundläufe ausschließen:
+  // Aus der Tagessumme die handling_art 'Musterzug' und 'Handling' Roundtrips rausrechnen
+  const tagesBewNetto = db.prepare(`
     SELECT datum, typ, SUM(anzahl) as summe 
-    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ IN ('Einlagerung','Auslagerung')
+    FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? 
+      AND typ IN ('Einlagerung','Auslagerung')
+      AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))
     GROUP BY datum, typ ORDER BY datum
   `).all(kid, von, bis);
 
   let simulierterBestand = bestandAnfang;
   let maxBestand = bestandAnfang;
   const tagesMap = {};
-  for (const tb of tagesBewegungen) {
+  for (const tb of tagesBewNetto) {
     if (!tagesMap[tb.datum]) tagesMap[tb.datum] = { ein: 0, aus: 0 };
     if (tb.typ === 'Einlagerung') tagesMap[tb.datum].ein += tb.summe;
     else if (tb.typ === 'Auslagerung') tagesMap[tb.datum].aus += tb.summe;
   }
   const sortedDays = Object.keys(tagesMap).sort();
   for (const day of sortedDays) {
+    // Auslagerungen zuerst (Paletten gehen raus bevor neue reinkommen)
+    simulierterBestand -= tagesMap[day].aus;
     simulierterBestand += tagesMap[day].ein;
     if (simulierterBestand > maxBestand) maxBestand = simulierterBestand;
-    simulierterBestand -= tagesMap[day].aus;
   }
-  const maxUeberbelegung = kontingent ? Math.max(0, maxBestand - kontingent.kontingent_plaetze) : 0;
+
+  // Kontingent: aus kontingent-Tabelle ODER aus kunden.kontingent_plaetze
+  const kontingentPlaetze = kontingent?.kontingent_plaetze || kunde?.kontingent_plaetze || 0;
+  const maxUeberbelegung = kontingentPlaetze > 0 ? Math.max(0, maxBestand - kontingentPlaetze) : 0;
 
   // Gruppierung: Gleicher Datum + Typ → eine Zeile (Direkt UND reguläre Auslagerungen)
   const grouped = [];
@@ -296,8 +306,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
     groupKeys[key].gesamtAnzahl += bew.anzahl;
   }
 
-  // Berechne Inhalt im Voraus für korrekte Seitenzählung
-  const pageHeight = 540;
+  const pageHeight = 520;
   const headerHeight = 100;
   const rowMinHeight = 11;
   
@@ -312,8 +321,8 @@ router.get('/monatsbericht-pdf', (req, res) => {
     doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Monatsbericht', 40, 30);
     doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
     doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
-    if (kontingent) {
-      doc.text(`Kontingent: ${kontingent.kontingent_plaetze} Plätze | Bestand aktuell: ${gesamtBestand} | Max. Überbelegung: ${maxUeberbelegung}`, 350, 60);
+    if (kontingentPlaetze > 0) {
+      doc.text(`Kontingent: ${kontingentPlaetze} Plätze | Bestand aktuell: ${gesamtBestand} | Max. Überbelegung: ${maxUeberbelegung}`, 350, 60);
     }
     doc.moveTo(40, 78).lineTo(780, 78).stroke();
   }
@@ -361,8 +370,8 @@ router.get('/monatsbericht-pdf', (req, res) => {
     y += rowHeight;
   }
 
-  // Summenzeile
-  if (y + 30 > pageHeight) {
+  // Summenzeile — 40px Platz für Summe + Abstand zur Fußzeile
+  if (y + 40 > pageHeight) {
     doc.addPage({ layout: 'landscape' });
     y = 40;
   }
@@ -373,13 +382,13 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.text('SUMME', 40, y);
   doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680, lineBreak: false });
 
-  // Seitennummerierung + Generiert-Zeitstempel auf allen Seiten
   const pages = doc.bufferedPageRange();
   const totalPages = pages.count;
+  const genTimestamp = new Date().toLocaleString('de-DE');
   for (let i = 0; i < totalPages; i++) {
     doc.switchToPage(i);
     doc.fontSize(6).font('Helvetica');
-    doc.text(`Generiert: ${new Date().toLocaleString('de-DE')} | Seite ${i + 1} von ${totalPages}`, 40, 545, { width: 740, align: 'center', lineBreak: false });
+    doc.text(`Generiert: ${genTimestamp} | Seite ${i + 1} von ${totalPages}`, 40, 555, { width: 740, align: 'center', lineBreak: false });
   }
 
   doc.end();
@@ -401,29 +410,28 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
     SELECT * FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? ORDER BY id
   `).all(auftragId);
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
   const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${auftragId}`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
 
-  // Logo
-  try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
+  function drawEinlagerungHeader() {
+    try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
+    doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
+    doc.fontSize(8).font('Helvetica');
+    doc.text(ABSENDER.inhaber, 40, 44);
+    doc.text(ABSENDER.strasse, 40, 55);
+    doc.text(ABSENDER.plz_ort, 40, 66);
+    doc.fontSize(9).font('Helvetica-Bold').text('Anlieferer / Kunde:', 320, 30);
+    doc.font('Helvetica');
+    const empfAddr = auftrag.kunde_adresse || auftrag.kunde_name || '—';
+    empfAddr.split('\n').forEach((line, i) => {
+      doc.text(line.trim(), 320, 43 + (i * 11));
+    });
+  }
 
-  // Absender
-  doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
-  doc.fontSize(8).font('Helvetica');
-  doc.text(ABSENDER.inhaber, 40, 44);
-  doc.text(ABSENDER.strasse, 40, 55);
-  doc.text(ABSENDER.plz_ort, 40, 66);
-
-  // Empfänger/Lieferant
-  doc.fontSize(9).font('Helvetica-Bold').text('Anlieferer / Kunde:', 320, 30);
-  doc.font('Helvetica');
-  const empfAddr = auftrag.kunde_adresse || auftrag.kunde_name || '—';
-  empfAddr.split('\n').forEach((line, i) => {
-    doc.text(line.trim(), 320, 43 + (i * 11));
-  });
+  drawEinlagerungHeader();
 
   let y = 105;
   const isDirekt = auftrag.typ === 'direktanlieferung';
@@ -442,29 +450,39 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
 
-  // Tabellenkopf
-  doc.fontSize(8).font('Helvetica-Bold');
-  doc.text('Nr.', 40, y, { width: 25 });
-  doc.text('Pal.-Nr.', 68, y, { width: 90 });
-  doc.text('Lagerplatz', 162, y, { width: 100 });
-  doc.text('Status', 266, y, { width: 70 });
-  doc.text('Bemerkung', 340, y, { width: 215 });
-  y += 13;
-  doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+  function drawEinlagerungTableHeader(yPos) {
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('Nr.', 40, yPos, { width: 25 });
+    doc.text('Pal.-Nr.', 68, yPos, { width: 90 });
+    doc.text('Lagerplatz', 162, yPos, { width: 100 });
+    doc.text('Status', 266, yPos, { width: 70 });
+    doc.text('Bemerkung', 340, yPos, { width: 215 });
+    yPos += 13;
+    doc.moveTo(40, yPos - 2).lineTo(555, yPos - 2).stroke();
+    return yPos;
+  }
+
+  y = drawEinlagerungTableHeader(y);
 
   doc.font('Helvetica').fontSize(8);
   for (let i = 0; i < positionen.length; i++) {
     const p = positionen[i];
+    if (y > 700) {
+      doc.addPage();
+      drawEinlagerungHeader();
+      y = drawEinlagerungTableHeader(105);
+      doc.font('Helvetica').fontSize(8);
+    }
     doc.text(String(i + 1), 40, y, { width: 25 });
     doc.text(p.paletten_nr || '—', 68, y, { width: 90 });
     doc.text(p.lagerplatz || 'Wareneingang', 162, y, { width: 100 });
     doc.text(p.status === 'eingelagert' ? 'OK' : 'Offen', 266, y, { width: 70 });
     doc.text(p.bemerkung || '', 340, y, { width: 215 });
     y += 13;
-    if (y > 700) { doc.addPage(); y = 40; }
   }
 
   y += 10;
+  if (y > 700) { doc.addPage(); y = 40; }
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${positionen.length} Palette(n)`, 40, y);
@@ -479,9 +497,14 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-  // Fußzeile: Generiert am ... Seite 1/1
   const genDatum = new Date().toLocaleString('de-DE');
-  doc.fontSize(7).text(`Generiert am ${genDatum} · Seite 1/1`, 40, 780, { align: 'center', width: 515 });
+  const einlPages = doc.bufferedPageRange();
+  const einlTotalPages = einlPages.count;
+  for (let i = 0; i < einlTotalPages; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${genDatum} · Seite ${i + 1}/${einlTotalPages}`, 40, 780, { align: 'center', width: 515 });
+  }
   doc.end();
 });
 
@@ -499,25 +522,26 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
     paletten.push({ nr, platz: p?.platz || '?', artikel: p?.artikel_nr || '', charge: p?.chargen_nr || '' });
   }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
   const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
 
-  // Logo
-  try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
+  function drawEinzelHeader() {
+    try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
+    doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
+    doc.fontSize(8).font('Helvetica');
+    doc.text(ABSENDER.inhaber, 40, 44);
+    doc.text(ABSENDER.strasse, 40, 55);
+    doc.text(ABSENDER.plz_ort, 40, 66);
+    doc.fontSize(9).font('Helvetica-Bold').text('Kunde:', 320, 30);
+    doc.font('Helvetica');
+    const addr = kunde?.adresse || kunde?.name || '—';
+    addr.split('\n').forEach((line, i) => { doc.text(line.trim(), 320, 43 + (i * 11)); });
+  }
 
-  doc.fontSize(11).font('Helvetica-Bold').text(ABSENDER.firma, 40, 30);
-  doc.fontSize(8).font('Helvetica');
-  doc.text(ABSENDER.inhaber, 40, 44);
-  doc.text(ABSENDER.strasse, 40, 55);
-  doc.text(ABSENDER.plz_ort, 40, 66);
-
-  doc.fontSize(9).font('Helvetica-Bold').text('Kunde:', 320, 30);
-  doc.font('Helvetica');
-  const addr = kunde?.adresse || kunde?.name || '—';
-  addr.split('\n').forEach((line, i) => { doc.text(line.trim(), 320, 43 + (i * 11)); });
+  drawEinzelHeader();
 
   let y = 100;
   doc.fontSize(13).font('Helvetica-Bold').text('EINLAGERUNGSBELEG', 40, y);
@@ -531,19 +555,30 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
 
-  doc.fontSize(8).font('Helvetica-Bold');
-  doc.text('Nr.', 40, y); doc.text('Pal.-Nr.', 68, y); doc.text('Lagerplatz', 165, y); doc.text('Artikel', 280, y); doc.text('Charge', 400, y);
-  y += 13;
-  doc.moveTo(40, y - 2).lineTo(555, y - 2).stroke();
+  function drawEinzelTableHeader(yPos) {
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('Nr.', 40, yPos); doc.text('Pal.-Nr.', 68, yPos); doc.text('Lagerplatz', 165, yPos); doc.text('Artikel', 280, yPos); doc.text('Charge', 400, yPos);
+    yPos += 13;
+    doc.moveTo(40, yPos - 2).lineTo(555, yPos - 2).stroke();
+    return yPos;
+  }
+
+  y = drawEinzelTableHeader(y);
 
   doc.font('Helvetica').fontSize(8);
   paletten.forEach((p, i) => {
+    if (y > 700) {
+      doc.addPage();
+      drawEinzelHeader();
+      y = drawEinzelTableHeader(105);
+      doc.font('Helvetica').fontSize(8);
+    }
     doc.text(String(i + 1), 40, y); doc.text(p.nr, 68, y); doc.text(p.platz, 165, y); doc.text(p.artikel, 280, y); doc.text(p.charge, 400, y);
     y += 13;
-    if (y > 700) { doc.addPage(); y = 40; }
   });
 
   y += 10;
+  if (y > 700) { doc.addPage(); y = 40; }
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
@@ -556,7 +591,13 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
   const genDatum2 = new Date().toLocaleString('de-DE');
-  doc.fontSize(7).text(`Generiert am ${genDatum2} · Seite 1/1`, 40, 780, { align: 'center', width: 515 });
+  const einzelPages = doc.bufferedPageRange();
+  const einzelTotalPages = einzelPages.count;
+  for (let i = 0; i < einzelTotalPages; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${genDatum2} · Seite ${i + 1}/${einzelTotalPages}`, 40, 780, { align: 'center', width: 515 });
+  }
   doc.end();
 });
 
