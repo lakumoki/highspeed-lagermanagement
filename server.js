@@ -48,6 +48,14 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth', require('./routes/auth'));
+
+// Auth-Check: Alle API-Routen (außer /api/auth und token-basierte Stapler-Routen) erfordern Login
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth')) return next();
+  if (req.path.match(/^\/auftraege\/[a-f0-9-]{36}/)) return next();
+  if (req.session && req.session.user) return next();
+  res.status(401).json({ error: 'Nicht angemeldet' });
+});
 app.use('/api/paletten', require('./routes/paletten'));
 app.use('/api/lagerplaetze', require('./routes/lagerplaetze'));
 app.use('/api/kunden', require('./routes/kunden'));

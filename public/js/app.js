@@ -17,6 +17,7 @@ async function init() {
 // ─── API HELPER ──────────────────────────────────────────────────────────────
 async function api(url, opts = {}) {
   const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (r.status === 401) { currentUser = null; renderLogin(); throw new Error('Sitzung abgelaufen'); }
   const data = await r.json();
   if (!r.ok) throw new Error(data.error || 'Fehler');
   return data;

@@ -149,26 +149,52 @@ router.post('/sammelbeleg', (req, res) => {
     );
   }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+  // Pre-calculate total pages for "Seite X von Y"
+  const PORTRAIT_FOOTER_Y = 775;
+  const PORTRAIT_ROW_BREAK = 720;
+  const PORTRAIT_SIG_BREAK = 690;
+  let sammelTotalPages = 0;
+  for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
+    const chunk = paletten.slice(lkw * LKW_KAPAZITAET, (lkw + 1) * LKW_KAPAZITAET);
+    let my = 200;
+    let pages = 1;
+    for (let i = 0; i < chunk.length; i++) { my += 14; if (my > PORTRAIT_ROW_BREAK) { pages++; my = 54; } }
+    if (my > PORTRAIT_SIG_BREAK) pages++;
+    sammelTotalPages += pages;
+  }
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="Lieferschein_${datum.replace(/\./g, '-')}_${paletten.length}Pal.pdf"`);
   doc.pipe(res);
 
+  const genSammel = new Date().toLocaleString('de-DE');
+  let sammelPageNr = 1;
+
+  function drawSammelFooter() {
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${genSammel} · Seite ${sammelPageNr}/${sammelTotalPages}`, 40, PORTRAIT_FOOTER_Y, { align: 'center', width: 515, lineBreak: false });
+    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515, lineBreak: false });
+  }
+
+  function sammelNewPage() {
+    drawSammelFooter();
+    sammelPageNr++;
+    doc.addPage();
+  }
+
   for (let lkw = 0; lkw < lkwAnzahl; lkw++) {
-    if (lkw > 0) doc.addPage();
+    if (lkw > 0) { sammelNewPage(); }
 
     const start = lkw * LKW_KAPAZITAET;
     const chunk = paletten.slice(start, start + LKW_KAPAZITAET);
 
-    // Absender (links)
     pdfAbsenderBlock(doc, 40, 30);
 
-    // Empfänger (rechts)
     doc.fontSize(9).font('Helvetica-Bold').text('Empfänger:', 320, 30);
     doc.font('Helvetica').fontSize(9).text(kunde, 320, 43);
     if (kundeAdresse) doc.text(kundeAdresse, 320, 55, { width: 200 });
 
-    // Dokumenttitel
     let y = 110;
     doc.fontSize(13).font('Helvetica-Bold').text('AUSLAGERUNGSBELEG / LIEFERSCHEIN', 40, y);
     if (lkwAnzahl > 1) {
@@ -188,7 +214,6 @@ router.post('/sammelbeleg', (req, res) => {
     doc.moveTo(40, y).lineTo(555, y).stroke();
     y += 8;
 
-    // Tabellenkopf
     doc.fontSize(8).font('Helvetica-Bold');
     doc.text('Nr.', 40, y, { width: 25 });
     doc.text('Pal.-Nr.', 68, y, { width: 75 });
@@ -211,11 +236,10 @@ router.post('/sammelbeleg', (req, res) => {
       doc.text(p.chargen_nr || '—', 345, y, { width: 100 });
       doc.text(p.bemerkung || '', 450, y, { width: 105 });
       y += 14;
-      if (y > 720) { doc.addPage(); y = 40; }
+      if (y > PORTRAIT_ROW_BREAK) { sammelNewPage(); y = 40; }
     }
 
-    // Summe + Unterschrift
-    if (y > 690) { doc.addPage(); y = 40; }
+    if (y > PORTRAIT_SIG_BREAK) { sammelNewPage(); y = 40; }
     y += 10;
     doc.moveTo(40, y).lineTo(555, y).stroke();
     y += 8;
@@ -231,15 +255,7 @@ router.post('/sammelbeleg', (req, res) => {
     doc.moveTo(300, y + 30).lineTo(450, y + 30).stroke();
   }
 
-  const genSammel = new Date().toLocaleString('de-DE');
-  const sammelPages = doc.bufferedPageRange();
-  for (let i = 0; i < sammelPages.count; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(7).font('Helvetica');
-    doc.text(`Generiert am ${genSammel} · Seite ${i + 1}/${sammelPages.count}`, 40, 775, { align: 'center', width: 515 });
-    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
-  }
-
+  drawSammelFooter();
   doc.end();
 });
 
@@ -313,16 +329,44 @@ router.get('/monatsbericht-pdf', (req, res) => {
     groupKeys[key].gesamtAnzahl += bew.anzahl;
   }
 
-  const pageHeight = 520;
-  const headerHeight = 100;
+  const CONTENT_MAX = 530;
+  const FOOTER_Y = 555;
   const rowMinHeight = 11;
   
-  const FOOTER_Y = 555;
-  const PAGE_CONTENT_MAX = 540;
-  const doc = new PDFDocument({ size: 'A4', margins: { top: 40, left: 40, right: 40, bottom: 15 }, layout: 'landscape', bufferPages: true });
+  // Two-pass: first calculate total pages, then render with correct "Seite X von Y"
+  // Use a temporary doc to measure heights
+  const measureDoc = new PDFDocument({ size: 'A4', margins: { top: 40, left: 40, right: 40, bottom: 15 }, layout: 'landscape' });
+  measureDoc.fontSize(7).font('Helvetica');
+
+  let totalPages = 1;
+  let measureY = 108;
+  for (const bew of grouped) {
+    const details = bew.nummern.length > 0 ? bew.nummern.join(', ') : (bew.bemerkung || '');
+    const h = Math.max(rowMinHeight, measureDoc.heightOfString(details, { width: 550 }) + 3);
+    if (measureY + h > CONTENT_MAX) { totalPages++; measureY = 52; }
+    measureY += h;
+  }
+  if (measureY + 40 > CONTENT_MAX) totalPages++;
+  measureDoc.end();
+
+  const doc = new PDFDocument({ size: 'A4', margins: { top: 40, left: 40, right: 40, bottom: 15 }, layout: 'landscape' });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="Monatsbericht_${kunde?.name || ''}_${von}_${bis}.pdf"`);
   doc.pipe(res);
+
+  let currentPage = 1;
+  const genTimestamp = new Date().toLocaleString('de-DE');
+
+  function drawFooter() {
+    doc.fontSize(6).font('Helvetica');
+    doc.text(`Generiert: ${genTimestamp} | Seite ${currentPage} von ${totalPages}`, 40, FOOTER_Y, { width: 740, align: 'center', lineBreak: false });
+  }
+
+  function newPage() {
+    drawFooter();
+    currentPage++;
+    doc.addPage({ layout: 'landscape' });
+  }
 
   function drawHeader() {
     try { if (HAS_LOGO) doc.image(LOGO_PATH, 680, 18, { height: 40 }); } catch {}
@@ -365,54 +409,21 @@ router.get('/monatsbericht-pdf', (req, res) => {
     const detailHeight = doc.heightOfString(details, { width: 550 });
     const rowHeight = Math.max(rowMinHeight, detailHeight + 3);
 
-    // Row taller than one page: split into chunks that fit
-    if (rowHeight > PAGE_CONTENT_MAX - 50) {
-      if (y > 110) {
-        doc.addPage({ layout: 'landscape' });
-        y = drawTableHeader(40);
-        doc.font('Helvetica').fontSize(7);
-      }
-      doc.text(d, 40, y, { width: 55, lineBreak: false });
-      doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
-      doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
-
-      const words = details.split(', ');
-      let chunk = '';
-      let chunkY = y;
-      for (let w = 0; w < words.length; w++) {
-        const candidate = chunk ? chunk + ', ' + words[w] : words[w];
-        const ch = doc.heightOfString(candidate, { width: 550 });
-        if (chunkY + ch + 3 > PAGE_CONTENT_MAX && chunk) {
-          doc.text(chunk, 224, chunkY, { width: 550 });
-          doc.addPage({ layout: 'landscape' });
-          chunkY = drawTableHeader(40);
-          doc.font('Helvetica').fontSize(7);
-          chunk = words[w];
-        } else {
-          chunk = candidate;
-        }
-      }
-      if (chunk) {
-        doc.text(chunk, 224, chunkY, { width: 550 });
-        const lastH = doc.heightOfString(chunk, { width: 550 });
-        y = chunkY + lastH + 3;
-      }
-    } else {
-      if (y + rowHeight > PAGE_CONTENT_MAX) {
-        doc.addPage({ layout: 'landscape' });
-        y = drawTableHeader(40);
-        doc.font('Helvetica').fontSize(7);
-      }
-      doc.text(d, 40, y, { width: 55, lineBreak: false });
-      doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
-      doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
-      doc.text(details, 224, y, { width: 550 });
-      y += rowHeight;
+    if (y + rowHeight > CONTENT_MAX) {
+      newPage();
+      y = drawTableHeader(40);
+      doc.font('Helvetica').fontSize(7);
     }
+
+    doc.text(d, 40, y, { width: 55, lineBreak: false });
+    doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
+    doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
+    doc.text(details, 224, y, { width: 550 });
+    y += rowHeight;
   }
 
-  if (y + 40 > PAGE_CONTENT_MAX) {
-    doc.addPage({ layout: 'landscape' });
+  if (y + 40 > CONTENT_MAX) {
+    newPage();
     y = 40;
   }
   y += 5;
@@ -422,15 +433,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.text('SUMME', 40, y, { lineBreak: false });
   doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680, lineBreak: false });
 
-  const pages = doc.bufferedPageRange();
-  const totalPages = pages.count;
-  const genTimestamp = new Date().toLocaleString('de-DE');
-  for (let i = 0; i < totalPages; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(6).font('Helvetica');
-    doc.text(`Generiert: ${genTimestamp} | Seite ${i + 1} von ${totalPages}`, 40, FOOTER_Y, { width: 740, align: 'center', lineBreak: false });
-  }
-
+  drawFooter();
   doc.end();
 });
 
@@ -450,11 +453,34 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
     SELECT * FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? ORDER BY id
   `).all(auftragId);
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+  const EINL_ROW_BREAK = 690;
+
+  // Pre-calculate total pages
+  let einlTotalPages = 1;
+  let ey = 174;
+  for (let i = 0; i < positionen.length; i++) { ey += 13; if (ey > EINL_ROW_BREAK) { einlTotalPages++; ey = 118; } }
+  if (ey + 10 > EINL_ROW_BREAK) einlTotalPages++;
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
   const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${auftragId}`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
+
+  const genDatum = new Date().toLocaleString('de-DE');
+  let einlPageNr = 1;
+
+  function drawEinlFooter() {
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${genDatum} · Seite ${einlPageNr}/${einlTotalPages}`, 40, 775, { align: 'center', width: 515, lineBreak: false });
+    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515, lineBreak: false });
+  }
+
+  function einlNewPage() {
+    drawEinlFooter();
+    einlPageNr++;
+    doc.addPage();
+  }
 
   function drawEinlagerungHeader() {
     try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
@@ -507,8 +533,8 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.font('Helvetica').fontSize(8);
   for (let i = 0; i < positionen.length; i++) {
     const p = positionen[i];
-    if (y > 690) {
-      doc.addPage();
+    if (y > EINL_ROW_BREAK) {
+      einlNewPage();
       drawEinlagerungHeader();
       y = drawEinlagerungTableHeader(105);
       doc.font('Helvetica').fontSize(8);
@@ -522,7 +548,7 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   }
 
   y += 10;
-  if (y > 690) { doc.addPage(); y = 40; }
+  if (y > EINL_ROW_BREAK) { einlNewPage(); y = 40; }
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${positionen.length} Palette(n)`, 40, y);
@@ -537,15 +563,7 @@ router.get('/einlagerungsbeleg/:auftrag_id', (req, res) => {
   doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-  const genDatum = new Date().toLocaleString('de-DE');
-  const einlPages = doc.bufferedPageRange();
-  const einlTotalPages = einlPages.count;
-  for (let i = 0; i < einlTotalPages; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(7).font('Helvetica');
-    doc.text(`Generiert am ${genDatum} · Seite ${i + 1}/${einlTotalPages}`, 40, 775, { align: 'center', width: 515 });
-    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
-  }
+  drawEinlFooter();
   doc.end();
 });
 
@@ -563,11 +581,33 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
     paletten.push({ nr, platz: p?.platz || '?', artikel: p?.artikel_nr || '', charge: p?.chargen_nr || '' });
   }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+  const EINZ_ROW_BREAK = 690;
+
+  let einzelTotalPages = 1;
+  let ezy = 169;
+  for (let i = 0; i < paletten.length; i++) { ezy += 13; if (ezy > EINZ_ROW_BREAK) { einzelTotalPages++; ezy = 118; } }
+  if (ezy + 10 > EINZ_ROW_BREAK) einzelTotalPages++;
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
   const belegNr = `EIN-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${belegNr}.pdf"`);
   doc.pipe(res);
+
+  const genDatum2 = new Date().toLocaleString('de-DE');
+  let einzelPageNr = 1;
+
+  function drawEinzelFooter() {
+    doc.fontSize(7).font('Helvetica');
+    doc.text(`Generiert am ${genDatum2} · Seite ${einzelPageNr}/${einzelTotalPages}`, 40, 775, { align: 'center', width: 515, lineBreak: false });
+    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515, lineBreak: false });
+  }
+
+  function einzelNewPage() {
+    drawEinzelFooter();
+    einzelPageNr++;
+    doc.addPage();
+  }
 
   function drawEinzelHeader() {
     try { if (HAS_LOGO) doc.image(LOGO_PATH, 440, 25, { height: 28 }); } catch {}
@@ -608,8 +648,8 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
 
   doc.font('Helvetica').fontSize(8);
   paletten.forEach((p, i) => {
-    if (y > 690) {
-      doc.addPage();
+    if (y > EINZ_ROW_BREAK) {
+      einzelNewPage();
       drawEinzelHeader();
       y = drawEinzelTableHeader(105);
       doc.font('Helvetica').fontSize(8);
@@ -619,7 +659,7 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   });
 
   y += 10;
-  if (y > 690) { doc.addPage(); y = 40; }
+  if (y > EINZ_ROW_BREAK) { einzelNewPage(); y = 40; }
   doc.moveTo(40, y).lineTo(555, y).stroke();
   y += 8;
   doc.font('Helvetica-Bold').fontSize(9).text(`Summe: ${paletten.length} Palette(n)`, 40, y);
@@ -631,15 +671,7 @@ router.post('/einlagerungsbeleg-einzel', (req, res) => {
   doc.text('Unterschrift Anlieferer/Fahrer:', 300, y);
   doc.moveTo(300, y + 30).lineTo(520, y + 30).stroke();
 
-  const genDatum2 = new Date().toLocaleString('de-DE');
-  const einzelPages = doc.bufferedPageRange();
-  const einzelTotalPages = einzelPages.count;
-  for (let i = 0; i < einzelTotalPages; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(7).font('Helvetica');
-    doc.text(`Generiert am ${genDatum2} · Seite ${i + 1}/${einzelTotalPages}`, 40, 775, { align: 'center', width: 515 });
-    doc.fontSize(6).text('HIGHSPEED Logistik · Inh. Martin Klüber · Otto-Hahn-Str. 3 a · DE-22946 Trittau · mk@highspeedlogistik.de', 40, 788, { align: 'center', width: 515 });
-  }
+  drawEinzelFooter();
   doc.end();
 });
 
