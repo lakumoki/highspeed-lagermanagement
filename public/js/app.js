@@ -923,18 +923,58 @@ function openSammelbeleg(nummern, lkwAnzahl) {
 // ═══ PICKLISTE ═══════════════════════════════════════════════════════════════
 async function pgPickliste() {
   const pc = document.getElementById('page-content');
-  const aktuell = await api('/api/pickliste/aktuell');
-  
-  const gepickt = aktuell.filter(i => i.abgehakt);
-  const offen = aktuell.filter(i => !i.abgehakt);
-  
-  const kundeNames = [...new Set(aktuell.filter(i => i.kunde_name).map(i => i.kunde_name))];
+  const kundenAktiv = await api('/api/pickliste/kunden-aktiv');
+  const kunden = await api('/api/kunden');
+  const selectedKunde = window._pickKundeId || getLastKunde() || '';
   
   pc.innerHTML = `
     <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button></div></div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;min-width:200px">
+          <label style="font-size:11px;margin-bottom:2px">Kunde auswählen</label>
+          <select id="pick-filter-kunde" onchange="pickKundeChanged(this.value)" style="padding:8px 10px">
+            <option value="">— Alle Kunden —</option>
+            ${kunden.map(k => {
+              const aktiv = kundenAktiv.find(a => a.kunde_id === k.id);
+              const badge = aktiv ? ` (${aktiv.gepickt}/${aktiv.anzahl} gepickt)` : '';
+              return `<option value="${k.id}" ${String(k.id) === String(selectedKunde) ? 'selected' : ''}>${k.name}${badge}</option>`;
+            }).join('')}
+          </select>
+        </div>
+        ${kundenAktiv.length > 0 ? kundenAktiv.map(ka => `
+          <button class="btn btn-sm ${String(ka.kunde_id) === String(selectedKunde) ? 'btn-primary' : 'btn-secondary'}" onclick="pickKundeChanged('${ka.kunde_id}')" style="font-size:11px">
+            ${ka.kunde_name || 'Unbekannt'} <span class="badge ${ka.gepickt === ka.anzahl ? 'badge-success' : 'badge-warning'}" style="margin-left:4px">${ka.gepickt}/${ka.anzahl}</span>
+          </button>`).join('') : ''}
+      </div>
+    </div>
+    <div id="pick-main-area"></div>`;
+  
+  loadPicklisteContent(selectedKunde);
+}
+
+function pickKundeChanged(kundeId) {
+  window._pickKundeId = kundeId;
+  setLastKunde(kundeId);
+  const sel = document.getElementById('pick-filter-kunde');
+  if (sel && sel.value !== kundeId) sel.value = kundeId;
+  loadPicklisteContent(kundeId);
+}
+
+async function loadPicklisteContent(kundeId) {
+  const area = document.getElementById('pick-main-area');
+  if (!area) return;
+  const url = kundeId ? `/api/pickliste/aktuell?kunde_id=${kundeId}` : '/api/pickliste/aktuell';
+  const aktuell = await api(url);
+  
+  const gepickt = aktuell.filter(i => i.abgehakt);
+  const offen = aktuell.filter(i => !i.abgehakt);
+  const kundeName = aktuell.length > 0 && aktuell[0].kunde_name ? aktuell[0].kunde_name : '';
+  
+  area.innerHTML = `
     ${aktuell.length > 0 ? `
     <div class="card" style="margin-bottom:12px">
-      ${kundeNames.length > 0 ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Kunde: <strong>${kundeNames.join(', ')}</strong></div>` : ''}
+      ${kundeName ? `<div style="font-size:13px;margin-bottom:8px">Pickliste für: <strong>${kundeName}</strong> · ${aktuell.length} Paletten</div>` : ''}
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <span style="font-size:13px"><strong>${gepickt.length}</strong> / ${aktuell.length} gepickt</span>
         <div class="progress-bar" style="flex:1;min-width:120px"><div class="fill ${gepickt.length === aktuell.length ? 'green' : 'yellow'}" style="width:${Math.round(gepickt.length/aktuell.length*100)}%"></div></div>
@@ -947,9 +987,9 @@ async function pgPickliste() {
       <button onclick="showPickTab('liste')">Listenansicht</button>
     </div>
     <div id="pick-content">
-      ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine aktive Pickliste vorhanden. Klicke "Neuer Abruf" um eine Liste zu importieren.</p>' :
+      ${aktuell.length === 0 ? '<p style="color:var(--text-muted);padding:20px">Keine Pickliste für diesen Kunden vorhanden. Klicke "Neuer Abruf" um eine Liste zu importieren.</p>' :
       aktuell.map(item => `
-        <div class="picklist-item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'already-out' : ''}" data-nr="${item.paletten_nr}">
+        <div class="picklist-item ${item.abgehakt ? 'done' : ''} ${item.bereits_ausgelagert ? 'already-out' : ''}" data-nr="${item.paletten_nr}" data-kunde="${item.kunde_id || ''}">
           <div class="check" ${item.bereits_ausgelagert ? 'style="background:#fee;color:#c00;pointer-events:none"' : `onclick="togglePickItem(this, '${item.abruf_id}', '${item.paletten_nr}')"`}>${item.bereits_ausgelagert ? '✗' : (item.abgehakt ? '✓' : '')}</div>
           <div class="nr">${item.paletten_nr}</div>
           <div class="platz">${item.bereits_ausgelagert ? '<span style="color:var(--danger);font-size:11px">Bereits ausgelagert</span>' : (item.lagerplatz || '?')}</div>
@@ -960,11 +1000,12 @@ async function pgPickliste() {
     <div id="pick-liste-content" style="display:none">
       ${aktuell.length === 0 ? '' : `
       <div class="card">
-        <div class="table-wrap"><table><thead><tr><th>Pos.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Status</th></tr></thead><tbody>
+        <div class="table-wrap"><table><thead><tr><th>Pos.</th><th>Pal.-Nr.</th><th>Lagerplatz</th><th>Kunde</th><th>Status</th></tr></thead><tbody>
           ${aktuell.map(item => `<tr style="${item.abgehakt ? 'background:#e8f8f0' : ''} ${item.bereits_ausgelagert ? 'opacity:0.5;background:#fee' : ''}">
             <td>${item.lfd_nummer}</td>
             <td><strong>${item.paletten_nr}</strong></td>
             <td>${item.bereits_ausgelagert ? '<span style="color:var(--danger)">Bereits ausgelagert</span>' : (item.lagerplatz || '?')}</td>
+            <td>${item.kunde_name || '—'}</td>
             <td>${item.bereits_ausgelagert ? '<span class="badge badge-danger">Ausgelagert</span>' : (item.abgehakt ? '<span class="badge badge-success">Gepickt</span>' : '<span class="badge badge-warning">Offen</span>')}</td>
           </tr>`).join('')}
         </tbody></table></div>
@@ -1016,7 +1057,9 @@ function updatePickCounter() {
 }
 
 async function picklisteQR() {
-  const aktuell = await api('/api/pickliste/aktuell');
+  const kundeId = window._pickKundeId || '';
+  const qUrl = kundeId ? `/api/pickliste/aktuell?kunde_id=${kundeId}` : '/api/pickliste/aktuell';
+  const aktuell = await api(qUrl);
   const offen = aktuell.filter(i => !i.abgehakt);
   if (offen.length === 0) { toast('Alle Paletten bereits gepickt', 'error'); return; }
   
@@ -1036,17 +1079,20 @@ async function picklisteQR() {
 }
 
 async function picklisteAbschliessen() {
-  const aktuell = await api('/api/pickliste/aktuell');
+  const kundeId = window._pickKundeId || '';
+  const url = kundeId ? `/api/pickliste/aktuell?kunde_id=${kundeId}` : '/api/pickliste/aktuell';
+  const aktuell = await api(url);
   const gepickt = aktuell.filter(i => i.abgehakt);
   if (gepickt.length === 0) { toast('Keine Paletten gepickt', 'error'); return; }
   
+  const kundeName = gepickt[0]?.kunde_name || '';
   const lkwKap = 17;
   const lkwAnzahl = Math.ceil(gepickt.length / lkwKap);
   
-  if (!confirm(`${gepickt.length} Paletten auslagern und ${lkwAnzahl} Lieferschein${lkwAnzahl > 1 ? 'e' : ''} generieren?`)) return;
+  if (!confirm(`${gepickt.length} Paletten${kundeName ? ' (' + kundeName + ')' : ''} auslagern und ${lkwAnzahl} Lieferschein${lkwAnzahl > 1 ? 'e' : ''} generieren?`)) return;
   
   try {
-    const data = await api('/api/pickliste/abschliessen', { method: 'POST', body: { lkw_kapazitaet: lkwKap } });
+    const data = await api('/api/pickliste/abschliessen', { method: 'POST', body: { lkw_kapazitaet: lkwKap, kunde_id: kundeId || undefined } });
     toast(`${data.ausgelagert} Paletten ausgelagert, ${data.lieferscheine} Lieferschein(e) erstellt`, 'success');
     if (data.pdf_urls && data.pdf_urls.length > 0) {
       data.pdf_urls.forEach((url, i) => {

@@ -241,9 +241,10 @@ router.post('/ausfuehren', (req, res) => {
   res.json({ ok: true, ausgelagert, fehler: fehler.length, fehler_nummern: fehler });
 });
 
-// Aktuelle Abrufliste mit Status
+// Aktuelle Abrufliste mit Status (optional nach kunde_id filtern)
 router.get('/aktuell', (req, res) => {
-  const items = db.prepare(`
+  const filterKunde = req.query.kunde_id ? parseInt(req.query.kunde_id) : null;
+  let sql = `
     SELECT a.*, 
       k.name as kunde_name,
       CASE WHEN NOT EXISTS(
@@ -256,28 +257,45 @@ router.get('/aktuell', (req, res) => {
           AND p2.ausgelagert = 1
       ) THEN 1 ELSE 0 END as bereits_ausgelagert
     FROM abrufliste a
-    LEFT JOIN kunden k ON a.kunde_id = k.id
-    ORDER BY a.lkw_nr, a.lfd_nummer
-  `).all();
+    LEFT JOIN kunden k ON a.kunde_id = k.id`;
+  const params = [];
+  if (filterKunde) { sql += ' WHERE a.kunde_id = ?'; params.push(filterKunde); }
+  sql += ' ORDER BY a.lkw_nr, a.lfd_nummer';
+  const items = db.prepare(sql).all(...params);
   res.json(items);
+});
+
+// Übersicht: welche Kunden haben gerade Einträge in der Abrufliste
+router.get('/kunden-aktiv', (req, res) => {
+  const kunden = db.prepare(`
+    SELECT DISTINCT a.kunde_id, k.name as kunde_name, COUNT(*) as anzahl,
+      SUM(CASE WHEN a.abgehakt = 1 THEN 1 ELSE 0 END) as gepickt
+    FROM abrufliste a
+    LEFT JOIN kunden k ON a.kunde_id = k.id
+    GROUP BY a.kunde_id
+    ORDER BY k.name
+  `).all();
+  res.json(kunden);
 });
 
 // Pickliste abschließen: gepickte auslagern + Lieferscheine generieren + archivieren
 router.post('/abschliessen', (req, res) => {
-  const { lkw_kapazitaet = 17 } = req.body;
+  const { lkw_kapazitaet = 17, kunde_id } = req.body;
   const heute = new Date().toISOString().split('T')[0];
   const jetzt = new Date().toISOString();
   const benutzer = req.session?.user?.benutzername || 'System';
 
-  const gepickt = db.prepare(`
+  let gepicktSql = `
     SELECT a.*, p.id as pal_id, p.kunde_id, p.lagerplatz_id, p.lagerplatz_bezeichnung, p.artikel_nr, p.chargen_nr, k.name as kunde_name 
     FROM abrufliste a 
     LEFT JOIN paletten p ON p.id = (
       SELECT p2.id FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND (a.kunde_id IS NULL OR p2.kunde_id = a.kunde_id) AND p2.ausgelagert = 0 AND p2.geloescht = 0 LIMIT 1
     )
     LEFT JOIN kunden k ON COALESCE(p.kunde_id, a.kunde_id) = k.id 
-    WHERE a.abgehakt = 1
-  `).all();
+    WHERE a.abgehakt = 1`;
+  const gepicktParams = [];
+  if (kunde_id) { gepicktSql += ' AND a.kunde_id = ?'; gepicktParams.push(parseInt(kunde_id)); }
+  const gepickt = db.prepare(gepicktSql).all(...gepicktParams);
 
   if (gepickt.length === 0) return res.status(400).json({ error: 'Keine gepickten Paletten vorhanden' });
 
@@ -328,8 +346,12 @@ router.post('/abschliessen', (req, res) => {
     benutzer, jetzt
   );
 
-  // Abrufliste bereinigen (nur gepickte)
-  db.prepare("DELETE FROM abrufliste WHERE abgehakt = 1").run();
+  // Abrufliste bereinigen (nur gepickte, ggf. nach Kunde)
+  if (kunde_id) {
+    db.prepare("DELETE FROM abrufliste WHERE abgehakt = 1 AND kunde_id = ?").run(parseInt(kunde_id));
+  } else {
+    db.prepare("DELETE FROM abrufliste WHERE abgehakt = 1").run();
+  }
 
   // PDF-URLs zurückgeben (aus Archiv)
   const pdfUrls = lieferscheinIds.map(id => `/api/pickliste/lieferschein/${id}`);
