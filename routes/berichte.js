@@ -317,17 +317,18 @@ router.get('/monatsbericht-pdf', (req, res) => {
   const headerHeight = 100;
   const rowMinHeight = 11;
   
-  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape', bufferPages: true });
+  const FOOTER_Y = 555;
+  const PAGE_CONTENT_MAX = 540;
+  const doc = new PDFDocument({ size: 'A4', margins: { top: 40, left: 40, right: 40, bottom: 15 }, layout: 'landscape', bufferPages: true });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="Monatsbericht_${kunde?.name || ''}_${von}_${bis}.pdf"`);
   doc.pipe(res);
 
-  // Header zeichnen (wird auf erster Seite gezeichnet)
   function drawHeader() {
     try { if (HAS_LOGO) doc.image(LOGO_PATH, 680, 18, { height: 40 }); } catch {}
-    doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Monatsbericht', 40, 30);
-    doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48);
-    doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60);
+    doc.fontSize(14).font('Helvetica-Bold').text('HIGHSPEED Logistik · Monatsbericht', 40, 30, { lineBreak: false });
+    doc.fontSize(10).font('Helvetica').text(`Kunde: ${kunde?.name || ''}`, 40, 48, { lineBreak: false });
+    doc.text(`Zeitraum: ${von} bis ${bis}`, 40, 60, { lineBreak: false });
     if (kontingentPlaetze > 0) {
       doc.text(`Kontingent: ${kontingentPlaetze} Plätze | Bestand aktuell: ${gesamtBestand} | Max. Überbelegung: ${maxUeberbelegung}`, 40, 72, { width: 740, lineBreak: false });
     }
@@ -336,10 +337,10 @@ router.get('/monatsbericht-pdf', (req, res) => {
 
   function drawTableHeader(yPos) {
     doc.fontSize(7).font('Helvetica-Bold');
-    doc.text('Datum', 40, yPos, { width: 55 });
-    doc.text('Typ', 98, yPos, { width: 95 });
-    doc.text('Anz.', 196, yPos, { width: 25 });
-    doc.text('Paletten-Nummern / Details', 224, yPos, { width: 555 });
+    doc.text('Datum', 40, yPos, { width: 55, lineBreak: false });
+    doc.text('Typ', 98, yPos, { width: 95, lineBreak: false });
+    doc.text('Anz.', 196, yPos, { width: 25, lineBreak: false });
+    doc.text('Paletten-Nummern / Details', 224, yPos, { width: 555, lineBreak: false });
     return yPos + 12;
   }
 
@@ -361,24 +362,56 @@ router.get('/monatsbericht-pdf', (req, res) => {
     if (bew.direktanlieferung_id) typLabel = 'D: ' + bew.typ;
 
     const details = bew.nummern.length > 0 ? bew.nummern.join(', ') : (bew.bemerkung || '');
-    const detailLines = doc.heightOfString(details, { width: 550 });
-    const rowHeight = Math.max(rowMinHeight, detailLines + 3);
+    const detailHeight = doc.heightOfString(details, { width: 550 });
+    const rowHeight = Math.max(rowMinHeight, detailHeight + 3);
 
-    if (y + rowHeight > pageHeight) {
-      doc.addPage({ layout: 'landscape' });
-      y = drawTableHeader(40);
-      doc.font('Helvetica').fontSize(7);
+    // Row taller than one page: split into chunks that fit
+    if (rowHeight > PAGE_CONTENT_MAX - 50) {
+      if (y > 110) {
+        doc.addPage({ layout: 'landscape' });
+        y = drawTableHeader(40);
+        doc.font('Helvetica').fontSize(7);
+      }
+      doc.text(d, 40, y, { width: 55, lineBreak: false });
+      doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
+      doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
+
+      const words = details.split(', ');
+      let chunk = '';
+      let chunkY = y;
+      for (let w = 0; w < words.length; w++) {
+        const candidate = chunk ? chunk + ', ' + words[w] : words[w];
+        const ch = doc.heightOfString(candidate, { width: 550 });
+        if (chunkY + ch + 3 > PAGE_CONTENT_MAX && chunk) {
+          doc.text(chunk, 224, chunkY, { width: 550 });
+          doc.addPage({ layout: 'landscape' });
+          chunkY = drawTableHeader(40);
+          doc.font('Helvetica').fontSize(7);
+          chunk = words[w];
+        } else {
+          chunk = candidate;
+        }
+      }
+      if (chunk) {
+        doc.text(chunk, 224, chunkY, { width: 550 });
+        const lastH = doc.heightOfString(chunk, { width: 550 });
+        y = chunkY + lastH + 3;
+      }
+    } else {
+      if (y + rowHeight > PAGE_CONTENT_MAX) {
+        doc.addPage({ layout: 'landscape' });
+        y = drawTableHeader(40);
+        doc.font('Helvetica').fontSize(7);
+      }
+      doc.text(d, 40, y, { width: 55, lineBreak: false });
+      doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
+      doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
+      doc.text(details, 224, y, { width: 550 });
+      y += rowHeight;
     }
-
-    doc.text(d, 40, y, { width: 55, lineBreak: false });
-    doc.text(typLabel, 98, y, { width: 95, lineBreak: false });
-    doc.text(String(anzahl), 196, y, { width: 25, lineBreak: false });
-    doc.text(details, 224, y, { width: 550 });
-    y += rowHeight;
   }
 
-  // Summenzeile — 40px Platz für Summe + Abstand zur Fußzeile
-  if (y + 40 > pageHeight) {
+  if (y + 40 > PAGE_CONTENT_MAX) {
     doc.addPage({ layout: 'landscape' });
     y = 40;
   }
@@ -386,7 +419,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   doc.moveTo(40, y).lineTo(780, y).stroke();
   y += 5;
   doc.font('Helvetica-Bold').fontSize(7);
-  doc.text('SUMME', 40, y);
+  doc.text('SUMME', 40, y, { lineBreak: false });
   doc.text(`Einlagerungen: ${sumEinl} | Auslagerungen: ${sumAusl} | Entladungen: ${sumEntl} | Extra Handling: ${sumExtra} | Gesamt: ${sumEinl + sumAusl + sumExtra + sumEntl} Bewegungen`, 98, y, { width: 680, lineBreak: false });
 
   const pages = doc.bufferedPageRange();
@@ -395,7 +428,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   for (let i = 0; i < totalPages; i++) {
     doc.switchToPage(i);
     doc.fontSize(6).font('Helvetica');
-    doc.text(`Generiert: ${genTimestamp} | Seite ${i + 1} von ${totalPages}`, 40, 555, { width: 740, align: 'center', lineBreak: false });
+    doc.text(`Generiert: ${genTimestamp} | Seite ${i + 1} von ${totalPages}`, 40, FOOTER_Y, { width: 740, align: 'center', lineBreak: false });
   }
 
   doc.end();
