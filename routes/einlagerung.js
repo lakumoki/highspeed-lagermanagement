@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database/init');
+const { updateMonatsPeak } = require('../helpers/peak');
 
 // Einlagerung: Neues System mit Kundenauswahl + Nummernformat
 router.post('/', (req, res) => {
@@ -79,6 +80,7 @@ router.post('/', (req, res) => {
   
   db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run('Einlagerung', `Palette ${nr} → Platz ${platz.bezeichnung} | Kunde: ${kundeId ? (db.prepare('SELECT name FROM kunden WHERE id=?').get(kundeId)?.name || kundeId) : '—'} | Artikel: ${artikel_nr || '—'} | Charge: ${chargen_nr || '—'}`, req.session?.user?.benutzername || 'System', jetzt);
   
+  updateMonatsPeak(kundeId);
   res.json({ ok: true, id: result.lastInsertRowid, message: `${nr} auf ${platz.bezeichnung} eingelagert` });
 });
 

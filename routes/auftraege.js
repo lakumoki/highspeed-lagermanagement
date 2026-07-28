@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 const db = require('../database/init');
+const { updateMonatsPeak } = require('../helpers/peak');
 
 // Tabellen erstellen falls nicht vorhanden
 db.exec(`
@@ -232,6 +233,7 @@ router.post('/:token/positionen/:id', (req, res) => {
 
   try {
     transaction();
+    updateMonatsPeak(auftrag.kunde_id);
     const verbleibend = db.prepare('SELECT COUNT(*) as cnt FROM einlagerungsauftrag_positionen WHERE auftrag_id = ? AND status = ?').get(auftrag.id, 'offen');
     const bewAnzahl = auftrag.typ === 'direktanlieferung' ? 3 : 1;
     res.json({ ok: true, message: `${nr} → ${platz.bezeichnung} eingelagert (${bewAnzahl} Bew.)`, verbleibend: verbleibend.cnt, bewegungen: bewAnzahl });
@@ -312,6 +314,7 @@ router.post('/:token/zwischenlagern', (req, res) => {
 
   try {
     transaction();
+    updateMonatsPeak(auftrag.kunde_id);
     const msg = `${count} Paletten im Wareneingang zwischengelagert${skipped.length > 0 ? `. ${skipped.length} übersprungen (bereits im Lager): ${skipped.slice(0, 5).join(', ')}${skipped.length > 5 ? '...' : ''}` : ''}`;
     res.json({ ok: true, message: msg, count, skipped });
   } catch (e) {

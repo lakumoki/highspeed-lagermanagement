@@ -21,6 +21,15 @@ db.exec(`
     erstellt_am TEXT DEFAULT (datetime('now'))
   )
 `);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS monats_peak (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kunde_id INTEGER NOT NULL,
+    monat TEXT NOT NULL,
+    max_bestand INTEGER DEFAULT 0,
+    UNIQUE(kunde_id, monat)
+  )
+`);
 
 const app = express();
 const PORT = process.env.PORT || 3000;

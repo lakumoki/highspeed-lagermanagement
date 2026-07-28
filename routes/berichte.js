@@ -277,15 +277,18 @@ router.get('/monatsbericht-pdf', (req, res) => {
   const bestand = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(kid);
   const gesamtBestand = bestand.c;
 
-  // Maximale Überbelegung im Zeitraum berechnen:
-  // Startbestand = aktueller Bestand - echte Einlagerungen + echte Auslagerungen
-  // (Musterzug/Handling-Roundtrips ausschließen, da die den Netto-Bestand nicht verändern)
+  // Kontingent: aus kontingent-Tabelle ODER aus kunden.kontingent_plaetze
+  const kontingentPlaetze = kontingent?.kontingent_plaetze || kunde?.kontingent_plaetze || 0;
+
+  // Max Bestand: gespeicherter Peak (nur aufwärts, nie abwärts)
+  const berichtsMonat = von.substring(0, 7);
+  const storedPeak = db.prepare("SELECT max_bestand FROM monats_peak WHERE kunde_id = ? AND monat = ?").get(kid, berichtsMonat);
+
+  // Fallback: Simulation aus Bewegungen (für Monate ohne gespeicherten Peak)
   const einlSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Einlagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
   const auslSeitVon = db.prepare("SELECT COALESCE(SUM(anzahl),0) as s FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? AND typ = 'Auslagerung' AND (handling_art IS NULL OR (handling_art NOT LIKE 'Musterzug%' AND handling_art NOT LIKE 'Handling%'))").get(kid, von, bis);
   const bestandAnfang = gesamtBestand - einlSeitVon.s + auslSeitVon.s;
 
-  // Tagesbestand simulieren — Musterzug/Handling-Rundläufe ausschließen:
-  // Aus der Tagessumme die handling_art 'Musterzug' und 'Handling' Roundtrips rausrechnen
   const tagesBewNetto = db.prepare(`
     SELECT datum, typ, SUM(anzahl) as summe 
     FROM bewegungen WHERE kunde_id = ? AND datum >= ? AND datum <= ? 
@@ -295,7 +298,7 @@ router.get('/monatsbericht-pdf', (req, res) => {
   `).all(kid, von, bis);
 
   let simulierterBestand = bestandAnfang;
-  let maxBestand = bestandAnfang;
+  let berechneterPeak = bestandAnfang;
   const tagesMap = {};
   for (const tb of tagesBewNetto) {
     if (!tagesMap[tb.datum]) tagesMap[tb.datum] = { ein: 0, aus: 0 };
@@ -304,15 +307,24 @@ router.get('/monatsbericht-pdf', (req, res) => {
   }
   const sortedDays = Object.keys(tagesMap).sort();
   for (const day of sortedDays) {
-    // Auslagerungen zuerst (Paletten gehen raus bevor neue reinkommen)
-    simulierterBestand -= tagesMap[day].aus;
     simulierterBestand += tagesMap[day].ein;
-    if (simulierterBestand > maxBestand) maxBestand = simulierterBestand;
+    if (simulierterBestand > berechneterPeak) berechneterPeak = simulierterBestand;
+    simulierterBestand -= tagesMap[day].aus;
   }
 
-  // Kontingent: aus kontingent-Tabelle ODER aus kunden.kontingent_plaetze
-  const kontingentPlaetze = kontingent?.kontingent_plaetze || kunde?.kontingent_plaetze || 0;
+  // Gespeicherten Peak verwenden, falls vorhanden und höher
+  const maxBestand = Math.max(storedPeak?.max_bestand || 0, berechneterPeak, gesamtBestand);
   const maxUeberbelegung = kontingentPlaetze > 0 ? Math.max(0, maxBestand - kontingentPlaetze) : 0;
+
+  // Peak für aktuellen Monat speichern/aktualisieren (nur aufwärts)
+  if (berichtsMonat === new Date().toISOString().substring(0, 7)) {
+    const ex = db.prepare("SELECT max_bestand FROM monats_peak WHERE kunde_id = ? AND monat = ?").get(kid, berichtsMonat);
+    if (!ex) {
+      db.prepare("INSERT INTO monats_peak (kunde_id, monat, max_bestand) VALUES (?, ?, ?)").run(kid, berichtsMonat, maxBestand);
+    } else if (maxBestand > ex.max_bestand) {
+      db.prepare("UPDATE monats_peak SET max_bestand = ? WHERE kunde_id = ? AND monat = ?").run(maxBestand, kid, berichtsMonat);
+    }
+  }
 
   // Gruppierung: Gleicher Datum + Typ → eine Zeile (Direkt UND reguläre Auslagerungen)
   const grouped = [];
