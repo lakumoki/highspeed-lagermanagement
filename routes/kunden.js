@@ -4,7 +4,8 @@ const db = require('../database/init');
 
 // Alle Kunden (mit Paletten-Zählung)
 router.get('/', (req, res) => {
-  const kunden = db.prepare('SELECT * FROM kunden WHERE aktiv = 1 ORDER BY name').all();
+  const showAll = req.query.alle === '1';
+  const kunden = db.prepare(showAll ? 'SELECT * FROM kunden ORDER BY name' : 'SELECT * FROM kunden WHERE aktiv = 1 ORDER BY name').all();
   for (const k of kunden) {
     const count = db.prepare("SELECT COUNT(*) as c FROM paletten WHERE kunde_id = ? AND ausgelagert = 0 AND geloescht = 0").get(k.id);
     k.aktive_paletten = count.c;
@@ -87,6 +88,19 @@ router.put('/:id', (req, res) => {
 router.put('/:id/adresse', (req, res) => {
   const { adresse } = req.body;
   db.prepare('UPDATE kunden SET adresse = ? WHERE id = ?').run(adresse || null, req.params.id);
+  res.json({ ok: true });
+});
+
+router.put('/:id/aktiv', (req, res) => {
+  const { aktiv } = req.body;
+  db.prepare('UPDATE kunden SET aktiv = ? WHERE id = ?').run(aktiv ? 1 : 0, req.params.id);
+  const benutzer = req.session?.user?.benutzername || 'System';
+  const kunde = db.prepare('SELECT name FROM kunden WHERE id = ?').get(req.params.id);
+  db.prepare('INSERT INTO protokoll (aktion, details, benutzer, zeitstempel) VALUES (?,?,?,?)').run(
+    aktiv ? 'Kunde aktiviert' : 'Kunde deaktiviert',
+    `Kunde: ${kunde?.name || req.params.id}`,
+    benutzer, new Date().toISOString()
+  );
   res.json({ ok: true });
 });
 

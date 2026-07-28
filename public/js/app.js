@@ -928,10 +928,13 @@ async function pgPickliste() {
   const gepickt = aktuell.filter(i => i.abgehakt);
   const offen = aktuell.filter(i => !i.abgehakt);
   
+  const kundeNames = [...new Set(aktuell.filter(i => i.kunde_name).map(i => i.kunde_name))];
+  
   pc.innerHTML = `
     <div class="page-header"><h1>Abruf / Pickliste</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuePickliste()">Neuer Abruf</button></div></div>
     ${aktuell.length > 0 ? `
     <div class="card" style="margin-bottom:12px">
+      ${kundeNames.length > 0 ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Kunde: <strong>${kundeNames.join(', ')}</strong></div>` : ''}
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <span style="font-size:13px"><strong>${gepickt.length}</strong> / ${aktuell.length} gepickt</span>
         <div class="progress-bar" style="flex:1;min-width:120px"><div class="fill ${gepickt.length === aktuell.length ? 'green' : 'yellow'}" style="width:${Math.round(gepickt.length/aktuell.length*100)}%"></div></div>
@@ -1054,19 +1057,27 @@ async function picklisteAbschliessen() {
   } catch (e) { toast(e.message, 'error'); }
 }
 
-function showNeuePickliste() {
+async function showNeuePickliste() {
+  const kunden = await api('/api/kunden');
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:600px">
       <h2>Neuer Abruf — Liste importieren</h2>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Paletten-Nummern einfügen (eine pro Zeile, z.B. vom Kunden per Mail). Leere Zeilen werden ignoriert.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Kunde</label>
+          <select id="pick-kunde" onchange="setLastKunde(this.value)">
+            ${kunden.map(k => `<option value="${k.id}">${k.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Abruf-ID</label><input type="text" id="pick-abruf" placeholder="z.B. 2026/149-1"></div>
+      </div>
       <div class="form-group">
         <label>Paletten-Nummern (eine pro Zeile)</label>
         <textarea id="pick-nummern" rows="10" placeholder="645524&#10;645525&#10;645526&#10;652654&#10;652655" style="font-family:monospace"></textarea>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Abruf-ID</label><input type="text" id="pick-abruf" placeholder="z.B. 2026/149-1"></div>
         <div class="form-group"><label>LKW-Kapazität</label><input type="number" id="pick-kap" value="17"></div>
       </div>
       <div class="modal-actions">
@@ -1075,18 +1086,24 @@ function showNeuePickliste() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  preSelectKunde('pick-kunde');
 }
 
 async function erstellePickliste() {
   const nummern = document.getElementById('pick-nummern').value.split('\n').map(l => l.trim()).filter(Boolean);
   const abruf = document.getElementById('pick-abruf').value.trim();
   const kap = parseInt(document.getElementById('pick-kap').value) || 17;
+  const kundeId = document.getElementById('pick-kunde')?.value || '';
 
   if (nummern.length === 0) { toast('Keine Nummern eingegeben', 'error'); return; }
+  if (!kundeId) { toast('Bitte Kunde auswählen', 'error'); return; }
+
+  const kundeName = document.getElementById('pick-kunde')?.selectedOptions[0]?.textContent || '';
 
   try {
-    const data = await api('/api/pickliste/erstellen', { method: 'POST', body: { paletten_nummern: nummern, abruf_id: abruf, lkw_split: kap } });
+    const data = await api('/api/pickliste/erstellen', { method: 'POST', body: { paletten_nummern: nummern, abruf_id: abruf, lkw_split: kap, kunde_id: kundeId } });
     document.querySelector('.modal-overlay')?.remove();
+    window._lastPickliste = { ...data, kunde_name: kundeName };
     toast(`Pickliste erstellt: ${data.gesamt} Paletten auf ${data.lkw_anzahl} LKW`, 'success');
     pgPickliste();
   } catch (e) { toast(e.message, 'error'); }
@@ -1155,7 +1172,7 @@ async function abrufPDF() {
   form.method = 'POST'; form.action = '/api/pickliste/pdf'; form.target = '_blank';
   form.innerHTML = `<input type="hidden" name="items" value='${JSON.stringify(window._lastPickliste.items)}'>
     <input type="hidden" name="abruf_id" value="${window._lastPickliste.abruf_id || ''}">
-    <input type="hidden" name="kunde_name" value="Panpharma">`;
+    <input type="hidden" name="kunde_name" value="${window._lastPickliste.kunde_name || ''}">`;
   document.body.appendChild(form); form.submit(); form.remove();
 }
 
@@ -1908,15 +1925,20 @@ function genMonatsbericht() {
 }
 
 // ═══ KUNDEN ══════════════════════════════════════════════════════════════════
-async function pgKunden() {
+async function pgKunden(showInactive) {
   const pc = document.getElementById('page-content');
-  const kunden = await api('/api/kunden');
+  const kunden = await api(`/api/kunden${showInactive ? '?alle=1' : ''}`);
+  const aktive = kunden.filter(k => k.aktiv !== 0);
+  const inaktive = kunden.filter(k => k.aktiv === 0);
   
   pc.innerHTML = `
-    <div class="page-header"><h1>Kunden</h1><div class="actions"><button class="btn btn-primary" onclick="showNeuerKunde()">+ Neuer Kunde</button></div></div>
+    <div class="page-header"><h1>Kunden</h1><div class="actions">
+      ${inaktive.length > 0 || showInactive ? `<button class="btn btn-sm ${showInactive ? 'btn-warning' : 'btn-secondary'}" onclick="pgKunden(${!showInactive})">${showInactive ? 'Nur aktive anzeigen' : `Deaktivierte anzeigen (${inaktive.length})`}</button>` : ''}
+      <button class="btn btn-primary" onclick="showNeuerKunde()">+ Neuer Kunde</button>
+    </div></div>
     <div class="card">
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Kürzel</th><th>Nr.-Prefix</th><th>Format</th><th>Kontingent</th><th>Paletten aktiv</th><th></th></tr></thead><tbody>
-        ${kunden.map(k => `<tr><td><strong>${k.name}</strong></td><td>${k.kuerzel || '—'}</td><td>${k.nummern_prefix || '—'}</td><td>${k.nummern_format || '—'}</td><td>${k.kontingent_plaetze || '—'}</td><td>${k.aktive_paletten || '—'}</td><td><button class="btn btn-sm" onclick="showKundeDetail(${k.id})">Details</button></td></tr>`).join('')}
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Kürzel</th><th>Nr.-Prefix</th><th>Format</th><th>Kontingent</th><th>Paletten aktiv</th><th>Status</th><th></th></tr></thead><tbody>
+        ${(showInactive ? kunden : aktive).map(k => `<tr style="${k.aktiv === 0 ? 'opacity:0.5;background:#f8f8f8' : ''}"><td><strong>${k.name}</strong></td><td>${k.kuerzel || '—'}</td><td>${k.nummern_prefix || '—'}</td><td>${k.nummern_format || '—'}</td><td>${k.kontingent_plaetze || '—'}</td><td>${k.aktive_paletten || '—'}</td><td>${k.aktiv === 0 ? '<span class="badge badge-danger">Inaktiv</span>' : '<span class="badge badge-success">Aktiv</span>'}</td><td><button class="btn btn-sm" onclick="showKundeDetail(${k.id})">Details</button></td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
 }
@@ -1929,8 +1951,13 @@ async function showKundeDetail(id) {
   
   pc.innerHTML = `
     <div class="page-header">
-      <h1>${kunde.name}</h1>
-      <div class="actions"><button class="btn btn-secondary" onclick="pgKunden()">← Zurück</button></div>
+      <h1>${kunde.name} ${kunde.aktiv === 0 ? '<span class="badge badge-danger" style="font-size:12px;vertical-align:middle">Inaktiv</span>' : ''}</h1>
+      <div class="actions">
+        ${kunde.aktiv !== 0
+          ? `<button class="btn btn-sm btn-danger" onclick="toggleKundeAktiv(${kunde.id}, false, '${kunde.name.replace(/'/g,'')}')">Deaktivieren</button>`
+          : `<button class="btn btn-sm btn-success" onclick="toggleKundeAktiv(${kunde.id}, true, '${kunde.name.replace(/'/g,'')}')">Aktivieren</button>`}
+        <button class="btn btn-secondary" onclick="pgKunden()">← Zurück</button>
+      </div>
     </div>
     
     <div class="stats-grid">
@@ -1976,6 +2003,16 @@ async function showKundeDetail(id) {
         ${bewegungen.map(b => `<tr><td>${b.datum || '—'}</td><td><span class="badge ${b.typ === 'Einlagerung' ? 'badge-success' : b.typ === 'Auslagerung' ? 'badge-danger' : 'badge-warning'}">${b.typ}</span></td><td>${b.anzahl}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.paletten_nummern || '—'}</td><td>${b.bemerkung || '—'}</td><td>${b.benutzer || '—'}</td><td>${b.typ === 'Auslagerung' || b.typ === 'Einlagerung' ? `<button class="btn btn-sm btn-danger" onclick="rueckgaengigBewegung(${b.id}, '${b.typ}', '${(b.paletten_nummern||'').replace(/'/g,'')}')" title="Rückgängig">↩</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>
     </div>`;
+}
+
+async function toggleKundeAktiv(id, aktiv, name) {
+  const aktion = aktiv ? 'aktivieren' : 'deaktivieren';
+  if (!confirm(`Kunde "${name}" wirklich ${aktion}?`)) return;
+  try {
+    await api(`/api/kunden/${id}/aktiv`, { method: 'PUT', body: { aktiv } });
+    toast(`Kunde ${aktiv ? 'aktiviert' : 'deaktiviert'}`, 'success');
+    pgKunden(true);
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 async function rueckgaengigBewegung(bewegungId, typ, palNr) {

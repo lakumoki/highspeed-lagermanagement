@@ -21,14 +21,23 @@ router.post('/erstellen', (req, res) => {
   const insert = db.prepare("INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, artikel_nr, chargen_nr, status, abgehakt, datum, kunde_id, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?)");
 
   const usedPaletteIds = new Set();
+  const kid = kunde_id ? parseInt(kunde_id) : null;
   for (let i = 0; i < paletten_nummern.length; i++) {
     const nr = paletten_nummern[i];
-    const allMatches = db.prepare(`
-      SELECT p.*, l.bezeichnung as platz, l.regal, l.position, l.bereich
-      FROM paletten p
-      LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
-      WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
-    `).all(nr);
+    let allMatches;
+    if (kid) {
+      allMatches = db.prepare(`
+        SELECT p.*, l.bezeichnung as platz, l.regal, l.position, l.bereich
+        FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+        WHERE p.paletten_nr = ? AND p.kunde_id = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+      `).all(nr, kid);
+    } else {
+      allMatches = db.prepare(`
+        SELECT p.*, l.bezeichnung as platz, l.regal, l.position, l.bereich
+        FROM paletten p LEFT JOIN lagerplaetze l ON p.lagerplatz_id = l.id
+        WHERE p.paletten_nr = ? AND p.ausgelagert = 0 AND p.geloescht = 0
+      `).all(nr);
+    }
     const pal = allMatches.find(p => !usedPaletteIds.has(p.id)) || allMatches[0] || null;
     if (pal) usedPaletteIds.add(pal.id);
 
@@ -237,8 +246,15 @@ router.get('/aktuell', (req, res) => {
   const items = db.prepare(`
     SELECT a.*, 
       k.name as kunde_name,
-      CASE WHEN NOT EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 0 AND p2.geloescht = 0)
-           AND EXISTS(SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr AND p2.ausgelagert = 1) THEN 1 ELSE 0 END as bereits_ausgelagert
+      CASE WHEN NOT EXISTS(
+        SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr 
+          AND (a.kunde_id IS NULL OR p2.kunde_id = a.kunde_id)
+          AND p2.ausgelagert = 0 AND p2.geloescht = 0
+      ) AND EXISTS(
+        SELECT 1 FROM paletten p2 WHERE p2.paletten_nr = a.paletten_nr 
+          AND (a.kunde_id IS NULL OR p2.kunde_id = a.kunde_id)
+          AND p2.ausgelagert = 1
+      ) THEN 1 ELSE 0 END as bereits_ausgelagert
     FROM abrufliste a
     LEFT JOIN kunden k ON a.kunde_id = k.id
     ORDER BY a.lkw_nr, a.lfd_nummer
