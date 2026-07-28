@@ -17,6 +17,23 @@ router.post('/erstellen', (req, res) => {
   // Alte nicht-abgehakte Einträge mit gleicher abruf_id löschen (falls neu erstellt)
   if (abruf_id) db.prepare("DELETE FROM abrufliste WHERE abruf_id = ? AND abgehakt = 0").run(abruf_id);
 
+  // Duplikate innerhalb der eingefügten Liste erkennen
+  const duplikateInListe = paletten_nummern.filter((nr, idx) => paletten_nummern.indexOf(nr) !== idx);
+  if (duplikateInListe.length > 0) {
+    const unique = [...new Set(duplikateInListe)];
+    return res.status(400).json({ error: `Doppelte Nummern in der Liste: ${unique.join(', ')}. Bitte Duplikate entfernen.` });
+  }
+
+  // Prüfen ob Nummern bereits auf einer aktiven Pickliste stehen
+  const bereitsAufListe = [];
+  for (const nr of paletten_nummern) {
+    const existing = db.prepare("SELECT paletten_nr, abruf_id FROM abrufliste WHERE paletten_nr = ?").get(nr);
+    if (existing) bereitsAufListe.push(nr);
+  }
+  if (bereitsAufListe.length > 0) {
+    return res.status(400).json({ error: `Bereits auf aktiver Pickliste: ${bereitsAufListe.join(', ')}. Bitte erst die bestehende Pickliste abschließen oder die Nummern entfernen.` });
+  }
+
   const items = [];
   const insert = db.prepare("INSERT INTO abrufliste (abruf_id, lfd_nummer, paletten_nr, lagerplatz, lkw, lkw_nr, artikel_nr, chargen_nr, status, abgehakt, datum, kunde_id, erstellt_am) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?)");
 
